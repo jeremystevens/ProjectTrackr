@@ -80,9 +80,6 @@ def view(short_id):
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
         
-    # Get expiration text for the template - using the Paste class method
-    expiration_text = paste.get_expiration_text()
-
     # Get or create a unique viewer ID for tracking view counts
     viewer_ip = request.remote_addr
     viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
@@ -93,12 +90,34 @@ def view(short_id):
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
-    # Check if this is a 10-minute expiration paste
-    is_ten_min = paste.is_ten_minute_expiration() if paste.expires_at else False
+    # Calculate expiration display for the template
+    if paste.expires_at:
+        if paste.is_ten_minute_expiration():
+            expiration_text = "10 M"
+        else:
+            now = datetime.utcnow()
+            remaining = paste.expires_at - now
+            
+            if remaining.total_seconds() <= 0:
+                expiration_text = "Expired"
+            else:
+                minutes = int(remaining.total_seconds() // 60)
+                hours = minutes // 60
+                minutes = minutes % 60
+                
+                if hours == 0:
+                    expiration_text = f"{minutes} M"
+                else:
+                    expiration_text = f"{hours} H : {minutes} M"
+    else:
+        expiration_text = "Never"
+    
+    # Import logging for debugging
+    import logging
+    logging.debug(f"Final expiration text: {expiration_text}")
     
     return render_template('paste/view.html', expiration_text=expiration_text, paste=paste, 
-                          highlighted_code=highlighted_code, css=css,
-                          is_ten_minute=is_ten_min)
+                          highlighted_code=highlighted_code, css=css)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):
