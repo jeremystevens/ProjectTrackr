@@ -48,23 +48,22 @@ def get_expiration_text(expires_at):
         return "in 10 minutes"
     
     # Regular formatted output based on actual time difference
-    if days > 30:
-        months = days // 30
-        return f"in {months} month{'s' if months > 1 else ''}"
-    elif days > 0:
-        if hours > 0:
-            return f"in {days}d {hours}h"
-        else:
-            return f"in {days} day{'s' if days > 1 else ''}"
-    elif hours > 0:
-        if minutes > 0:
-            return f"in {hours}h {minutes}m"
-        else:
-            return f"in {hours} hour{'s' if hours > 1 else ''}"
+    # Format according to specification:
+    # - Hours/Minutes for > 1h
+    # - Minutes only for < 1h
+    
+    if hours > 0:
+        # More than 1 hour: show hours and minutes
+        return f"in {hours}h {minutes}m"
     elif minutes > 0:
-        return f"in {minutes} minute{'s' if minutes > 1 else ''}"
+        # Less than 1 hour: show only minutes
+        return f"in {minutes} minutes"
+    elif days > 0:
+        # Days (note: this is now a fallback case since we prioritize hour/minute display)
+        return f"in {days} days"
     else:
-        return f"in {seconds} second{'s' if seconds > 1 else ''}"
+        # Seconds (very short expiration)
+        return f"in {seconds} seconds"
 
 def highlight_code(code, syntax='text'):
     """Highlight code using Pygments"""
