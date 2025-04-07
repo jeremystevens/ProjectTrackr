@@ -81,22 +81,16 @@
                             {{ paste.visibility }}
                         </span>
                     </p>
-                    {% if paste.expires_at %}
-                        <p class="mb-0">
-                            <strong>Expires:</strong> 
-                            {% if is_ten_minute %}
-                                in 10 minutes
-                            {% else %}
-                                <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
-                                    {{ get_expiration_text(paste.expires_at) }}
-                                </span>
-                            {% endif %}
-                        </p>
-                    {% else %}
-                        <p class="mb-0">
-                            <strong>Expires:</strong> Never
-                        </p>
-                    {% endif %}
+                    <p class="mb-0">
+                        <strong>Expires:</strong> 
+                        {% if paste.expires_at %}
+                            <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
+                                {{ paste.get_expiration_text() }}
+                            </span>
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>

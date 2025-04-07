@@ -83,6 +83,26 @@ class Paste(db.Model):
         
         logging.debug("Not a 10-minute expiration paste")
         return False
+        
+    def get_expiration_text(self):
+        """Get human-readable expiration text"""
+        if not self.expires_at:
+            return "Never"
+
+        now = datetime.utcnow()
+        remaining = self.expires_at - now
+
+        if remaining.total_seconds() <= 0:
+            return "Expired"
+
+        minutes = int(remaining.total_seconds() // 60)
+        hours = minutes // 60
+        minutes = minutes % 60
+
+        if hours == 0:
+            return f"Expires: {minutes} M"
+        else:
+            return f"Expires: {hours} H : {minutes} M"
     
     def update_view_count(self, viewer_id=None):
         """

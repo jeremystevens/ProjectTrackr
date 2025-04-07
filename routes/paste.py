@@ -90,16 +90,8 @@ def view(short_id):
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
-    # Check if this is a 10-minute expiration paste
-    is_ten_min = paste.is_ten_minute_expiration() if paste.expires_at else False
-    
-    # Import function to make sure it's available (redundant with context processor but safer)
-    from utils import get_expiration_text
-    
     return render_template('paste/view.html', paste=paste, 
-                          highlighted_code=highlighted_code, css=css,
-                          is_ten_minute=is_ten_min,
-                          get_expiration_text=get_expiration_text)
+                          highlighted_code=highlighted_code, css=css)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):

@@ -73,13 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const expirationElements = document.querySelectorAll('.expiration-countdown');
   if (expirationElements.length > 0) {
     expirationElements.forEach(element => {
-      // Special case for the 10-minute expiration
-      const initialText = element.textContent.trim();
-      if (initialText === "Expires in 10 minutes") {
-        // Don't override the server-provided text for 10-minute expirations
-        return;
-      }
-      
       const expiresAt = new Date(element.getAttribute('data-expires-at')).getTime();
       
       if (expiresAt) {
@@ -92,32 +85,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
           }
           
-          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+          // Calculate time in minutes and hours
+          const totalMinutes = Math.floor(distance / (1000 * 60));
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
           
-          // Special case for 10-minute expiration
-          const totalMinutes = hours * 60 + minutes;
-          if (totalMinutes >= 9 && totalMinutes <= 11 && days === 0) {
-            element.textContent = `Expires in 10 minutes`;
-            return;
-          }
-          
-          if (days > 0) {
-            element.textContent = `Expires in ${days}d ${hours}h`;
-          } else if (hours > 0) {
-            element.textContent = `Expires in ${hours}h ${minutes}m`;
-          } else if (minutes > 0) {
-            element.textContent = `Expires in ${minutes}m ${seconds}s`;
+          // Format according to the new standard: "Expires: X H : Y M" or "Expires: Y M"
+          if (hours > 0) {
+            element.textContent = `Expires: ${hours} H : ${minutes} M`;
           } else {
-            element.textContent = `Expires in ${seconds}s`;
+            element.textContent = `Expires: ${minutes} M`;
           }
         };
         
-        // Update immediately and then every second
+        // Update immediately and then every minute
         updateCountdown();
-        setInterval(updateCountdown, 1000);
+        setInterval(updateCountdown, 60000); // Update every minute instead of every second
       }
     });
   }
