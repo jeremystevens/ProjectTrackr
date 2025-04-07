@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block title %}FlaskBin - Create a New Paste{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create a New Paste</h4>
+            </div>
+            <div class="card-body paste-form">
+                <form method="POST" action="{{ url_for('paste.create') }}" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               placeholder="Paste title (optional)" maxlength="255">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="content" name="content" rows="15" required></textarea>
+                        <div class="invalid-feedback">
+                            Please enter some content for your paste.
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="syntax" class="form-label">Syntax Highlighting</label>
+                            <select class="form-select" id="syntax" name="syntax">
+                                <option value="text">Plain Text</option>
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                                <option value="java">Java</option>
+                                <option value="c">C</option>
+                                <option value="cpp">C++</option>
+                                <option value="csharp">C#</option>
+                                <option value="php">PHP</option>
+                                <option value="ruby">Ruby</option>
+                                <option value="go">Go</option>
+                                <option value="rust">Rust</option>
+                                <option value="swift">Swift</option>
+                                <option value="bash">Bash/Shell</option>
+                                <option value="sql">SQL</option>
+                                <option value="xml">XML</option>
+                                <option value="json">JSON</option>
+                                <option value="markdown">Markdown</option>
+                                <option value="yaml">YAML</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="expiration" class="form-label">Expiration</label>
+                            <select class="form-select" id="expiration" name="expiration">
+                                <option value="0">Never</option>
+                                <option value="1">10 Minutes</option>
+                                <option value="2">1 Hour</option>
+                                <option value="3">1 Day</option>
+                                <option value="4">1 Month</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="visibility" class="form-label">Visibility</label>
+                        <select class="form-select" id="visibility" name="visibility">
+                            <option value="public">Public (Visible to everyone, listed in archive)</option>
+                            <option value="unlisted">Unlisted (Visible to anyone with the link, not listed)</option>
+                            {% if current_user.is_authenticated %}
+                                <option value="private">Private (Only visible to you)</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div id="syntax-preview" class="syntax-preview mb-3">
+                        <div class="text-muted">Enter some code to see syntax highlighting preview</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Paste
+                        </button>
+                    </div>
+                    
+                    {% if not current_user.is_authenticated %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tip:</strong> <a href="{{ url_for('auth.register') }}" class="alert-link">Register</a> or 
+                            <a href="{{ url_for('auth.login') }}" class="alert-link">Login</a> to keep track of your pastes!
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <!-- Recent Pastes -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Pastes</h5>
+            </div>
+            <div class="card-body p-0 recent-pastes">
+                {% if recent_pastes %}
+                    <div class="list-group list-group-flush">
+                        {% for paste in recent_pastes %}
+                            <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-truncate" style="max-width: 180px;">
+                                        {{ paste.title }}
+                                    </h6>
+                                    <small class="badge bg-secondary">{{ paste.syntax }}</small>
+                                </div>
+                                <small class="text-muted">
+                                    {% if paste.user_id %}
+                                        By {{ paste.author.username }}
+                                    {% else %}
+                                        By Guest
+                                    {% endif %}
+                                    {{ paste.created_at | timesince }}
+                                </small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-3 text-center">
+                        <p class="text-muted mb-0">No recent pastes available.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('paste.archive') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+        </div>
+        
+        <!-- About Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About FlaskBin</h5>
+            </div>
+            <div class="card-body">
+                <p>FlaskBin is a modern pastebin application for storing and sharing text online. Features include:</p>
+                <ul class="mb-0">
+                    <li>Syntax highlighting for multiple languages</li>
+                    <li>User accounts to manage your pastes</li>
+                    <li>Public, unlisted, and private paste options</li>
+                    <li>Paste expiration settings</li>
+                    <li>Raw view and download options</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

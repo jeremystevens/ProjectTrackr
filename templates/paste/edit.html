@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Paste - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Paste</h4>
+    </div>
+    <div class="card-body paste-form">
+        <form method="POST" action="{{ url_for('paste.edit', short_id=paste.short_id) }}" class="needs-validation" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="title" name="title" 
+                       value="{{ form.title.data }}" placeholder="Paste title (optional)" maxlength="255">
+            </div>
+            
+            <div class="mb-3">
+                <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="content" name="content" rows="15" required>{{ form.content.data }}</textarea>
+                <div class="invalid-feedback">
+                    Please enter some content for your paste.
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="syntax" class="form-label">Syntax Highlighting</label>
+                    <select class="form-select" id="syntax" name="syntax">
+                        <option value="text" {% if form.syntax.data == 'text' %}selected{% endif %}>Plain Text</option>
+                        <option value="python" {% if form.syntax.data == 'python' %}selected{% endif %}>Python</option>
+                        <option value="javascript" {% if form.syntax.data == 'javascript' %}selected{% endif %}>JavaScript</option>
+                        <option value="html" {% if form.syntax.data == 'html' %}selected{% endif %}>HTML</option>
+                        <option value="css" {% if form.syntax.data == 'css' %}selected{% endif %}>CSS</option>
+                        <option value="java" {% if form.syntax.data == 'java' %}selected{% endif %}>Java</option>
+                        <option value="c" {% if form.syntax.data == 'c' %}selected{% endif %}>C</option>
+                        <option value="cpp" {% if form.syntax.data == 'cpp' %}selected{% endif %}>C++</option>
+                        <option value="csharp" {% if form.syntax.data == 'csharp' %}selected{% endif %}>C#</option>
+                        <option value="php" {% if form.syntax.data == 'php' %}selected{% endif %}>PHP</option>
+                        <option value="ruby" {% if form.syntax.data == 'ruby' %}selected{% endif %}>Ruby</option>
+                        <option value="go" {% if form.syntax.data == 'go' %}selected{% endif %}>Go</option>
+                        <option value="rust" {% if form.syntax.data == 'rust' %}selected{% endif %}>Rust</option>
+                        <option value="swift" {% if form.syntax.data == 'swift' %}selected{% endif %}>Swift</option>
+                        <option value="bash" {% if form.syntax.data == 'bash' %}selected{% endif %}>Bash/Shell</option>
+                        <option value="sql" {% if form.syntax.data == 'sql' %}selected{% endif %}>SQL</option>
+                        <option value="xml" {% if form.syntax.data == 'xml' %}selected{% endif %}>XML</option>
+                        <option value="json" {% if form.syntax.data == 'json' %}selected{% endif %}>JSON</option>
+                        <option value="markdown" {% if form.syntax.data == 'markdown' %}selected{% endif %}>Markdown</option>
+                        <option value="yaml" {% if form.syntax.data == 'yaml' %}selected{% endif %}>YAML</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="expiration" class="form-label">Expiration</label>
+                    <select class="form-select" id="expiration" name="expiration">
+                        <option value="0">Never</option>
+                        <option value="1">10 Minutes</option>
+                        <option value="2">1 Hour</option>
+                        <option value="3">1 Day</option>
+                        <option value="4">1 Month</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        {% if paste.expires_at %}
+                            Current expiration: {{ paste.expires_at.strftime('%b %d, %Y %H:%M') }}
+                        {% else %}
+                            Current expiration: Never
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="visibility" class="form-label">Visibility</label>
+                <select class="form-select" id="visibility" name="visibility">
+                    <option value="public" {% if form.visibility.data == 'public' %}selected{% endif %}>Public (Visible to everyone, listed in archive)</option>
+                    <option value="unlisted" {% if form.visibility.data == 'unlisted' %}selected{% endif %}>Unlisted (Visible to anyone with the link, not listed)</option>
+                    <option value="private" {% if form.visibility.data == 'private' %}selected{% endif %}>Private (Only visible to you)</option>
+                </select>
+            </div>
+            
+            <div id="syntax-preview" class="syntax-preview mb-3">
+                <div class="text-muted">Enter some code to see syntax highlighting preview</div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Update Paste
+                </button>
+                <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
