@@ -74,6 +74,10 @@ class Paste(db.Model):
         if not self.expires_at:
             return "Never"
 
+        # First check if this is a 10-minute paste by checking time diff from creation
+        if self.is_ten_minute_expiration():
+            return "10 M"
+
         now = datetime.utcnow()
         remaining = self.expires_at - now
 
@@ -85,9 +89,9 @@ class Paste(db.Model):
         minutes = minutes % 60
 
         if hours == 0:
-            return f"Expires: {minutes} M"
+            return f"{minutes} M"
         else:
-            return f"Expires: {hours} H : {minutes} M"
+            return f"{hours} H : {minutes} M"
 
     def update_view_count(self, viewer_id=None):
         """
