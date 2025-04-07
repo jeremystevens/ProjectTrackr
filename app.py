@@ -110,11 +110,7 @@ def utility_processor():
                 
         return False
     
-    # Import utility functions
-    from utils import get_expiration_text
-    
     return {
         'now': datetime.utcnow(),
-        'is_ten_minute_expiration': is_ten_minute_expiration,
-        'get_expiration_text': get_expiration_text
+        'is_ten_minute_expiration': is_ten_minute_expiration
     }

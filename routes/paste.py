@@ -91,24 +91,9 @@ def view(short_id):
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
     # Calculate expiration display for the template
+    # Just use the paste.get_expiration_text() method directly
     if paste.expires_at:
-        if paste.is_ten_minute_expiration():
-            expiration_text = "10 M"
-        else:
-            now = datetime.utcnow()
-            remaining = paste.expires_at - now
-            
-            if remaining.total_seconds() <= 0:
-                expiration_text = "Expired"
-            else:
-                minutes = int(remaining.total_seconds() // 60)
-                hours = minutes // 60
-                minutes = minutes % 60
-                
-                if hours == 0:
-                    expiration_text = f"{minutes} M"
-                else:
-                    expiration_text = f"{hours} H : {minutes} M"
+        expiration_text = paste.get_expiration_text()
     else:
         expiration_text = "Never"
     
