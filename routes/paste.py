@@ -93,9 +93,33 @@ def view(short_id):
     # Check if this is a 10-minute expiration paste
     is_ten_min = paste.is_ten_minute_expiration() if paste.expires_at else False
     
+    # Calculate expiration text directly (without the "Expires in" prefix)
+    expiration_text = ""
+    if paste.expires_at:
+        now = datetime.utcnow()
+        if paste.expires_at > now:
+            diff = paste.expires_at - now
+            days = diff.days
+            hours, remainder = divmod(diff.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            
+            # Format according to specification:
+            if hours > 0:
+                # More than 1 hour: show hours and minutes
+                expiration_text = f"in {hours}h {minutes}m"
+            elif minutes > 0:
+                # Less than 1 hour: show only minutes
+                expiration_text = f"in {minutes} minutes"
+            else:
+                # Very short expiration (seconds)
+                expiration_text = f"in {seconds} seconds"
+        else:
+            expiration_text = "expired"
+    
     return render_template('paste/view.html', paste=paste, 
                           highlighted_code=highlighted_code, css=css,
-                          is_ten_minute=is_ten_min)
+                          is_ten_minute=is_ten_min,
+                          expiration_text=expiration_text)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):
