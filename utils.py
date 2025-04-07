@@ -29,18 +29,32 @@ def get_expiration_text(expires_at):
     if expires_at < now:
         return "Expired"
     
+    # Print debug info
+    import logging
+    logging.debug(f"Now: {now}")
+    logging.debug(f"Expires at: {expires_at}")
+    
     diff = expires_at - now
     days = diff.days
     hours, remainder = divmod(diff.seconds, 3600)
-    minutes, _ = divmod(remainder, 60)
+    minutes, seconds = divmod(remainder, 60)
     
+    logging.debug(f"Time diff: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds")
+    
+    # Build the expiration string with more precision
     if days > 30:
         months = days // 30
         return f"Expires in {months} month{'s' if months > 1 else ''}"
     elif days > 0:
-        return f"Expires in {days} day{'s' if days > 1 else ''}"
+        if hours > 0:
+            return f"Expires in {days}d {hours}h"
+        else:
+            return f"Expires in {days} day{'s' if days > 1 else ''}"
     elif hours > 0:
-        return f"Expires in {hours} hour{'s' if hours > 1 else ''}"
+        if minutes > 0:
+            return f"Expires in {hours}h {minutes}m"
+        else:
+            return f"Expires in {hours} hour{'s' if hours > 1 else ''}"
     else:
         return f"Expires in {minutes} minute{'s' if minutes > 1 else ''}"
 

@@ -25,13 +25,20 @@ def create():
             if not Paste.query.filter_by(short_id=short_id).first():
                 break
         
+        # Debug the expiration selection
+        import logging
+        logging.debug(f"Expiration option selected: {form.expiration.data}")
+        
         # Create the paste
+        expiry_time = Paste.set_expiration(form.expiration.data)
+        logging.debug(f"Calculated expiry time: {expiry_time}")
+        
         paste = Paste(
             title=form.title.data or 'Untitled',
             content=form.content.data,
             syntax=form.syntax.data,
             visibility=form.visibility.data,
-            expires_at=Paste.set_expiration(form.expiration.data),
+            expires_at=expiry_time,
             short_id=short_id
         )
         
