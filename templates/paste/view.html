@@ -82,10 +82,10 @@
                         </span>
                     </p>
                     <p class="mb-0">
-                        <strong>Expires:</strong> 
+                        <strong>Expiration:</strong> 
                         {% if paste.expires_at %}
                             <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
-                                {{ expiration_text }}
+                                {{ expiry_display }}
                             </span>
                         {% else %}
                             Never

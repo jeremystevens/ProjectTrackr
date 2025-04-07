@@ -90,18 +90,17 @@ def view(short_id):
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
-    # Calculate expiration display for the template
-    # Just use the paste.get_expiration_text() method directly
+    # Calculate expiration display for the template with a new variable name
     if paste.expires_at:
-        expiration_text = paste.get_expiration_text()
+        expiry_display = paste.get_expiration_text()
     else:
-        expiration_text = "Never"
+        expiry_display = "Never"
     
     # Import logging for debugging
     import logging
-    logging.debug(f"Final expiration text: {expiration_text}")
+    logging.debug(f"Final expiration display: {expiry_display}")
     
-    return render_template('paste/view.html', expiration_text=expiration_text, paste=paste, 
+    return render_template('paste/view.html', expiry_display=expiry_display, paste=paste, 
                           highlighted_code=highlighted_code, css=css)
 
 @paste_bp.route('/raw/<short_id>')

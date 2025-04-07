@@ -20,52 +20,9 @@ def sanitize_html(text):
     allowed_attrs = {'*': ['class']}
     return bleach.clean(text, tags=allowed_tags, attributes=allowed_attrs, strip=True)
 
-def get_expiration_text(expires_at):
-    """Convert expiration datetime to human-readable text"""
-    if not expires_at:
-        return "Never"
-    
-    now = datetime.utcnow()
-    if expires_at < now:
-        return "Expired"
-    
-    # Print debug info
-    import logging
-    logging.debug(f"Now: {now}")
-    logging.debug(f"Expires at: {expires_at}")
-    
-    # Calculate time difference
-    diff = expires_at - now
-    days = diff.days
-    hours, remainder = divmod(diff.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    
-    logging.debug(f"Time diff: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds")
-    
-    # For 10-minute expiration special case
-    # Note: In the template, we now handle 10-minute expirations separately with the is_ten_minute flag
-    # This is just a fallback in case the flag isn't available
-    if days == 0 and hours == 0 and 8 <= minutes <= 11:
-        logging.debug("Detected 10 minute expiration time range")
-        return "in 10 minutes"
-    
-    # Regular formatted output based on actual time difference
-    # Format according to specification:
-    # - Hours/Minutes for > 1h
-    # - Minutes only for < 1h
-    
-    if hours > 0:
-        # More than 1 hour: show hours and minutes
-        return f"in {hours}h {minutes}m"
-    elif minutes > 0:
-        # Less than 1 hour: show only minutes
-        return f"in {minutes} minutes"
-    elif days > 0:
-        # Days (note: this is now a fallback case since we prioritize hour/minute display)
-        return f"in {days} days"
-    else:
-        # Seconds (very short expiration)
-        return f"in {seconds} seconds"
+# This function was duplicated in both utils.py and models.py (as a method)
+# It was causing the "Expires: Expires:" issue, so we've removed it from utils.py
+# Use paste.get_expiration_text() method from the Paste model instead
 
 def highlight_code(code, syntax='text'):
     """Highlight code using Pygments"""
