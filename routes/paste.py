@@ -100,8 +100,12 @@ def view(short_id):
     import logging
     logging.debug(f"Final expiration display: {expiry_display}")
     
+    # Create a minimal form instance for CSRF token
+    from flask_wtf import FlaskForm
+    form = FlaskForm()
+    
     return render_template('paste/view.html', expiry_display=expiry_display, paste=paste, 
-                          highlighted_code=highlighted_code, css=css)
+                          highlighted_code=highlighted_code, css=css, form=form)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):
