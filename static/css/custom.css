@@ -18,6 +18,9 @@ footer {
 /* Paste content styles */
 .paste-content {
   position: relative;
+  margin-top: 1rem;
+  border-radius: 4px;
+  overflow: hidden; /* Ensure the content doesn't overflow rounded corners */
 }
 
 .paste-header {

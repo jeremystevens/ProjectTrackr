@@ -51,9 +51,15 @@ def highlight_code(code, syntax='text'):
     except ClassNotFound:
         lexer = get_lexer_by_name('text', stripall=True)
     
-    formatter = HtmlFormatter(linenos=True, cssclass='highlight')
+    # Use a dark style (like 'monokai' or 'dracula') for better visibility with dark theme
+    formatter = HtmlFormatter(linenos=True, cssclass='highlight', style='monokai')
     highlighted = highlight(code, lexer, formatter)
-    css = HtmlFormatter().get_style_defs('.highlight')
+    css = HtmlFormatter(style='monokai').get_style_defs('.highlight')
+    
+    # Add additional styles for better readability
+    css += "\n.highlight { background-color: #272822; border-radius: 4px; padding: 10px; }"
+    css += "\n.highlight pre { background-color: #272822; color: #f8f8f2; }"
+    css += "\n.highlight .linenos { color: #8f908a; }"
     
     return highlighted, css
 
