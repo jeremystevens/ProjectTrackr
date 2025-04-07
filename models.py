@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import hashlib
+import uuid
 from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -56,14 +57,42 @@ class Paste(db.Model):
             return False
         return datetime.utcnow() > self.expires_at
     
-    def update_view_count(self):
+    def update_view_count(self, viewer_id=None):
+        """
+        Update view count only if this is a unique viewer
+        
+        Args:
+            viewer_id: A unique identifier for the viewer (session ID or IP-based)
+        
+        Returns:
+            bool: True if this was a new view, False if it was a repeat view
+        """
+        if not viewer_id:
+            return False
+            
+        # Check if this viewer has already viewed this paste
+        existing_view = PasteView.query.filter_by(
+            paste_id=self.id,
+            viewer_id=viewer_id
+        ).first()
+        
+        if existing_view:
+            # This viewer has already seen this paste
+            return False
+            
+        # This is a new view, create a record and increment counters
+        new_view = PasteView(paste_id=self.id, viewer_id=viewer_id)
+        db.session.add(new_view)
+        
+        # Increment the paste's view counter
         self.views += 1
-        db.session.commit()
         
         # Also update author's total views if paste has an author
         if self.user_id:
             self.author.total_views += 1
-            db.session.commit()
+            
+        db.session.commit()
+        return True
     
     def calculate_size(self):
         """Calculate and update the paste size in bytes"""
@@ -95,3 +124,38 @@ class Paste(db.Model):
             
     def __repr__(self):
         return f'<Paste {self.id}: {self.title}>'
+
+class PasteView(db.Model):
+    """
+    Model to track unique views of pastes by storing viewer information
+    (session ID or IP address) to avoid counting repeated views.
+    """
+    __tablename__ = 'paste_views'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    paste_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=False)
+    viewer_id = db.Column(db.String(64), nullable=False)  # Session ID or hashed IP
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Define a unique constraint to ensure one view per viewer per paste
+    __table_args__ = (
+        db.UniqueConstraint('paste_id', 'viewer_id', name='_paste_viewer_uc'),
+    )
+    
+    # Relationship back to Paste
+    paste = db.relationship('Paste', backref=db.backref('views_data', lazy='dynamic'))
+    
+    @staticmethod
+    def get_or_create_viewer_id(session, ip_address):
+        """
+        Get or create a unique viewer ID based on session ID or IP address
+        """
+        # Use session ID if available
+        if session.get('viewer_id'):
+            return session['viewer_id']
+        
+        # Otherwise generate one based on IP address and a random component
+        # to protect privacy while still being consistent per visitor
+        viewer_id = str(uuid.uuid4())
+        session['viewer_id'] = viewer_id
+        return viewer_id

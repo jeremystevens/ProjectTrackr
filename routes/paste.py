@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response, session
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
 from app import db
-from models import Paste, User
+from models import Paste, User, PasteView
 from forms import PasteForm
 from utils import generate_short_id, highlight_code, sanitize_html
 
@@ -69,8 +69,12 @@ def view(short_id):
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
     
-    # Update view count
-    paste.update_view_count()
+    # Get or create a unique viewer ID for tracking view counts
+    viewer_ip = request.remote_addr
+    viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
+    
+    # Update view count only for unique viewers
+    paste.update_view_count(viewer_id)
     
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
