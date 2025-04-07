@@ -43,7 +43,9 @@ def get_expiration_text(expires_at):
     logging.debug(f"Time diff: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds")
     
     # For 10-minute expiration special case
-    if 0 <= hours <= 0 and 8 <= minutes <= 11:
+    # Note: In the template, we now handle 10-minute expirations separately with the is_ten_minute flag
+    # This is just a fallback in case the flag isn't available
+    if days == 0 and hours == 0 and 8 <= minutes <= 11:
         logging.debug("Detected 10 minute expiration time range")
         return "in 10 minutes"
     
