@@ -30,7 +30,7 @@ def create():
         logging.debug(f"Expiration option selected: {form.expiration.data}")
         
         # Special case for 10-minute expiration - just store the option number for later use
-        expiration_option = form.expiration.data
+        expiration_option = int(form.expiration.data)
         # We'll handle the special case in the get_expiration_text function and our templates
         
         # Create the paste
@@ -80,8 +80,8 @@ def view(short_id):
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
         
-    # Get expiration text for the template
-    expiration_text = paste.get_expiration_text() if paste.expires_at else "Never"
+    # Get expiration text for the template - using the Paste class method
+    expiration_text = paste.get_expiration_text()
 
     # Get or create a unique viewer ID for tracking view counts
     viewer_ip = request.remote_addr

@@ -61,9 +61,6 @@
                         {% endif %}
                     </p>
                     <p class="mb-1">
-                        <strong>Expires:</strong> {{ expiration_text }}
-                    </p>
-                    <p class="mb-1">
                         <strong>Created:</strong> {{ paste.created_at.strftime('%b %d, %Y %H:%M') }}
                         <span class="text-muted">({{ paste.created_at | timesince }})</span>
                     </p>
@@ -84,22 +81,16 @@
                             {{ paste.visibility }}
                         </span>
                     </p>
-                    {% if paste.expires_at %}
-                        <p class="mb-0">
-                            <strong>Expires:</strong> 
+                    <p class="mb-0">
+                        <strong>Expires:</strong> 
+                        {% if paste.expires_at %}
                             <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
-                                {% if is_ten_minute %}
-                                    in 10 minutes
-                                {% else %}
-                                    {{ expiration_text }}
-                                {% endif %}
+                                {{ expiration_text }}
                             </span>
-                        </p>
-                    {% else %}
-                        <p class="mb-0">
-                            <strong>Expires:</strong> Never
-                        </p>
-                    {% endif %}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>
