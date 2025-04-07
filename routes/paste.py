@@ -29,12 +29,9 @@ def create():
         import logging
         logging.debug(f"Expiration option selected: {form.expiration.data}")
         
-        # Special case for 10-minute expiration - add special path suffix to help identify later
+        # Special case for 10-minute expiration - just store the option number for later use
         expiration_option = form.expiration.data
-        if expiration_option == '1':  # 10 minutes
-            special_expiry_path = f"expires_in_10_minutes_{short_id}"
-            if not Paste.query.filter_by(short_id=special_expiry_path).first():
-                short_id = special_expiry_path
+        # We'll handle the special case in the get_expiration_text function and our templates
         
         # Create the paste
         expiry_time = Paste.set_expiration(expiration_option)
@@ -93,8 +90,12 @@ def view(short_id):
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
+    # Check if this is a 10-minute expiration paste
+    is_ten_min = paste.is_ten_minute_expiration() if paste.expires_at else False
+    
     return render_template('paste/view.html', paste=paste, 
-                          highlighted_code=highlighted_code, css=css)
+                          highlighted_code=highlighted_code, css=css,
+                          is_ten_minute=is_ten_min)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):

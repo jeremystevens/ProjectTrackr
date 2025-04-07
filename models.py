@@ -56,6 +56,18 @@ class Paste(db.Model):
         if self.expires_at is None:
             return False
         return datetime.utcnow() > self.expires_at
+        
+    def is_ten_minute_expiration(self):
+        """Check if this paste has a 10-minute expiration"""
+        if not self.expires_at or not self.created_at:
+            return False
+            
+        # Calculate the difference between expiration and creation time
+        diff = self.expires_at - self.created_at
+        minutes = diff.total_seconds() / 60
+        
+        # If it's close to 10 minutes (between 9 and 11)
+        return 9 <= minutes <= 11
     
     def update_view_count(self, viewer_id=None):
         """

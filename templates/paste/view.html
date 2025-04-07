@@ -85,7 +85,7 @@
                         <p class="mb-0">
                             <strong>Expires:</strong> 
                             <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
-                                {% if is_ten_minute_expiration(paste) %}
+                                {% if is_ten_minute %}
                                     Expires in 10 minutes
                                 {% else %}
                                     {{ get_expiration_text(paste.expires_at) }}
