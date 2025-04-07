@@ -50,7 +50,11 @@
             <div class="row">
                 <div class="col-md-6">
                     <p class="mb-1">
-                        <strong>Posted by:</strong> 
+                        <strong>Posted by:</strong>
+<p class="mb-1">
+                        <strong>Expires:</strong> {{ expiration_text }}
+                    </p>
+ 
                         {% if paste.user_id %}
                             <a href="{{ url_for('user.profile', username=paste.author.username) }}">
                                 <img src="{{ paste.author.get_avatar_url(24) }}" class="rounded-circle me-1" width="20" height="20">
@@ -59,9 +63,6 @@
                         {% else %}
                             <span>Guest</span>
                         {% endif %}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Expires:</strong> {{ expiration_text }}
                     </p>
                     <p class="mb-1">
                         <strong>Created:</strong> {{ paste.created_at.strftime('%b %d, %Y %H:%M') }}
@@ -91,7 +92,7 @@
                                 {% if is_ten_minute %}
                                     in 10 minutes
                                 {% else %}
-                                    {{ expiration_text }}
+                                    {{ get_expiration_text(paste.expires_at) }}
                                 {% endif %}
                             </span>
                         </p>

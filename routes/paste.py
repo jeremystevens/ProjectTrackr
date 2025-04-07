@@ -79,7 +79,10 @@ def view(short_id):
     # Check if paste is private and user is not the author
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
-    
+        
+    # Get expiration text for the template
+    expiration_text = paste.get_expiration_text() if paste.expires_at else "Never"
+
     # Get or create a unique viewer ID for tracking view counts
     viewer_ip = request.remote_addr
     viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
@@ -93,13 +96,9 @@ def view(short_id):
     # Check if this is a 10-minute expiration paste
     is_ten_min = paste.is_ten_minute_expiration() if paste.expires_at else False
     
-    # Calculate the expiration text using the model method
-    expiration_text = paste.get_expiration_text() if paste.expires_at else "Never"
-    
-    return render_template('paste/view.html', paste=paste, 
+    return render_template('paste/view.html', expiration_text=expiration_text, paste=paste, 
                           highlighted_code=highlighted_code, css=css,
-                          is_ten_minute=is_ten_min,
-                          expiration_text=expiration_text)
+                          is_ten_minute=is_ten_min)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):
