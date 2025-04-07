@@ -45,26 +45,26 @@ def get_expiration_text(expires_at):
     # For 10-minute expiration special case
     if 0 <= hours <= 0 and 8 <= minutes <= 11:
         logging.debug("Detected 10 minute expiration time range")
-        return "Expires in 10 minutes"
+        return "in 10 minutes"
     
     # Regular formatted output based on actual time difference
     if days > 30:
         months = days // 30
-        return f"Expires in {months} month{'s' if months > 1 else ''}"
+        return f"in {months} month{'s' if months > 1 else ''}"
     elif days > 0:
         if hours > 0:
-            return f"Expires in {days}d {hours}h"
+            return f"in {days}d {hours}h"
         else:
-            return f"Expires in {days} day{'s' if days > 1 else ''}"
+            return f"in {days} day{'s' if days > 1 else ''}"
     elif hours > 0:
         if minutes > 0:
-            return f"Expires in {hours}h {minutes}m"
+            return f"in {hours}h {minutes}m"
         else:
-            return f"Expires in {hours} hour{'s' if hours > 1 else ''}"
+            return f"in {hours} hour{'s' if hours > 1 else ''}"
     elif minutes > 0:
-        return f"Expires in {minutes} minute{'s' if minutes > 1 else ''}"
+        return f"in {minutes} minute{'s' if minutes > 1 else ''}"
     else:
-        return f"Expires in {seconds} second{'s' if seconds > 1 else ''}"
+        return f"in {seconds} second{'s' if seconds > 1 else ''}"
 
 def highlight_code(code, syntax='text'):
     """Highlight code using Pygments"""
