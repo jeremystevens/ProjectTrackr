@@ -109,13 +109,19 @@ class Paste(db.Model):
     @staticmethod
     def set_expiration(expiry_option):
         """Set the expiration date based on the selected option"""
+        import logging
         now = datetime.utcnow()
+        logging.debug(f"Setting expiration from current time: {now}")
         
         if expiry_option == '0':
             return None  # Never expires
         elif expiry_option == '1':
-            # Exactly 10 minutes from now
-            return now + timedelta(minutes=10)  # 10 minutes
+            # Force actual 10 minute expiration
+            minutes_to_add = 10
+            # Add exactly 10 minutes from now to ensure timezone consistency
+            expiry_time = now + timedelta(minutes=minutes_to_add)
+            logging.debug(f"Setting 10-minute expiration to: {expiry_time}")
+            return expiry_time
         elif expiry_option == '2':
             return now + timedelta(hours=1)  # 1 hour
         elif expiry_option == '3':

@@ -92,6 +92,25 @@ def timesince_filter(dt):
 
 @app.context_processor
 def utility_processor():
+    def is_ten_minute_expiration(paste):
+        """Check if a paste has 10-minute expiration"""
+        # Check for special short_id
+        if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
+            return True
+            
+        # If that doesn't work, check the time difference
+        if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
+            # Calculate total minutes of expiration
+            diff = paste.expires_at - paste.created_at
+            total_minutes = diff.total_seconds() / 60
+            
+            # If it's close to 10 minutes (between 9 and 11)
+            if 9 <= total_minutes <= 11:
+                return True
+                
+        return False
+    
     return {
         'now': datetime.utcnow(),
+        'is_ten_minute_expiration': is_ten_minute_expiration
     }

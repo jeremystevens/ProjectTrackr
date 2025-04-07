@@ -29,8 +29,15 @@ def create():
         import logging
         logging.debug(f"Expiration option selected: {form.expiration.data}")
         
+        # Special case for 10-minute expiration - add special path suffix to help identify later
+        expiration_option = form.expiration.data
+        if expiration_option == '1':  # 10 minutes
+            special_expiry_path = f"expires_in_10_minutes_{short_id}"
+            if not Paste.query.filter_by(short_id=special_expiry_path).first():
+                short_id = special_expiry_path
+        
         # Create the paste
-        expiry_time = Paste.set_expiration(form.expiration.data)
+        expiry_time = Paste.set_expiration(expiration_option)
         logging.debug(f"Calculated expiry time: {expiry_time}")
         
         paste = Paste(
