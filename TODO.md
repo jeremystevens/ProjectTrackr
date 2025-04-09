@@ -1,0 +1,53 @@
+# FlaskBin TODO List
+
+This document tracks future enhancements and features planned for the FlaskBin application.
+
+## High Priority
+
+- [ ] Add API endpoints for programmatic paste creation and access
+- [ ] Implement password reset functionality
+- [ ] Add email verification for new user registrations
+- [ ] Improve error pages with more helpful messages
+- [ ] Add paste comments/discussion functionality
+- [ ] Implement rate limiting to prevent abuse
+
+## Medium Priority
+
+- [ ] Add two-factor authentication option for users
+- [ ] Create a user dashboard with more detailed statistics
+- [ ] Add support for paste versioning (history of edits)
+- [ ] Implement paste templates (common layouts/snippets)
+- [ ] Add paste forking functionality
+- [ ] Create a browser extension for quick pasting
+- [ ] Add support for image/file uploads within pastes
+- [ ] Implement a dark/light theme toggle
+
+## Low Priority
+
+- [ ] Add user notification system
+- [ ] Create paste collections/folders for organization
+- [ ] Implement language detection for unspecified syntax
+- [ ] Add export/import functionality for user pastes
+- [ ] Support collaborative real-time editing
+- [ ] Create a desktop application using Electron
+- [ ] Add support for custom paste syntax themes
+- [ ] Implement paste encryption for added security
+- [ ] Add internationalization (i18n) support
+
+## Technical Debt
+
+- [ ] Improve test coverage with unit and integration tests
+- [ ] Optimize database queries for better performance
+- [ ] Add comprehensive API documentation
+- [ ] Implement more robust error tracking and monitoring
+- [ ] Improve accessibility (WCAG compliance)
+- [ ] Containerize application using Docker
+- [ ] Set up CI/CD pipeline for automated testing and deployment
+- [ ] Add performance metrics and analytics
+
+## Completed Items
+
+- [x] Implement real-time expiration countdown
+- [x] Create automated paste pruning system
+- [x] Fix database integrity issues with paste deletion
+- [x] Add CSRF protection for all forms

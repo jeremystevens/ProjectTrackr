@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 import hashlib
 import uuid
-from app import db
+import secrets
+import os
+from app import db, app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
@@ -23,6 +25,7 @@ class User(UserMixin, db.Model):
 
     # Relationships
     pastes = db.relationship('Paste', backref='author', lazy='dynamic', cascade='all, delete-orphan')
+    password_reset_tokens = db.relationship('PasswordResetToken', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -33,9 +36,58 @@ class User(UserMixin, db.Model):
     def get_avatar_url(self, size=80):
         email_hash = hashlib.md5(self.email.lower().encode()).hexdigest()
         return f"https://www.gravatar.com/avatar/{email_hash}?s={size}&d=identicon"
+        
+    def generate_reset_token(self):
+        """Generate a secure password reset token that expires in 24 hours"""
+        # First, invalidate any existing tokens
+        PasswordResetToken.query.filter_by(user_id=self.id).delete()
+        
+        # Create a new token
+        token = PasswordResetToken(
+            user_id=self.id,
+            token=secrets.token_urlsafe(32),  # Generate a secure random token
+            expires_at=datetime.utcnow() + timedelta(hours=24)
+        )
+        
+        db.session.add(token)
+        db.session.commit()
+        
+        return token.token
+    
+    @staticmethod
+    def verify_reset_token(token):
+        """Verify a password reset token and return the user if valid"""
+        if not token:
+            return None
+            
+        # Find the token in the database
+        token_obj = PasswordResetToken.query.filter_by(token=token).first()
+        
+        # Check if token exists and is not expired
+        if token_obj and token_obj.expires_at > datetime.utcnow():
+            return token_obj.user
+            
+        return None
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+class PasswordResetToken(db.Model):
+    """Model for password reset tokens"""
+    __tablename__ = 'password_reset_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    
+    def is_expired(self):
+        """Check if the token has expired"""
+        return self.expires_at < datetime.utcnow()
+        
+    def __repr__(self):
+        return f'<PasswordResetToken user_id={self.user_id}>'
 
 class Paste(db.Model):
     __tablename__ = 'pastes'

@@ -91,3 +91,19 @@ class SearchForm(FlaskForm):
         ('author', 'Author')
     ])
     submit = SubmitField('Search')
+
+class RequestPasswordResetForm(FlaskForm):
+    """Form for requesting a password reset"""
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Request Password Reset')
+    
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if not user:
+            raise ValidationError('There is no account with that email. Please register first.')
+
+class ResetPasswordForm(FlaskForm):
+    """Form for setting a new password after reset"""
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Reset Password')
