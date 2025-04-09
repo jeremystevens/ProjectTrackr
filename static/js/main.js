@@ -85,19 +85,24 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
           }
           
-          // Calculate hours, minutes, and seconds
-          const hours = Math.floor(distance / (1000 * 60 * 60));
+          // Calculate days, hours, minutes, and seconds
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
           const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
           const seconds = Math.floor((distance % (1000 * 60)) / 1000);
           
-          // Format the countdown as "in Xh Ym Zs" or appropriate variations
+          // Format the countdown as "in Xd Yh Zm Ws" or appropriate variations
           let countdownText = 'in ';
           
-          if (hours > 0) {
+          if (days > 0) {
+            countdownText += `${days}d `;
+          }
+          
+          if (hours > 0 || days > 0) {
             countdownText += `${hours}h `;
           }
           
-          if (minutes > 0 || hours > 0) {
+          if (minutes > 0 || hours > 0 || days > 0) {
             countdownText += `${minutes}m `;
           }
           
