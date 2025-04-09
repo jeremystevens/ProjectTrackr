@@ -87,8 +87,12 @@
                     <p class="mb-0">
                         <strong>Expires:</strong> 
                         {% if paste.expires_at %}
-                            <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
-                                ...
+                            <!-- Add extra attributes to help debug timezone issues -->
+                            <span class="expiration-countdown" 
+                                  data-expires-at="{{ paste.expires_at.isoformat() }}"
+                                  data-expires-timestamp="{{ paste.expires_at.timestamp() }}"
+                                  data-expiry-type="{% if paste.is_ten_minute_expiration() %}10min{% else %}other{% endif %}">
+                                calculating...
                             </span>
                         {% else %}
                             Never

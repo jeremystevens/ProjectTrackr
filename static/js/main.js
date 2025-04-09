@@ -73,12 +73,32 @@ document.addEventListener('DOMContentLoaded', function() {
   const expirationElements = document.querySelectorAll('.expiration-countdown');
   if (expirationElements.length > 0) {
     expirationElements.forEach(element => {
-      const expiresAt = new Date(element.getAttribute('data-expires-at')).getTime();
+      // First try to use the timestamp attribute which is more reliable
+      const expiresTimestamp = element.getAttribute('data-expires-timestamp');
+      const expiryType = element.getAttribute('data-expiry-type');
       
-      if (expiresAt) {
+      // For debugging
+      console.log("Expiry type:", expiryType);
+      
+      if (expiresTimestamp) {
+        // Convert timestamp (seconds) to milliseconds for JS Date
+        const expiresAt = new Date(parseFloat(expiresTimestamp) * 1000);
+        
+        console.log("Expiration time (from timestamp):", expiresAt);
+        console.log("Current time:", new Date());
+        
+        // Special case for 10-minute pastes to ensure accuracy
+        if (expiryType === '10min') {
+          console.log("10-minute paste detected");
+        }
+        
         const updateCountdown = () => {
-          const now = new Date().getTime();
-          const distance = expiresAt - now;
+          const now = new Date();
+          
+          // Calculate the time difference in milliseconds
+          const distance = expiresAt.getTime() - now.getTime();
+          
+          console.log("Remaining milliseconds:", distance);
           
           if (distance < 0) {
             element.textContent = 'Expired';

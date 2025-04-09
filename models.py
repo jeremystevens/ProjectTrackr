@@ -146,8 +146,9 @@ class Paste(db.Model):
     def set_expiration(expiry_option):
         """Set the expiration date based on the selected option"""
         import logging
+        # Always use UTC for consistency across server and client
         now = datetime.utcnow()
-        logging.debug(f"Setting expiration from current time: {now}")
+        logging.debug(f"Setting expiration from current time (UTC): {now}")
 
         # Convert to int if it's a string
         if isinstance(expiry_option, str):
@@ -160,14 +161,23 @@ class Paste(db.Model):
             minutes_to_add = 10
             # Add exactly 10 minutes from now to ensure timezone consistency
             expiry_time = now + timedelta(minutes=minutes_to_add)
-            logging.debug(f"Setting 10-minute expiration to: {expiry_time}")
+            logging.debug(f"Setting 10-minute expiration to (UTC): {expiry_time}")
             return expiry_time
         elif expiry_option == 2:
-            return now + timedelta(hours=1)  # 1 hour
+            # 1 hour expiration
+            expiry_time = now + timedelta(hours=1)
+            logging.debug(f"Setting 1-hour expiration to (UTC): {expiry_time}")
+            return expiry_time
         elif expiry_option == 3:
-            return now + timedelta(days=1)  # 1 day
+            # 1 day expiration
+            expiry_time = now + timedelta(days=1)
+            logging.debug(f"Setting 1-day expiration to (UTC): {expiry_time}")
+            return expiry_time
         elif expiry_option == 4:
-            return now + timedelta(days=30)  # 1 month
+            # 1 month expiration
+            expiry_time = now + timedelta(days=30)
+            logging.debug(f"Setting 1-month expiration to (UTC): {expiry_time}")
+            return expiry_time
         else:
             return None
 
