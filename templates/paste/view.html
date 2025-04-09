@@ -86,11 +86,12 @@
                     </p>
                     <p class="mb-0">
                         {% if paste.expires_at %}
+                            <strong>EXPIRES:</strong> 
                             <span class="expiration-countdown" data-expires-at="{{ paste.expires_at.isoformat() }}">
-                                Expires: {{ paste.expires_at.strftime('%b %d, %Y at %H:%M:%S') }}
+                                ...
                             </span>
                         {% else %}
-                            <strong>Expiration:</strong> Never
+                            <strong>EXPIRES:</strong> Never
                         {% endif %}
                     </p>
                 </div>
