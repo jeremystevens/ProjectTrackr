@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
-from app import db
+from app import db, app
 from models import Paste, User, PasteView
 from forms import PasteForm
 from utils import generate_short_id, highlight_code, sanitize_html
@@ -202,11 +202,24 @@ def delete(short_id):
     if current_user.id != paste.user_id:
         abort(403)
     
-    current_user.total_pastes -= 1
-    db.session.delete(paste)
-    db.session.commit()
+    try:
+        # First delete associated paste views to avoid foreign key constraint issues
+        PasteView.query.filter_by(paste_id=paste.id).delete()
+        
+        # Update user stats if needed
+        if current_user.total_pastes > 0:
+            current_user.total_pastes -= 1
+            
+        # Delete the paste
+        db.session.delete(paste)
+        db.session.commit()
+        
+        flash('Paste deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting paste: {e}")
+        flash('An error occurred while deleting the paste.', 'danger')
     
-    flash('Paste deleted successfully.', 'success')
     return redirect(url_for('user.profile', username=current_user.username))
 
 @paste_bp.route('/print/<short_id>')
