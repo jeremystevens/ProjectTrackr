@@ -91,22 +91,15 @@ document.addEventListener('DOMContentLoaded', function() {
           const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
           const seconds = Math.floor((distance % (1000 * 60)) / 1000);
           
-          // Format the countdown as "in Xd Yh Zm Ws" or appropriate variations
-          let countdownText = 'in ';
+          // Format the countdown with explicit labels
+          let countdownText = '';
           
           if (days > 0) {
-            countdownText += `${days}d `;
+            countdownText += `${days} Days : `;
           }
           
-          if (hours > 0 || days > 0) {
-            countdownText += `${hours}h `;
-          }
-          
-          if (minutes > 0 || hours > 0 || days > 0) {
-            countdownText += `${minutes}m `;
-          }
-          
-          countdownText += `${seconds}s`;
+          // Always show hours, minutes, and seconds
+          countdownText += `${hours} Hours : ${minutes} Minutes : ${seconds} Seconds`;
           
           element.textContent = countdownText;
         };
