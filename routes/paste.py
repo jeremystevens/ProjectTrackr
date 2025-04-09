@@ -90,21 +90,11 @@ def view(short_id):
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
-    # Calculate expiration display for the template with a new variable name
-    if paste.expires_at:
-        expiry_display = paste.get_expiration_text()
-    else:
-        expiry_display = "Never"
-    
-    # Import logging for debugging
-    import logging
-    logging.debug(f"Final expiration display: {expiry_display}")
-    
     # Create a minimal form instance for CSRF token
     from flask_wtf import FlaskForm
     form = FlaskForm()
     
-    return render_template('paste/view.html', expiry_display=expiry_display, paste=paste, 
+    return render_template('paste/view.html', paste=paste, 
                           highlighted_code=highlighted_code, css=css, form=form)
 
 @paste_bp.route('/raw/<short_id>')

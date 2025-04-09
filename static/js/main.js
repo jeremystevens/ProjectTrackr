@@ -85,22 +85,26 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
           }
           
-          // Calculate time in minutes and hours
-          const totalMinutes = Math.floor(distance / (1000 * 60));
-          const hours = Math.floor(totalMinutes / 60);
-          const minutes = totalMinutes % 60;
+          // Format the expiration date/time
+          const expirationDate = new Date(expiresAt);
           
-          // Format according to the new standard: "Expires: X H : Y M" or "Expires: Y M"
-          if (hours > 0) {
-            element.textContent = `Expires: ${hours} H : ${minutes} M`;
-          } else {
-            element.textContent = `Expires: ${minutes} M`;
-          }
+          // Format hours and minutes with leading zeros
+          const hours = expirationDate.getHours().toString().padStart(2, '0');
+          const minutes = expirationDate.getMinutes().toString().padStart(2, '0');
+          const seconds = expirationDate.getSeconds().toString().padStart(2, '0');
+          
+          // Get date components
+          const month = expirationDate.toLocaleString('default', { month: 'short' });
+          const day = expirationDate.getDate();
+          const year = expirationDate.getFullYear();
+          
+          // Format as "Apr 7, 2025 at 17:30:00"
+          element.textContent = `Expires: ${month} ${day}, ${year} at ${hours}:${minutes}:${seconds}`;
         };
         
-        // Update immediately and then every minute
+        // Update immediately and then every second for more accurate countdown
         updateCountdown();
-        setInterval(updateCountdown, 60000); // Update every minute instead of every second
+        setInterval(updateCountdown, 1000); // Update every second for real-time countdown
       }
     });
   }
