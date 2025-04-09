@@ -15,6 +15,17 @@ class RegistrationForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    security_question = SelectField('Security Question', choices=[
+        ('pet', 'What was the name of your first pet?'),
+        ('school', 'What was the name of your first school?'),
+        ('city', 'In what city were you born?'),
+        ('mother', 'What is your mother\'s maiden name?'),
+        ('book', 'What is your favorite book?'),
+        ('food', 'What is your favorite food?'),
+        ('custom', 'Custom question (specify below)')
+    ])
+    custom_question = StringField('Custom Security Question (optional)')
+    security_answer = StringField('Security Answer', validators=[DataRequired(), Length(min=2, max=100)])
     submit = SubmitField('Register')
     
     def validate_username(self, username):
@@ -101,6 +112,11 @@ class RequestPasswordResetForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if not user:
             raise ValidationError('There is no account with that email. Please register first.')
+            
+class SecurityAnswerForm(FlaskForm):
+    """Form for answering the security question during password reset"""
+    security_answer = StringField('Answer to Security Question', validators=[DataRequired()])
+    submit = SubmitField('Verify Answer')
 
 class ResetPasswordForm(FlaskForm):
     """Form for setting a new password after reset"""

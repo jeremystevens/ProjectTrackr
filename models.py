@@ -22,6 +22,8 @@ class User(UserMixin, db.Model):
     location = db.Column(db.String(100), nullable=True)
     total_pastes = db.Column(db.Integer, default=0)
     total_views = db.Column(db.Integer, default=0)
+    security_question = db.Column(db.String(255), nullable=True)
+    security_answer_hash = db.Column(db.String(256), nullable=True)
 
     # Relationships
     pastes = db.relationship('Paste', backref='author', lazy='dynamic', cascade='all, delete-orphan')
@@ -32,6 +34,16 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+        
+    def set_security_answer(self, answer):
+        """Hash and store the security answer"""
+        self.security_answer_hash = generate_password_hash(answer.lower().strip())
+        
+    def check_security_answer(self, answer):
+        """Verify the security answer"""
+        if not self.security_answer_hash:
+            return False
+        return check_password_hash(self.security_answer_hash, answer.lower().strip())
 
     def get_avatar_url(self, size=80):
         email_hash = hashlib.md5(self.email.lower().encode()).hexdigest()

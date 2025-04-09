@@ -1,5 +1,27 @@
 {% extends "layout.html" %}
 
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const securityQuestionSelect = document.getElementById("security_question");
+        const customQuestionContainer = document.getElementById("custom_question_container");
+        
+        // Show/hide custom question field based on selection
+        securityQuestionSelect.addEventListener("change", function() {
+            if (this.value === "custom") {
+                customQuestionContainer.classList.remove("d-none");
+            } else {
+                customQuestionContainer.classList.add("d-none");
+            }
+        });
+        
+        // Initial check in case the page reloads with "custom" selected
+        if (securityQuestionSelect.value === "custom") {
+            customQuestionContainer.classList.remove("d-none");
+        }
+    });
+</script>
+{% endblock %}
 {% block title %}Register - FlaskBin{% endblock %}
 
 {% block content %}
@@ -72,6 +94,47 @@
                         </div>
                     </div>
                     
+                    <div class="mb-3">
+                        <label for="security_question" class="form-label">Security Question</label>
+                        {{ form.security_question(class="form-control", id="security_question") }}
+                        {% if form.security_question.errors %}
+                            <div class="text-danger">
+                                {% for error in form.security_question.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            This question will be used to verify your identity if you need to reset your password.
+                        </small>
+                    </div>
+                    
+                    <div id="custom_question_container" class="mb-3 d-none">
+                        <label for="custom_question" class="form-label">Custom Security Question</label>
+                        {{ form.custom_question(class="form-control", placeholder="Enter your custom security question", id="custom_question") }}
+                        {% if form.custom_question.errors %}
+                            <div class="text-danger">
+                                {% for error in form.custom_question.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="security_answer" class="form-label">Security Answer</label>
+                        {{ form.security_answer(class="form-control", placeholder="Enter your answer", id="security_answer") }}
+                        {% if form.security_answer.errors %}
+                            <div class="text-danger">
+                                {% for error in form.security_answer.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Remember this answer exactly as you enter it (not case-sensitive).
+                        </small>
+                    </div>
                     <div class="d-grid mt-3">
                         {{ form.submit(class="btn btn-primary") }}
                     </div>
@@ -83,4 +146,26 @@
         </div>
     </div>
 </div>
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const securityQuestionSelect = document.getElementById("security_question");
+        const customQuestionContainer = document.getElementById("custom_question_container");
+        
+        // Show/hide custom question field based on selection
+        securityQuestionSelect.addEventListener("change", function() {
+            if (this.value === "custom") {
+                customQuestionContainer.classList.remove("d-none");
+            } else {
+                customQuestionContainer.classList.add("d-none");
+            }
+        });
+        
+        // Initial check in case the page reloads with "custom" selected
+        if (securityQuestionSelect.value === "custom") {
+            customQuestionContainer.classList.remove("d-none");
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}
