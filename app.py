@@ -78,6 +78,7 @@ with app.app_context():
     from routes.comment import comment_bp
     from routes.notification import notification_bp
     from routes.collection import collection_bp
+    from routes.admin import admin_bp
     
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -87,6 +88,7 @@ with app.app_context():
     app.register_blueprint(comment_bp)
     app.register_blueprint(notification_bp)
     app.register_blueprint(collection_bp)
+    app.register_blueprint(admin_bp)
     
     # Create database tables
     db.create_all()
