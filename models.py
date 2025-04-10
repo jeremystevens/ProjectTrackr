@@ -147,7 +147,7 @@ class User(UserMixin, db.Model):
     def is_admin_user(self):
         """Check if the user has admin privileges"""
         return self.is_admin
-    
+        
     def is_account_banned(self):
         """Check if the account is permanently or temporarily banned"""
         if not self.is_banned:
@@ -157,9 +157,20 @@ class User(UserMixin, db.Model):
         if not self.banned_until:
             return True
             
-        # Check if temporary ban is still active
-        return self.banned_until > datetime.utcnow()
+        # Temporary ban (check if still active)
+        if self.banned_until > datetime.utcnow():
+            return True
+            
+        # Ban has expired, automatically unban the user
+        self.is_banned = False
+        db.session.commit()
+        return False
+        
+    def is_shadowbanned(self):
+        """Check if the user account is shadowbanned."""
+        return self.is_shadowbanned
     
+    # Fixed the duplicate method error
     def get_ban_remaining_time(self):
         """Get the remaining time (in minutes) until ban expires"""
         if not self.is_banned or not self.banned_until:

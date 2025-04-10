@@ -23,6 +23,16 @@ def login():
             flash('Invalid username or password', 'danger')
             return render_template('auth/login.html', form=form)
             
+        # Ban check
+        if user.is_account_banned():
+            if user.banned_until:
+                flash(f'Your account has been temporarily banned until {user.banned_until.strftime("%Y-%m-%d %H:%M")}. ' +
+                      f'Reason: {user.ban_reason or "Violation of terms of service"}', 'danger')
+            else:
+                flash(f'Your account has been permanently banned. ' +
+                      f'Reason: {user.ban_reason or "Violation of terms of service"}', 'danger')
+            return render_template('auth/login.html', form=form)
+            
         # Account lockout check
         if user.is_account_locked():
             remaining_mins = user.get_lockout_remaining_time()
@@ -126,6 +136,16 @@ def security_question(user_id):
     # Get the user
     user = User.query.get_or_404(user_id)
     
+    # Check for banned account
+    if user.is_account_banned():
+        if user.banned_until:
+            flash(f'This account has been temporarily banned until {user.banned_until.strftime("%Y-%m-%d %H:%M")}. ' +
+                  f'Password reset is not available.', 'danger')
+        else:
+            flash(f'This account has been permanently banned. ' +
+                  f'Password reset is not available.', 'danger')
+        return redirect(url_for('auth.reset_request'))
+    
     # Check for account lockout
     if user.is_account_locked():
         remaining_mins = user.get_lockout_remaining_time()
@@ -168,6 +188,16 @@ def reset_token(token):
     user = User.verify_reset_token(token)
     if not user:
         flash('The reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('auth.reset_request'))
+        
+    # Check for banned account - don't allow banned users to reset passwords
+    if user.is_account_banned():
+        if user.banned_until:
+            flash(f'This account has been temporarily banned until {user.banned_until.strftime("%Y-%m-%d %H:%M")}. ' +
+                  f'Password reset is not available.', 'danger')
+        else:
+            flash(f'This account has been permanently banned. ' +
+                  f'Password reset is not available.', 'danger')
         return redirect(url_for('auth.reset_request'))
         
     form = ResetPasswordForm()
