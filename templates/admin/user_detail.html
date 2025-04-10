@@ -154,6 +154,60 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="col-12">
+                        <div class="card border-secondary mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Account Moderation</h6>
+                                <p>Current status: 
+                                    {% if user.is_account_banned() %}
+                                    <span class="badge bg-danger">Banned</span>
+                                    {% if user.banned_until %}
+                                    <small class="text-muted"> (until {{ user.banned_until.strftime('%Y-%m-%d %H:%M') }})</small>
+                                    {% else %}
+                                    <small class="text-muted"> (permanent)</small>
+                                    {% endif %}
+                                    {% elif user.is_shadowbanned %}
+                                    <span class="badge bg-warning text-dark">Shadowbanned</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Not restricted</span>
+                                    {% endif %}
+                                </p>
+                                
+                                <div class="row">
+                                    {% if not user.is_banned %}
+                                    <div class="col-md-6 mb-3">
+                                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#banUserModal">
+                                            <i class="bi bi-ban me-1"></i> Ban User
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <div class="col-md-6 mb-3">
+                                        <button type="submit" name="action" value="unban_user" class="btn btn-success w-100">
+                                            <i class="bi bi-check-circle me-1"></i> Remove Ban
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <button type="submit" name="action" value="toggle_shadowban" class="btn btn-{{ 'warning' if user.is_shadowbanned else 'outline-warning' }} w-100">
+                                            {% if user.is_shadowbanned %}
+                                            <i class="bi bi-eye me-1"></i> Remove Shadowban
+                                            {% else %}
+                                            <i class="bi bi-eye-slash me-1"></i> Shadowban User
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {% if user.ban_reason %}
+                                <div class="alert alert-secondary mt-2">
+                                    <strong>Ban reason:</strong> {{ user.ban_reason }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -195,6 +249,46 @@
                     <i class="bi bi-search me-1"></i> View All Pastes
                 </a>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ban User Modal -->
+<div class="modal fade" id="banUserModal" tabindex="-1" aria-labelledby="banUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="banUserModalLabel">Ban User: {{ user.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="banDuration" class="form-label">Ban Duration</label>
+                        <select class="form-select" id="banDuration" name="ban_duration">
+                            <option value="permanent">Permanent Ban</option>
+                            <option value="1">1 Day</option>
+                            <option value="3">3 Days</option>
+                            <option value="7">7 Days</option>
+                            <option value="14">14 Days</option>
+                            <option value="30">30 Days</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="banReason" class="form-label">Ban Reason</label>
+                        <textarea class="form-control" id="banReason" name="ban_reason" rows="3" required></textarea>
+                        <div class="form-text">This reason will be visible to moderators and may be shown to the user.</div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-1"></i> Banning a user will prevent them from logging in and accessing any features of the site.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="action" value="ban_user" class="btn btn-danger">Ban User</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

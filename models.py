@@ -34,6 +34,12 @@ class User(UserMixin, db.Model):
     failed_reset_attempts = db.Column(db.Integer, default=0)
     account_locked_until = db.Column(db.DateTime, nullable=True)
     last_failed_attempt = db.Column(db.DateTime, nullable=True)
+    
+    # Account moderation fields
+    is_banned = db.Column(db.Boolean, default=False)
+    is_shadowbanned = db.Column(db.Boolean, default=False)
+    ban_reason = db.Column(db.Text, nullable=True)
+    banned_until = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     pastes = db.relationship('Paste', backref='author', lazy='dynamic', cascade='all, delete-orphan')
@@ -141,6 +147,43 @@ class User(UserMixin, db.Model):
     def is_admin_user(self):
         """Check if the user has admin privileges"""
         return self.is_admin
+    
+    def is_account_banned(self):
+        """Check if the account is permanently or temporarily banned"""
+        if not self.is_banned:
+            return False
+            
+        # If banned_until is not set, it's a permanent ban
+        if not self.banned_until:
+            return True
+            
+        # Check if temporary ban is still active
+        return self.banned_until > datetime.utcnow()
+    
+    def get_ban_remaining_time(self):
+        """Get the remaining time (in minutes) until ban expires"""
+        if not self.is_banned or not self.banned_until:
+            return 0
+            
+        remaining = self.banned_until - datetime.utcnow()
+        return max(0, int(remaining.total_seconds() // 60))
+    
+    def get_account_status(self):
+        """Get a user-friendly account status text"""
+        if self.is_account_banned():
+            if not self.banned_until:
+                return "Permanently Banned"
+            return f"Banned for {self.get_ban_remaining_time()} more minutes"
+        elif self.is_shadowbanned:
+            return "Shadowbanned"
+        elif self.is_account_locked():
+            return f"Locked for {self.get_lockout_remaining_time()} more minutes"
+        elif self.is_admin:
+            return "Administrator"
+        elif self.is_premium:
+            return "Premium User"
+        else:
+            return "Active"
         
     def __repr__(self):
         return f'<User {self.username}>'

@@ -318,6 +318,81 @@ def user_detail(user_id):
             
             flash(f"Account for {user.username} has been unlocked.", 'success')
             return redirect(url_for('admin.user_detail', user_id=user.id))
+            
+        elif action == 'ban_user':
+            # Ban a user (temporary or permanent)
+            ban_duration = request.form.get('ban_duration', 'permanent')
+            ban_reason = request.form.get('ban_reason', '').strip()
+            
+            if not ban_reason:
+                flash("Ban reason is required.", 'danger')
+                return redirect(url_for('admin.user_detail', user_id=user.id))
+            
+            # Set ban status
+            user.is_banned = True
+            user.ban_reason = ban_reason
+            
+            # Set expiration date if temporary ban
+            if ban_duration != 'permanent':
+                try:
+                    days = int(ban_duration)
+                    user.banned_until = datetime.utcnow() + timedelta(days=days)
+                except (ValueError, TypeError):
+                    user.banned_until = None  # Fallback to permanent ban
+            else:
+                user.banned_until = None  # Permanent ban
+                
+            db.session.commit()
+            
+            # Log the action
+            AuditLog.log(
+                admin_id=current_user.id,
+                action="ban_user",
+                entity_type='user',
+                entity_id=user.id,
+                details=f"Banned user: {ban_duration} days, Reason: {ban_reason}",
+                ip_address=request.remote_addr
+            )
+            
+            ban_type = "permanently" if ban_duration == 'permanent' else f"for {ban_duration} days"
+            flash(f"User {user.username} has been banned {ban_type}.", 'success')
+            return redirect(url_for('admin.user_detail', user_id=user.id))
+            
+        elif action == 'unban_user':
+            # Remove ban from user
+            user.is_banned = False
+            user.banned_until = None
+            db.session.commit()
+            
+            AuditLog.log(
+                admin_id=current_user.id,
+                action="unban_user",
+                entity_type='user',
+                entity_id=user.id,
+                details="Removed ban from user",
+                ip_address=request.remote_addr
+            )
+            
+            flash(f"Ban for user {user.username} has been removed.", 'success')
+            return redirect(url_for('admin.user_detail', user_id=user.id))
+            
+        elif action == 'toggle_shadowban':
+            # Toggle shadowban status
+            user.is_shadowbanned = not user.is_shadowbanned
+            db.session.commit()
+            
+            AuditLog.log(
+                admin_id=current_user.id,
+                action=f"{'apply' if user.is_shadowbanned else 'remove'}_shadowban",
+                entity_type='user',
+                entity_id=user.id,
+                details=f"Changed shadowban status to {user.is_shadowbanned}",
+                ip_address=request.remote_addr
+            )
+            
+            status = "applied" if user.is_shadowbanned else "removed"
+            flash(f"Shadowban for {user.username} has been {status}.", 'success')
+            return redirect(url_for('admin.user_detail', user_id=user.id))
     
     # Get user statistics
     total_pastes = Paste.query.filter_by(user_id=user.id).count()
