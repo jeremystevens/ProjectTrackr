@@ -62,6 +62,9 @@
                 <a href="{{ url_for('paste.print_view', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                     <i class="fas fa-print me-1"></i> Print
                 </a>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
+                    <i class="fas fa-code-branch me-1"></i> Fork
+                </button>
             </div>
             
             {% if current_user.is_authenticated and current_user.id == paste.user_id %}
@@ -123,6 +126,21 @@
                             <i class="fas fa-infinity me-1"></i> No expiration
                         </span>
                     {% endif %}
+                    
+                    {% if paste.fork_count > 0 %}
+                        <span class="text-muted paste-metadata-item">
+                            <i class="fas fa-code-branch me-1"></i> Forks: {{ paste.fork_count }}
+                        </span>
+                    {% endif %}
+                    
+                    {% if paste.forked_from %}
+                        <span class="text-muted paste-metadata-item">
+                            <i class="fas fa-code-branch me-1"></i> Forked from:
+                            <a href="{{ url_for('paste.view', short_id=paste.forked_from.short_id) }}">
+                                {{ paste.forked_from.title }}
+                            </a>
+                        </span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -153,6 +171,46 @@
             </a>
         </div>
     </div>
+</div>
+
+<!-- Fork Modal -->
+<div class="modal fade" id="forkModal" tabindex="-1" aria-labelledby="forkModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="forkModalLabel">Fork Paste</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('paste.fork', short_id=paste.short_id) }}" method="POST">
+        {% if form %}
+            {{ form.hidden_tag() }}
+        {% endif %}
+        <div class="modal-body">
+          <p>Create a copy of this paste that you can modify.</p>
+          
+          <div class="mb-3">
+            <label for="visibility" class="form-label">Visibility</label>
+            <select class="form-select" id="visibility" name="visibility">
+              <option value="public" {% if paste.visibility == 'public' %}selected{% endif %}>Public</option>
+              <option value="unlisted" {% if paste.visibility == 'unlisted' %}selected{% endif %}>Unlisted</option>
+              <option value="private">Private</option>
+            </select>
+            <div class="form-text">
+              <strong>Public:</strong> Visible to everyone and listed in archives<br>
+              <strong>Unlisted:</strong> Visible to anyone with the link but not listed in archives<br>
+              <strong>Private:</strong> Only visible to you (requires login)
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-code-branch me-1"></i> Fork Paste
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 {% if paste.comments_enabled %}
