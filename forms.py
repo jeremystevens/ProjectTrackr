@@ -323,3 +323,19 @@ class CollectionForm(FlaskForm):
     is_public = BooleanField('Public Collection', default=False, 
                             description="If enabled, other users can view this collection")
     submit = SubmitField('Save Collection')
+    
+class FlagContentForm(FlaskForm):
+    """Form for flagging inappropriate content (pastes or comments)"""
+    reason = SelectField('Reason', choices=[
+        ('spam', 'Spam'),
+        ('inappropriate', 'Inappropriate Content'),
+        ('illegal', 'Illegal Content'),
+        ('harmful', 'Harmful or Dangerous Content'),
+        ('private', 'Contains Private Information'),
+        ('other', 'Other (please specify)')
+    ])
+    details = TextAreaField('Details', validators=[
+        Optional(),
+        Length(max=1000, message="Details must be no more than 1000 characters.")
+    ])
+    submit = SubmitField('Submit Flag')
