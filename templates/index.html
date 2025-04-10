@@ -22,12 +22,12 @@
                     <div class="mb-3">
                         <label for="template" class="form-label">Template (optional)</label>
                         {{ form.template(class="form-select", id="template-selector") }}
-                        <div class="form-text" id="template-description"></div>
+                        <small id="templateHelp" class="form-text text-muted">Select a template to use as a starting point</small>
                     </div>
                     
                     <div class="mb-3">
                         <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
-                        {{ form.content(class="form-control", rows=15, required=True) }}
+                        {{ form.content(class="form-control", rows=15, required=True, id="content-area") }}
                         <div class="invalid-feedback">
                             Please enter some content for your paste.
                         </div>
@@ -139,101 +139,65 @@
 {% block scripts %}
 {{ super() }}
 <script>
-    // This script handles the syntax highlighting preview
-    document.getElementById('content').addEventListener('input', updateSyntaxPreview);
-    document.getElementById('syntax').addEventListener('change', updateSyntaxPreview);
+document.addEventListener("DOMContentLoaded", function() {
+  // Select elements
+  const templateSelector = document.getElementById("template-selector");
+  const contentArea = document.getElementById("content-area");
+  const syntaxSelector = document.getElementById("syntax");
+  const helpText = document.getElementById("templateHelp");
+  
+  // Add event listener to template selector
+  templateSelector.addEventListener("change", function() {
+    const templateId = parseInt(this.value);
     
-    function updateSyntaxPreview() {
-        const content = document.getElementById('content').value;
-        const syntax = document.getElementById('syntax').value;
-        const previewContainer = document.getElementById('syntax-preview');
-        
-        if (content.trim() === '') {
-            previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
-            return;
-        }
-        
-        // For simplicity, just show a preview message
-        // In a real implementation, you might want to use an AJAX request to get syntax highlighted code
-        previewContainer.innerHTML = `<div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            A preview would be shown here with ${syntax} syntax highlighting.
-        </div>`;
+    if (templateId <= 0) {
+      helpText.textContent = "Select a template to use as a starting point";
+      return;
     }
     
-    // Template handling - Debugging version
-    document.addEventListener('DOMContentLoaded', function() {
-        const templateSelector = document.getElementById('template-selector');
+    // Load template data via AJAX
+    fetch("/template/" + templateId)
+      .then(response => response.json())
+      .then(data => {
+        // Update help text
+        helpText.innerHTML = "<i class=\"fas fa-info-circle me-1\"></i> " + data.description;
         
-        if (templateSelector) {
-            templateSelector.addEventListener('change', function() {
-                console.log('Template selected:', this.value);
-                const templateId = parseInt(this.value);
-                const descriptionElement = document.getElementById('template-description');
-                const contentElement = document.getElementById('content');
-                const syntaxElement = document.getElementById('syntax');
-                
-                if (templateId > 0) {
-                    // Template selected, fetch its details
-                    console.log('Fetching template data...');
-                    
-                    fetch('/template/' + templateId)
-                        .then(response => {
-                            console.log('Response status:', response.status);
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Template data received:', data);
-                            
-                            // Show description
-                            if (data.description) {
-                                descriptionElement.innerHTML = `<i class="fas fa-info-circle me-1"></i>${data.description}`;
-                            } else {
-                                descriptionElement.innerHTML = '';
-                            }
-                            
-                            // Only fill content if it's empty or user confirms
-                            if (!contentElement.value.trim()) {
-                                contentElement.value = data.content;
-                                syntaxElement.value = data.syntax;
-                                updateSyntaxPreview();
-                                console.log('Content and syntax updated');
-                            } else if (confirm('Replace current content with template? Your existing content will be lost.')) {
-                                contentElement.value = data.content;
-                                syntaxElement.value = data.syntax;
-                                updateSyntaxPreview();
-                                console.log('Content and syntax updated after confirmation');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching template:', error);
-                            descriptionElement.innerHTML = '<span class="text-danger">Error loading template</span>';
-                        });
-                } else {
-                    // No template selected
-                    descriptionElement.innerHTML = '';
-                }
-            });
-        } else {
-            console.error('Template selector not found!');
+        // If content is empty or user confirms replacement, update content
+        if (!contentArea.value.trim() || confirm("Replace your current content with this template?")) {
+          contentArea.value = data.content;
+          syntaxSelector.value = data.syntax;
+          updateSyntaxPreview();
         }
-    });
+      })
+      .catch(error => {
+        console.error("Error loading template:", error);
+        helpText.innerHTML = "<span class=\"text-danger\">Error loading template</span>";
+      });
+  });
+  
+  // Syntax preview functionality
+  function updateSyntaxPreview() {
+    const content = contentArea.value;
+    const syntax = syntaxSelector.value;
+    const previewContainer = document.getElementById("syntax-preview");
     
-    // Form validation
-    (function() {
-        'use strict';
-        window.addEventListener('load', function() {
-            var forms = document.getElementsByClassName('needs-validation');
-            Array.prototype.filter.call(forms, function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        }, false);
-    })();
+    if (content.trim() === "") {
+      previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+      return;
+    }
+    
+    previewContainer.innerHTML = "<div class=\"alert alert-info\">" +
+      "<i class=\"fas fa-info-circle me-2\"></i>" +
+      "A preview would be shown here with " + syntax + " syntax highlighting." +
+    "</div>";
+  }
+  
+  // Set up syntax preview events
+  contentArea.addEventListener("input", updateSyntaxPreview);
+  syntaxSelector.addEventListener("change", updateSyntaxPreview);
+  
+  // Initial syntax preview update
+  updateSyntaxPreview();
+});
 </script>
 {% endblock %}
