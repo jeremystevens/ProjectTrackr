@@ -174,28 +174,10 @@ def dashboard():
         ).scalar() or 0
         daily_views.append(count)
     
-    # Get user collections with paste count
-    collections_query = db.session.query(
-        PasteCollection,
-        func.count(Paste.id).label('paste_count')
-    ).outerjoin(
-        Paste, Paste.collection_id == PasteCollection.id
-    ).filter(
-        PasteCollection.user_id == current_user.id
-    ).group_by(
-        PasteCollection.id
-    ).order_by(
-        PasteCollection.name
-    ).all()
+    # Note: Collections are now displayed on the profile page instead of the dashboard
     
-    # Convert to a list of collection objects with paste_count attribute
-    collections = []
-    for collection, paste_count in collections_query:
-        collection.paste_count = paste_count
-        collections.append(collection)
-    
-    # Limit to 3 collections for dashboard preview
-    preview_collections = collections[:3] if collections else []
+    # Get total collections count
+    total_collections = PasteCollection.query.filter_by(user_id=current_user.id).count()
     
     stats = {
         'total_pastes': total_pastes,
@@ -217,8 +199,7 @@ def dashboard():
         'day_labels': day_labels,
         'daily_pastes': daily_pastes,
         'daily_views': daily_views,
-        'collections': preview_collections,
-        'total_collections': len(collections)
+        'total_collections': total_collections
     }
     
     return render_template('user/dashboard.html', stats=stats)
