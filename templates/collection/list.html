@@ -1,106 +1,101 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
 
 {% block title %}My Collections - FlaskBin{% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h1>My Collections</h1>
-            <p class="text-muted">Organize your pastes into collections for better organization</p>
-        </div>
-    </div>
-
     <div class="row mb-4">
-        <div class="col-md-12">
-            <a href="{{ url_for('collection.create') }}" class="btn btn-primary">
-                <i class="bi bi-folder-plus"></i> Create New Collection
-            </a>
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>
+                    <i class="fas fa-folder me-2"></i>My Collections
+                </h1>
+                <a href="{{ url_for('collection.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>New Collection
+                </a>
+            </div>
+            <p class="text-muted">
+                Organize your pastes into collections for better management.
+            </p>
         </div>
     </div>
-
-    {% if collections %}
+    
     <div class="row">
-        {% for collection in collections %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-folder{% if collection.is_public %}-check{% endif %}"></i>
-                        {{ collection.name }}
-                    </h5>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-three-dots-vertical"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('collection.edit', collection_id=collection.id) }}">
-                                    <i class="bi bi-pencil"></i> Edit
+        {% if collections %}
+            {% for collection in collections %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-folder{% if collection.is_public %}-open{% endif %} me-2"></i>
+                                {{ collection.name }}
+                            </h5>
+                            <p class="card-text small">
+                                {% if collection.description %}
+                                    {{ collection.description }}
+                                {% else %}
+                                    <span class="text-muted">No description</span>
+                                {% endif %}
+                            </p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-secondary">
+                                    {{ collection_stats[collection.id]['paste_count'] }} paste{% if collection_stats[collection.id]['paste_count'] != 1 %}s{% endif %}
+                                </span>
+                                <span class="badge {% if collection.is_public %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if collection.is_public %}Public{% else %}Private{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('collection.view', collection_id=collection.id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>View
                                 </a>
-                            </li>
-                            <li>
-                                <button class="dropdown-item text-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteCollectionModal{{ collection.id }}">
-                                    <i class="bi bi-trash"></i> Delete
+                                <a href="{{ url_for('collection.edit', collection_id=collection.id) }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit me-1"></i>Edit
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ collection.id }}">
+                                    <i class="fas fa-trash-alt me-1"></i>Delete
                                 </button>
-                            </li>
-                        </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    {% if collection.description %}
-                    <p class="card-text">{{ collection.description }}</p>
-                    {% else %}
-                    <p class="card-text text-muted"><em>No description</em></p>
-                    {% endif %}
-                    
-                    <div class="d-flex justify-content-between">
-                        <span class="badge bg-secondary">
-                            {{ collection.pastes|length }} paste{% if collection.pastes|length != 1 %}s{% endif %}
-                        </span>
-                        <span class="badge {% if collection.is_public %}bg-success{% else %}bg-secondary{% endif %}">
-                            {% if collection.is_public %}Public{% else %}Private{% endif %}
-                        </span>
+                
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" id="deleteModal{{ collection.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ collection.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ collection.id }}">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete the collection <strong>{{ collection.name }}</strong>?</p>
+                                <p class="text-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Pastes in this collection will not be deleted, but they will no longer belong to any collection.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form action="{{ url_for('collection.delete', collection_id=collection.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger">Delete Collection</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="card-footer text-center">
-                    <a href="{{ url_for('collection.view', collection_id=collection.id) }}" class="btn btn-outline-primary btn-sm">View Collection</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete Confirmation Modal for {{ collection.name }} -->
-        <div class="modal fade" id="deleteCollectionModal{{ collection.id }}" tabindex="-1" aria-labelledby="deleteCollectionModalLabel{{ collection.id }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteCollectionModalLabel{{ collection.id }}">Confirm Deletion</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Are you sure you want to delete the collection <strong>{{ collection.name }}</strong>?</p>
-                        <p>This will only delete the collection, not the pastes inside it.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <form action="{{ url_for('collection.delete', collection_id=collection.id) }}" method="post">
-                            {{ form.csrf_token }}
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-danger">Delete Collection</button>
-                        </form>
-                    </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>You haven't created any collections yet.
+                    <a href="{{ url_for('collection.create') }}" class="alert-link">Create your first collection</a> to organize your pastes.
                 </div>
             </div>
-        </div>
-        {% endfor %}
+        {% endif %}
     </div>
-    {% else %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> You don't have any collections yet. Create one to start organizing your pastes!
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}
