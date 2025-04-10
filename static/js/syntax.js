@@ -29,30 +29,62 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     const syntax = syntaxSelect.value;
-    const preElement = document.createElement('pre');
-    const codeElement = document.createElement('code');
+    const previewContent = content.value.substring(0, 500); // Preview first 500 chars
     
-    if (syntax !== 'text') {
-      codeElement.className = `language-${syntax}`;
-    }
+    // Show loading indicator
+    previewContainer.innerHTML = '<div class="text-muted">Loading preview...</div>';
     
-    // Escape HTML in content
-    codeElement.textContent = content.value.substring(0, 200); // Preview first 200 chars
-    
-    if (content.value.length > 200) {
-      codeElement.textContent += '...';
-    }
-    
-    preElement.appendChild(codeElement);
-    
-    // Clear previous content and add new preview
-    previewContainer.innerHTML = '';
-    previewContainer.appendChild(preElement);
-    
-    // Apply highlighting
-    if (typeof hljs !== 'undefined') {
-      hljs.highlightElement(codeElement);
-    }
+    // Use server-side Pygments highlighting via the API
+    fetch('/api/highlight', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: new URLSearchParams({
+        'content': previewContent,
+        'syntax': syntax
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Clear previous content
+      previewContainer.innerHTML = '';
+      
+      // Add the highlighted HTML and CSS
+      if (data.css) {
+        // Add the CSS if not already present
+        if (!document.getElementById('pygments-css')) {
+          const style = document.createElement('style');
+          style.id = 'pygments-css';
+          style.textContent = data.css;
+          document.head.appendChild(style);
+        }
+      }
+      
+      // Add the highlighted HTML
+      const preElement = document.createElement('div');
+      preElement.className = 'syntax-preview-content';
+      preElement.innerHTML = data.highlighted;
+      
+      if (content.value.length > 500) {
+        const ellipsis = document.createElement('div');
+        ellipsis.className = 'text-muted';
+        ellipsis.textContent = '... (preview truncated)';
+        preElement.appendChild(ellipsis);
+      }
+      
+      previewContainer.appendChild(preElement);
+    })
+    .catch(error => {
+      console.error('Error fetching syntax highlight preview:', error);
+      previewContainer.innerHTML = '<div class="alert alert-danger">Error loading preview</div>';
+    });
+  }
+  
+  // Helper function to get CSRF token
+  function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   }
   
   // Line numbers for code blocks

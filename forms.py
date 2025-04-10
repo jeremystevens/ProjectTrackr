@@ -80,26 +80,76 @@ class PasteForm(FlaskForm):
     template = SelectField('Use Template', validators=[Optional()], coerce=int)
     content = TextAreaField('Content', validators=[DataRequired()])
     syntax = SelectField('Syntax Highlighting', choices=[
+        # Common and plain text formats
         ('text', 'Plain Text'),
-        ('python', 'Python'),
-        ('javascript', 'JavaScript'),
+        ('markdown', 'Markdown'),
+        ('rst', 'reStructuredText'),
+        
+        # Web development
         ('html', 'HTML'),
         ('css', 'CSS'),
+        ('javascript', 'JavaScript'),
+        ('typescript', 'TypeScript'),
+        ('jsx', 'JSX/React'),
+        ('json', 'JSON'),
+        ('xml', 'XML'),
+        ('yaml', 'YAML'),
+        ('toml', 'TOML'),
+        ('svg', 'SVG'),
+        
+        # Backend/Server languages
+        ('python', 'Python'),
         ('java', 'Java'),
-        ('c', 'C'),
-        ('cpp', 'C++'),
+        ('kotlin', 'Kotlin'),
         ('csharp', 'C#'),
         ('php', 'PHP'),
         ('ruby', 'Ruby'),
         ('go', 'Go'),
         ('rust', 'Rust'),
         ('swift', 'Swift'),
+        ('scala', 'Scala'),
+        ('dart', 'Dart'),
+        ('elixir', 'Elixir'),
+        ('perl', 'Perl'),
+        
+        # Systems programming
+        ('c', 'C'),
+        ('cpp', 'C++'),
+        ('objectivec', 'Objective-C'),
+        
+        # Shell and scripting
         ('bash', 'Bash/Shell'),
+        ('powershell', 'PowerShell'),
+        ('batch', 'Batch/DOS'),
+        
+        # Data and scientific
         ('sql', 'SQL'),
-        ('xml', 'XML'),
-        ('json', 'JSON'),
-        ('markdown', 'Markdown'),
-        ('yaml', 'YAML')
+        ('r', 'R'),
+        ('julia', 'Julia'),
+        ('matlab', 'MATLAB/Octave'),
+        ('haskell', 'Haskell'),
+        
+        # Config and build systems
+        ('cmake', 'CMake'),
+        ('makefile', 'Makefile'),
+        ('dockerfile', 'Dockerfile'),
+        ('terraform', 'Terraform'),
+        ('nginx', 'Nginx Config'),
+        ('apache', 'Apache Config'),
+        
+        # Mobile (using different display names to avoid duplication)
+        # Note: Swift, Kotlin, and Objective-C are already listed above
+        
+        # Other programming languages
+        ('lua', 'Lua'),
+        ('erlang', 'Erlang'),
+        ('asm', 'Assembly'),
+        ('fortran', 'Fortran'),
+        ('pascal', 'Pascal'),
+        ('prolog', 'Prolog'),
+        ('lisp', 'Lisp'),
+        ('clojure', 'Clojure'),
+        ('groovy', 'Groovy')
     ])
     expiration = SelectField('Expiration', choices=[
         ('0', 'Never'),
