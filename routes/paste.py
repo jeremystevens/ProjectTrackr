@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response, session, after_this_request
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
@@ -106,13 +106,17 @@ def view(short_id):
     # Check if paste is private and user is not the author
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
-        
+    
+    # Handle burn after read pastes
+    is_burn_after_read = paste.burn_after_read
+    is_paste_owner = current_user.is_authenticated and current_user.id == paste.user_id
+    
     # Get or create a unique viewer ID for tracking view counts
     viewer_ip = request.remote_addr
     viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
     
     # Update view count only for unique viewers
-    paste.update_view_count(viewer_id)
+    is_new_view = paste.update_view_count(viewer_id)
     
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
@@ -129,9 +133,32 @@ def view(short_id):
     from flask_wtf import FlaskForm
     form = FlaskForm()
     
+    # If this is a burn after read paste and this is a new view (not the owner viewing it),
+    # mark it for deletion after the response is sent
+    burn_notice = None
+    if is_burn_after_read and is_new_view and not is_paste_owner:
+        burn_notice = "This paste was set to burn after reading. It will be permanently deleted after you view it."
+        
+        # We'll delete the paste after showing it to the user
+        @after_this_request
+        def delete_burned_paste(response):
+            try:
+                # Delete associated views first
+                PasteView.query.filter_by(paste_id=paste.id).delete()
+                
+                # Delete the paste
+                db.session.delete(paste)
+                db.session.commit()
+                app.logger.info(f"Burn after read paste {short_id} was deleted after viewing")
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error deleting burn after read paste: {e}")
+            return response
+    
     return render_template('paste/view.html', paste=paste, 
                           highlighted_code=highlighted_code, css=css, form=form,
-                          comment_form=comment_form, comments=comments)
+                          comment_form=comment_form, comments=comments,
+                          burn_notice=burn_notice)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):
@@ -145,6 +172,35 @@ def raw(short_id):
     # Check if paste is private and user is not the author
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
+    
+    # Handle burn after read pastes
+    is_burn_after_read = paste.burn_after_read
+    is_paste_owner = current_user.is_authenticated and current_user.id == paste.user_id
+    
+    # Get or create a unique viewer ID for tracking view counts
+    viewer_ip = request.remote_addr
+    viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
+    
+    # Update view count only for unique viewers
+    is_new_view = paste.update_view_count(viewer_id)
+    
+    # If this is a burn after read paste and this is a new view (not the owner viewing it),
+    # mark it for deletion after the response is sent
+    if is_burn_after_read and is_new_view and not is_paste_owner:
+        @after_this_request
+        def delete_burned_paste(response):
+            try:
+                # Delete associated views first
+                PasteView.query.filter_by(paste_id=paste.id).delete()
+                
+                # Delete the paste
+                db.session.delete(paste)
+                db.session.commit()
+                app.logger.info(f"Burn after read paste {short_id} was deleted after viewing")
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error deleting burn after read paste: {e}")
+            return response
     
     # Return plain text
     return Response(paste.content, mimetype='text/plain')
@@ -162,10 +218,40 @@ def download(short_id):
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
     
+    # Handle burn after read pastes
+    is_burn_after_read = paste.burn_after_read
+    is_paste_owner = current_user.is_authenticated and current_user.id == paste.user_id
+    
+    # Get or create a unique viewer ID for tracking view counts
+    viewer_ip = request.remote_addr
+    viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
+    
+    # Update view count only for unique viewers
+    is_new_view = paste.update_view_count(viewer_id)
+    
     # Create download response
     filename = f"{paste.title.replace(' ', '_')}.txt"
     response = Response(paste.content, mimetype='text/plain')
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    
+    # If this is a burn after read paste and this is a new view (not the owner viewing it),
+    # mark it for deletion after the response is sent
+    if is_burn_after_read and is_new_view and not is_paste_owner:
+        @after_this_request
+        def delete_burned_paste(resp):
+            try:
+                # Delete associated views first
+                PasteView.query.filter_by(paste_id=paste.id).delete()
+                
+                # Delete the paste
+                db.session.delete(paste)
+                db.session.commit()
+                app.logger.info(f"Burn after read paste {short_id} was deleted after downloading")
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error deleting burn after read paste: {e}")
+            return resp
+    
     return response
 
 @paste_bp.route('/embed/<short_id>')
@@ -181,11 +267,44 @@ def embed(short_id):
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
     
+    # Handle burn after read pastes
+    is_burn_after_read = paste.burn_after_read
+    is_paste_owner = current_user.is_authenticated and current_user.id == paste.user_id
+    
+    # Get or create a unique viewer ID for tracking view counts
+    viewer_ip = request.remote_addr
+    viewer_id = PasteView.get_or_create_viewer_id(session, viewer_ip)
+    
+    # Update view count only for unique viewers
+    is_new_view = paste.update_view_count(viewer_id)
+        
     # Syntax highlighting for embedding
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
+    # If this is a burn after read paste and this is a new view (not the owner viewing it),
+    # mark it for deletion after the response is sent
+    burn_notice = None
+    if is_burn_after_read and is_new_view and not is_paste_owner:
+        burn_notice = "This paste was set to burn after reading. It will be permanently deleted after you view it."
+        
+        @after_this_request
+        def delete_burned_paste(response):
+            try:
+                # Delete associated views first
+                PasteView.query.filter_by(paste_id=paste.id).delete()
+                
+                # Delete the paste
+                db.session.delete(paste)
+                db.session.commit()
+                app.logger.info(f"Burn after read paste {short_id} was deleted after embedding")
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Error deleting burn after read paste: {e}")
+            return response
+    
     return render_template('paste/embed.html', paste=paste, 
-                          highlighted_code=highlighted_code, css=css)
+                          highlighted_code=highlighted_code, css=css,
+                          burn_notice=burn_notice)
 
 @paste_bp.route('/edit/<short_id>', methods=['GET', 'POST'])
 @login_required
