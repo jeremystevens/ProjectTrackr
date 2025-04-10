@@ -77,6 +77,7 @@ class RegistrationForm(FlaskForm):
 
 class PasteForm(FlaskForm):
     title = StringField('Title', validators=[Length(max=255)])
+    template = SelectField('Use Template', validators=[Optional()], coerce=int)
     content = TextAreaField('Content', validators=[DataRequired()])
     syntax = SelectField('Syntax Highlighting', choices=[
         ('text', 'Plain Text'),
@@ -115,6 +116,20 @@ class PasteForm(FlaskForm):
     comments_enabled = BooleanField('Enable Comments', default=True)
     edit_description = StringField('Edit Description (for existing pastes)', validators=[Optional(), Length(max=255)])
     submit = SubmitField('Save Paste')
+    
+    def __init__(self, *args, **kwargs):
+        super(PasteForm, self).__init__(*args, **kwargs)
+        # Populate template choices from database
+        from models import PasteTemplate
+        template_choices = [(0, 'None - Start from scratch')]
+        templates = PasteTemplate.query.filter_by(is_public=True).order_by(
+            PasteTemplate.category, PasteTemplate.name
+        ).all()
+        
+        for template in templates:
+            template_choices.append((template.id, f"{template.name} ({template.category})"))
+            
+        self.template.choices = template_choices
 
 class ProfileEditForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])

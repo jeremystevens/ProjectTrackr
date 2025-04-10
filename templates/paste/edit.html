@@ -18,6 +18,12 @@
             </div>
             
             <div class="mb-3">
+                <label for="template" class="form-label">Template (optional)</label>
+                {{ form.template(class="form-select", id="template-selector") }}
+                <div class="form-text" id="template-description"></div>
+            </div>
+            
+            <div class="mb-3">
                 <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
                 <textarea class="form-control" id="content" name="content" rows="15" required>{{ form.content.data }}</textarea>
                 <div class="invalid-feedback">
@@ -115,4 +121,86 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // This script handles the syntax highlighting preview
+    document.getElementById('content').addEventListener('input', updateSyntaxPreview);
+    document.getElementById('syntax').addEventListener('change', updateSyntaxPreview);
+    
+    function updateSyntaxPreview() {
+        const content = document.getElementById('content').value;
+        const syntax = document.getElementById('syntax').value;
+        const previewContainer = document.getElementById('syntax-preview');
+        
+        if (content.trim() === '') {
+            previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+            return;
+        }
+        
+        // For simplicity, just show a preview message
+        previewContainer.innerHTML = `<div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            A preview would be shown here with ${syntax} syntax highlighting.
+        </div>`;
+    }
+    
+    // Template handling
+    document.getElementById('template-selector').addEventListener('change', function() {
+        const templateId = this.value;
+        const descriptionElement = document.getElementById('template-description');
+        const contentElement = document.getElementById('content');
+        const syntaxElement = document.getElementById('syntax');
+        
+        if (templateId > 0) {
+            // Template selected, fetch its details
+            fetch(`/template/${templateId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Show description
+                    if (data.description) {
+                        descriptionElement.innerHTML = `<i class="fas fa-info-circle me-1"></i>${data.description}`;
+                    } else {
+                        descriptionElement.innerHTML = '';
+                    }
+                    
+                    // Ask user before replacing content in edit mode
+                    if (confirm('Replace current content with template? Your existing content will be lost.')) {
+                        contentElement.value = data.content;
+                        syntaxElement.value = data.syntax;
+                        updateSyntaxPreview();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching template:', error);
+                    descriptionElement.innerHTML = '<span class="text-danger">Error loading template</span>';
+                });
+        } else {
+            // No template selected
+            descriptionElement.innerHTML = '';
+        }
+    });
+    
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+    
+    // Run syntax preview on page load
+    document.addEventListener('DOMContentLoaded', updateSyntaxPreview);
+</script>
 {% endblock %}

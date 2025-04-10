@@ -42,10 +42,26 @@ def create():
         if hasattr(form, 'comments_enabled') and form.comments_enabled is not None:
             comments_enabled = form.comments_enabled.data
             
+        # Get template content if a template was selected
+        content = form.content.data
+        syntax = form.syntax.data
+        if form.template.data and form.template.data > 0:
+            # Template was selected, load it
+            from models import PasteTemplate
+            template = PasteTemplate.query.get(form.template.data)
+            if template:
+                # Only use template content if user hasn't entered any content
+                if not content.strip():
+                    content = template.content
+                    syntax = template.syntax
+                
+                # Increment template usage count
+                template.increment_usage()
+                
         paste = Paste(
             title=form.title.data or 'Untitled',
-            content=form.content.data,
-            syntax=form.syntax.data,
+            content=content,
+            syntax=syntax,
             visibility=form.visibility.data,
             expires_at=expiry_time,
             short_id=short_id,
@@ -328,6 +344,22 @@ def view_revision(short_id, revision_number):
                           css=css, 
                           form=form)
                           
+@paste_bp.route('/template/<int:template_id>')
+def get_template(template_id):
+    """Get a template's details"""
+    from models import PasteTemplate
+    
+    template = PasteTemplate.query.get_or_404(template_id)
+    
+    # Return the template data as JSON
+    return {
+        'id': template.id,
+        'name': template.name,
+        'description': template.description,
+        'content': template.content,
+        'syntax': template.syntax
+    }
+
 @paste_bp.route('/<short_id>/fork', methods=['POST'])
 @limiter.limit("20 per hour")
 def fork(short_id):
