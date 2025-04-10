@@ -1,16 +1,10 @@
 # FlaskBin TODO List
-
 This document tracks future enhancements and features planned for the FlaskBin application.
-
 ## Medium Priority
-
-- [ ] Implement paste templates (common layouts/snippets)
 - [ ] Create a browser extension for quick pasting
-- [ ] Add support for image/file uploads within pastes
+- [ ] [Undecided] Add support for image/file uploads within pastes (content moderation concerns)
 - [ ] Implement a dark/light theme toggle
-
 ## Low Priority
-
 - [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
 - [ ] Add user notification system
@@ -23,9 +17,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Implement paste encryption for added security
 - [ ] Add internationalization (i18n) support
 - [ ] Add OpenAI integration for smart features
-
 ## Technical Debt
-
 - [ ] Improve test coverage with unit and integration tests
 - [ ] Optimize database queries for better performance
 - [ ] Add comprehensive API documentation
@@ -34,9 +26,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Containerize application using Docker
 - [ ] Set up CI/CD pipeline for automated testing and deployment
 - [ ] Add performance metrics and analytics
-
 ## Completed Items
-
 - [x] Add paste forking functionality
 - [x] Add support for paste versioning (history of edits) for registered users
 - [x] Fix UI issues with paste expiration countdown display
@@ -46,6 +36,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Create a user dashboard with more detailed statistics
 - [x] Implement real-time expiration countdown
 - [x] Create automated paste pruning system
+- [x] Implement paste templates (common layouts/snippets)
 - [x] Fix database integrity issues with paste deletion
 - [x] Add CSRF protection for all forms
 - [x] Add password strength meter to registration form

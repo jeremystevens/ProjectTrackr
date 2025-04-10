@@ -3,6 +3,8 @@
 All notable changes to the FlaskBin project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+- Added paste templates for common layouts and code snippets
+- Added paste templates for common layouts and code snippets
 - Added paste forking functionality with visibility options
 - Added fork count and "forked from" indicators on pastes
 - Added support for paste versioning (history of edits) for registered users
