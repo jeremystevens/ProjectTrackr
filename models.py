@@ -169,6 +169,7 @@ class Paste(db.Model):
     short_id = db.Column(db.String(16), unique=True, nullable=False)
     size = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
+    burn_after_read = db.Column(db.Boolean, default=False)
     
     # Forking relationship
     forked_from_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=True)

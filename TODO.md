@@ -6,7 +6,6 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
 - [ ] Create a browser extension for quick pasting
-- [ ] Add user notification system
 - [ ] Create paste collections/folders for organization
 - [ ] Implement language detection for unspecified syntax
 - [ ] Add export/import functionality for user pastes
@@ -26,6 +25,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Set up CI/CD pipeline for automated testing and deployment
 - [ ] Add performance metrics and analytics
 ## Completed Items
+- [x] Add user notification system
 - [x] Add paste forking functionality
 - [x] Add support for paste versioning (history of edits) for registered users
 - [x] Fix UI issues with paste expiration countdown display
