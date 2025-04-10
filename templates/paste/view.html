@@ -54,7 +54,7 @@
     <div class="card-body p-0">
         <div class="paste-info p-2 border-bottom">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <span class="text-muted small me-3">
                         <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | timesince }}
                     </span>
@@ -65,7 +65,7 @@
                         <i class="fas fa-code me-1"></i> Syntax: {{ paste.syntax }}
                     </span>
                 </div>
-                <div class="col-md-6 text-md-end">
+                <div class="col-md-4">
                     {% if paste.user_id %}
                         <span class="text-muted small me-3">
                             <i class="fas fa-user me-1"></i> Author: 
@@ -75,24 +75,25 @@
                         </span>
                     {% endif %}
                     
+                    <span class="text-muted small">
+                        <i class="fas fa-eye-slash me-1"></i> {{ paste.visibility | capitalize }}
+                    </span>
+                </div>
+                <div class="col-md-4 text-md-end">
                     {% if paste.expires_at %}
-                        <span class="text-muted small me-3">
+                        <span class="text-muted small">
                             <i class="fas fa-clock me-1"></i> 
                             Expires in: 
-                            <span class="countdown" 
+                            <span class="countdown fw-bold" 
                                   data-expires="{{ paste.expires_at.isoformat() }}">
                                 ...
                             </span>
                         </span>
                     {% else %}
-                        <span class="text-muted small me-3">
+                        <span class="text-muted small">
                             <i class="fas fa-infinity me-1"></i> No expiration
                         </span>
                     {% endif %}
-                    
-                    <span class="text-muted small">
-                        <i class="fas fa-eye-slash me-1"></i> {{ paste.visibility | capitalize }}
-                    </span>
                 </div>
             </div>
         </div>
