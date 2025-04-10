@@ -545,34 +545,21 @@ def get_template(template_id):
 def highlight_preview():
     """API endpoint for syntax highlighting preview"""
     import logging
-    import json
-    from flask import jsonify
-    
     logging.debug("API highlight called")
     
     # Log the request data for debugging
     logging.debug(f"Request form: {request.form}")
-    logging.debug(f"Request content type: {request.content_type}")
     logging.debug(f"Request data: {request.get_data(as_text=True)}")
     
-    # Handle both JSON and form data
-    if request.is_json:
-        data = request.get_json()
-        content = data.get('content', '')
-        syntax = data.get('syntax', 'text')
-    else:
-        content = request.form.get('content', '')
-        syntax = request.form.get('syntax', 'text')
+    content = request.form.get('content', '')
+    syntax = request.form.get('syntax', 'text')
     
     logging.debug(f"Content: {content[:100]}...")  # Log first 100 chars
     logging.debug(f"Syntax: {syntax}")
     
     if not content or not content.strip():
         logging.debug("No content to highlight")
-        return jsonify({
-            'highlighted': '<div class="text-muted">No content to highlight</div>', 
-            'css': ''
-        })
+        return {'highlighted': '<div class="text-muted">No content to highlight</div>', 'css': ''}
     
     try:
         # Get highlighted code
@@ -580,16 +567,16 @@ def highlight_preview():
         logging.debug(f"Highlighted code length: {len(highlighted_code)}")
         
         # Return the highlighted code as JSON
-        return jsonify({
+        return {
             'highlighted': highlighted_code,
             'css': css
-        })
+        }
     except Exception as e:
         logging.error(f"Error highlighting code: {e}")
-        return jsonify({
+        return {
             'highlighted': f'<div class="alert alert-danger">Error highlighting code: {e}</div>',
             'css': ''
-        })
+        }
 
 @paste_bp.route('/<short_id>/fork', methods=['POST'])
 @limiter.limit("20 per hour")

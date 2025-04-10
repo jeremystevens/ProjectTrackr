@@ -239,12 +239,7 @@ class Paste(db.Model):
         Returns:
             bool: True if this was a new view, False if it was a repeat view
         """
-        import logging
-        logging.debug(f"Updating view count for paste {self.id}")
-        logging.debug(f"Viewer ID: {viewer_id}")
-        
         if not viewer_id:
-            logging.debug("No viewer ID provided, aborting view count update")
             return False
 
         # Check if this viewer has already viewed this paste
@@ -254,26 +249,21 @@ class Paste(db.Model):
         ).first()
 
         if existing_view:
-            logging.debug(f"Found existing view record for viewer {viewer_id}")
             # This viewer has already seen this paste
             return False
 
-        logging.debug(f"No existing view record found, creating new view")
         # This is a new view, create a record and increment counters
         new_view = PasteView(paste_id=self.id, viewer_id=viewer_id)
         db.session.add(new_view)
 
         # Increment the paste's view counter
         self.views += 1
-        logging.debug(f"Incremented paste view count to {self.views}")
 
         # Also update author's total views if paste has an author
         if self.user_id:
             self.author.total_views += 1
-            logging.debug(f"Incremented author's total views to {self.author.total_views}")
 
         db.session.commit()
-        logging.debug(f"View count update committed to database")
         return True
 
     def calculate_size(self):
