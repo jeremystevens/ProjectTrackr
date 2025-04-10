@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user, login_required
 from datetime import datetime
 from app import db, limiter
-from models import Comment, Paste, User, Notification
-from forms import CommentForm, CommentEditForm
+from models import Comment, Paste, User, Notification, FlaggedComment
+from forms import CommentForm, CommentEditForm, FlagContentForm
 from utils import sanitize_html, check_shadowban
 
 comment_bp = Blueprint('comment', __name__)
@@ -158,3 +158,50 @@ def reply_form(comment_id):
     form.parent_id.data = comment_id
     
     return render_template('comment/reply.html', form=form, parent_comment=parent_comment, paste=paste)
+
+
+@comment_bp.route('/comment/<int:comment_id>/flag', methods=['GET', 'POST'])
+@login_required
+def flag_comment(comment_id):
+    """Route for flagging a comment as inappropriate content"""
+    comment = Comment.query.get_or_404(comment_id)
+    paste = Paste.query.get_or_404(comment.paste_id)
+    
+    # Check if paste has expired
+    if paste.is_expired():
+        flash('This paste has expired.', 'warning')
+        return redirect(url_for('paste.index'))
+    
+    # Check if the user already flagged this comment
+    existing_flag = FlaggedComment.query.filter_by(
+        comment_id=comment.id, 
+        reporter_id=current_user.id,
+        status='pending'
+    ).first()
+    
+    if existing_flag:
+        flash('You have already flagged this comment. A moderator will review it soon.', 'info')
+        return redirect(url_for('paste.view', short_id=paste.short_id))
+    
+    form = FlagContentForm()
+    
+    if form.validate_on_submit():
+        flag = FlaggedComment(
+            comment_id=comment.id,
+            reporter_id=current_user.id,
+            reason=form.reason.data,
+            details=form.details.data
+        )
+        
+        db.session.add(flag)
+        db.session.commit()
+        
+        flash('Thank you for flagging this comment. A moderator will review it soon.', 'success')
+        return redirect(url_for('paste.view', short_id=paste.short_id))
+    
+    return render_template(
+        'comment/flag_comment.html',
+        comment=comment,
+        paste=paste,
+        form=form
+    )

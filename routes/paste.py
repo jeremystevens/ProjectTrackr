@@ -667,3 +667,43 @@ def fork(short_id):
     
     flash('Paste forked successfully!', 'success')
     return redirect(url_for('paste.view', short_id=fork.short_id))
+
+
+@paste_bp.route('/flag/<string:short_id>', methods=['GET', 'POST'])
+@login_required
+def flag_paste(short_id):
+    """Route for flagging a paste as inappropriate content"""
+    paste = Paste.query.filter_by(short_id=short_id).first_or_404()
+    
+    # Check if the user already flagged this paste
+    existing_flag = FlaggedPaste.query.filter_by(
+        paste_id=paste.id, 
+        reporter_id=current_user.id,
+        status='pending'
+    ).first()
+    
+    if existing_flag:
+        flash('You have already flagged this paste. A moderator will review it soon.', 'info')
+        return redirect(url_for('paste.view', short_id=short_id))
+    
+    form = FlagContentForm()
+    
+    if form.validate_on_submit():
+        flag = FlaggedPaste(
+            paste_id=paste.id,
+            reporter_id=current_user.id,
+            reason=form.reason.data,
+            details=form.details.data
+        )
+        
+        db.session.add(flag)
+        db.session.commit()
+        
+        flash('Thank you for flagging this content. A moderator will review it soon.', 'success')
+        return redirect(url_for('paste.view', short_id=short_id))
+    
+    return render_template(
+        'paste/flag_paste.html',
+        paste=paste,
+        form=form
+    )

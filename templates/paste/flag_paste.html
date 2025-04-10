@@ -1,0 +1,65 @@
+{% extends 'layout.html' %}
+
+{% block title %}Flag Paste - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-flag me-2"></i>Flag Inappropriate Content
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">You are flagging the paste: <strong>{{ paste.title }}</strong></h6>
+                    
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> Flagging helps our moderators identify content that violates our community guidelines. 
+                        Abuse of this feature may result in account restrictions.
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('paste.flag_paste', short_id=paste.short_id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            {{ form.reason.label(class="form-label") }}
+                            {{ form.reason(class="form-select") }}
+                            {% if form.reason.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.reason.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.details.label(class="form-label") }}
+                            {{ form.details(class="form-control", rows=4, placeholder="Please provide additional details about why this content is inappropriate...") }}
+                            {% if form.details.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.details.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Providing additional information will help our moderators make informed decisions.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-danger") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+
+{% block title %}Flag Comment - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-flag me-2"></i>Flag Inappropriate Comment
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">You are flagging a comment on the paste: <strong>{{ paste.title }}</strong></h6>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="text-muted">
+                                <i class="bi bi-person-circle me-1"></i>
+                                {% if comment.user %}
+                                    {{ comment.user.username }}
+                                {% else %}
+                                    Anonymous
+                                {% endif %}
+                                <small class="ms-2">{{ comment.created_at|timesince }}</small>
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ comment.content|safe }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> Flagging helps our moderators identify content that violates our community guidelines. 
+                        Abuse of this feature may result in account restrictions.
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('comment.flag_comment', comment_id=comment.id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            {{ form.reason.label(class="form-label") }}
+                            {{ form.reason(class="form-select") }}
+                            {% if form.reason.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.reason.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.details.label(class="form-label") }}
+                            {{ form.details(class="form-control", rows=4, placeholder="Please provide additional details about why this comment is inappropriate...") }}
+                            {% if form.details.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.details.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Providing additional information will help our moderators make informed decisions.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-danger") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
