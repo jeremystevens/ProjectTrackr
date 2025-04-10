@@ -107,7 +107,7 @@
                             <i class="fas fa-clock me-1"></i> 
                             Expires in: 
                             <span class="countdown expiration-countdown" 
-                                  data-expires="{{ paste.expires_at.isoformat() }}">
+                                  data-expires-timestamp="{{ paste.expires_at.timestamp() }}">
                                 Loading...
                             </span>
                         </span>
@@ -218,42 +218,6 @@
                 e.preventDefault();
             }
         });
-    });
-    
-    // Initialize countdown timer with better browser compatibility
-    document.querySelectorAll('.countdown').forEach(function(element) {
-        // Use ISO date string and create date object
-        const expiresAt = new Date(element.dataset.expires);
-        
-        function updateCountdown() {
-            const now = new Date();
-            const diff = expiresAt - now;
-            
-            if (diff <= 0) {
-                element.innerHTML = 'Expired';
-                return;
-            }
-            
-            // Calculate days, hours, minutes, seconds
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            
-            // Format the countdown
-            if (days > 0) {
-                element.innerHTML = `${days}d : ${hours}h : ${minutes}m : ${seconds}s`;
-            } else if (hours > 0) {
-                element.innerHTML = `${hours}h : ${minutes}m : ${seconds}s`;
-            } else {
-                element.innerHTML = `${minutes}m : ${seconds}s`;
-            }
-        }
-        
-        // Update immediately and then every second
-        console.log("Initializing countdown for: ", element.dataset.expires);
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
     });
 </script>
 {% endblock %}
