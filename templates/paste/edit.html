@@ -71,13 +71,28 @@
                 </div>
             </div>
             
-            <div class="mb-4">
+            <div class="mb-3">
                 <label for="visibility" class="form-label">Visibility</label>
                 <select class="form-select" id="visibility" name="visibility">
                     <option value="public" {% if form.visibility.data == 'public' %}selected{% endif %}>Public (Visible to everyone, listed in archive)</option>
                     <option value="unlisted" {% if form.visibility.data == 'unlisted' %}selected{% endif %}>Unlisted (Visible to anyone with the link, not listed)</option>
                     <option value="private" {% if form.visibility.data == 'private' %}selected{% endif %}>Private (Only visible to you)</option>
                 </select>
+            </div>
+            
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="comments_enabled" name="comments_enabled" 
+                       {% if form.comments_enabled.data %}checked{% endif %}>
+                <label class="form-check-label" for="comments_enabled">Enable comments</label>
+            </div>
+            
+            <div class="mb-3">
+                <label for="edit_description" class="form-label">Edit Description</label>
+                <input type="text" class="form-control" id="edit_description" name="edit_description" 
+                       placeholder="Short description of your changes (optional)" maxlength="255">
+                <small class="form-text text-muted">
+                    This will be shown in the revision history to help understand the changes you made.
+                </small>
             </div>
             
             <div id="syntax-preview" class="syntax-preview mb-3">
@@ -91,6 +106,11 @@
                 <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="btn btn-outline-secondary">
                     <i class="fas fa-times me-2"></i>Cancel
                 </a>
+                {% if current_user.is_authenticated and current_user.id == paste.user_id %}
+                <a href="{{ url_for('paste.revisions', short_id=paste.short_id) }}" class="btn btn-outline-secondary ms-auto">
+                    <i class="fas fa-history me-2"></i>View Revision History
+                </a>
+                {% endif %}
             </div>
         </form>
     </div>

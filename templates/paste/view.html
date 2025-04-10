@@ -34,6 +34,9 @@
                     <a href="{{ url_for('paste.edit', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-edit me-1"></i> Edit
                     </a>
+                    <a href="{{ url_for('paste.revisions', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-history me-1"></i> Revisions
+                    </a>
                     <form action="{{ url_for('paste.delete', short_id=paste.short_id) }}" method="POST" class="d-inline">
                         <!-- Use the form.hidden_tag() to include CSRF token -->
                         {% if form %}
@@ -48,132 +51,184 @@
         </div>
     </div>
     
-    <div class="card-body">
-        <div class="paste-metadata mb-3">
+    <div class="card-body p-0">
+        <div class="paste-info p-2 border-bottom">
             <div class="row">
                 <div class="col-md-6">
-                    <p class="mb-1">
-                        <strong>Posted by:</strong> 
-                        {% if paste.user_id %}
+                    <span class="text-muted small me-3">
+                        <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | datetime }}
+                    </span>
+                    <span class="text-muted small me-3">
+                        <i class="fas fa-eye me-1"></i> Views: {{ paste.views }}
+                    </span>
+                    <span class="text-muted small">
+                        <i class="fas fa-code me-1"></i> Syntax: {{ paste.syntax }}
+                    </span>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    {% if paste.user_id %}
+                        <span class="text-muted small me-3">
+                            <i class="fas fa-user me-1"></i> Author: 
                             <a href="{{ url_for('user.profile', username=paste.author.username) }}">
-                                <img src="{{ paste.author.get_avatar_url(24) }}" class="rounded-circle me-1" width="20" height="20">
                                 {{ paste.author.username }}
                             </a>
-                        {% else %}
-                            <span>Guest</span>
-                        {% endif %}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Created:</strong> {{ paste.created_at.strftime('%b %d, %Y %H:%M') }}
-                        <span class="text-muted">({{ paste.created_at | timesince }})</span>
-                    </p>
-                    <p class="mb-0">
-                        <strong>Syntax:</strong> {{ paste.syntax }}
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <p class="mb-1">
-                        <strong>Views:</strong> {{ paste.views }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Size:</strong> {{ paste.size }} bytes
-                    </p>
-                    <p class="mb-1">
-                        <strong>Visibility:</strong> 
-                        <span class="badge {% if paste.visibility == 'public' %}bg-success{% elif paste.visibility == 'private' %}bg-danger{% else %}bg-warning{% endif %}">
-                            {{ paste.visibility }}
                         </span>
-                    </p>
-                    <p class="mb-0">
-                        <strong>Expires:</strong> 
-                        {% if paste.expires_at %}
-                            <!-- Add extra attributes to help debug timezone issues -->
-                            <span class="expiration-countdown" 
-                                  data-expires-at="{{ paste.expires_at.isoformat() }}"
-                                  data-expires-timestamp="{{ paste.expires_at.timestamp() }}"
-                                  data-expiry-type="{% if paste.is_ten_minute_expiration() %}10min{% else %}other{% endif %}">
-                                calculating...
+                    {% endif %}
+                    
+                    {% if paste.expires_at %}
+                        <span class="text-muted small me-3">
+                            <i class="fas fa-clock me-1"></i> 
+                            Expires in: 
+                            <span class="countdown" 
+                                  data-expires="{{ paste.expires_at.isoformat() }}">
+                                ...
                             </span>
-                        {% else %}
-                            Never
-                        {% endif %}
-                    </p>
+                        </span>
+                    {% else %}
+                        <span class="text-muted small me-3">
+                            <i class="fas fa-infinity me-1"></i> No expiration
+                        </span>
+                    {% endif %}
+                    
+                    <span class="text-muted small">
+                        <i class="fas fa-eye-slash me-1"></i> {{ paste.visibility | capitalize }}
+                    </span>
                 </div>
             </div>
         </div>
         
-        <div class="paste-content">
-            <div id="paste-content">
-                {{ highlighted_code | safe }}
-            </div>
+        <div class="paste-content p-0">
+            {{ highlighted_code | safe }}
         </div>
-        
-        <div class="mt-4">
-            <p class="mb-0">
-                <strong>Share:</strong>
-                <a href="https://twitter.com/intent/tweet?text={{ paste.title | urlencode }}&url={{ url_for('paste.view', short_id=paste.short_id, _external=True) | urlencode }}" 
-                   target="_blank" class="btn btn-sm btn-outline-info">
-                    <i class="fab fa-twitter me-1"></i> Twitter
-                </a>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ url_for('paste.view', short_id=paste.short_id, _external=True) | urlencode }}" 
-                   target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="fab fa-facebook me-1"></i> Facebook
-                </a>
-                <button class="btn btn-sm btn-outline-secondary btn-copy" 
-                        data-clipboard-text="{{ url_for('paste.view', short_id=paste.short_id, _external=True) }}">
-                    <i class="fas fa-link me-1"></i> Copy Link
-                </button>
-            </p>
+    </div>
+    
+    <div class="card-footer">
+        <div class="share-buttons d-flex gap-2 flex-wrap">
+            <span class="text-muted me-2 pt-1"><i class="fas fa-share-alt"></i> Share:</span>
+            <a href="https://twitter.com/intent/tweet?text={{ paste.title | urlencode }}&url={{ url_for('paste.view', short_id=paste.short_id, _external=True) | urlencode }}" 
+               target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fab fa-twitter me-1"></i> Twitter
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ url_for('paste.view', short_id=paste.short_id, _external=True) | urlencode }}" 
+               target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fab fa-facebook me-1"></i> Facebook
+            </a>
+            <button class="btn btn-sm btn-outline-secondary btn-copy" 
+                    data-clipboard-text="{{ url_for('paste.view', short_id=paste.short_id, _external=True) }}">
+                <i class="fas fa-link me-1"></i> Copy Link
+            </button>
+            <a href="{{ url_for('paste.embed', short_id=paste.short_id) }}" 
+               target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-code me-1"></i> Embed
+            </a>
         </div>
     </div>
 </div>
 
 {% if paste.comments_enabled %}
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Comments</h5>
-        <span class="badge bg-primary">{{ comments|length }}</span>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Comments</h5>
     </div>
     <div class="card-body">
-        {% if comments %}
-            <div class="comments-list">
-                {% for comment in comments %}
-                    {% include 'comment/_comment.html' %}
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="alert alert-secondary">
-                No comments yet. Be the first to comment!
-            </div>
-        {% endif %}
-        
         {% if current_user.is_authenticated %}
-            <div class="add-comment mt-4">
-                <h5>Add a Comment</h5>
+            <div class="comment-form mb-4">
                 <form method="POST" action="{{ url_for('comment.add_comment', short_id=paste.short_id) }}">
                     {{ comment_form.hidden_tag() }}
-                    
                     <div class="mb-3">
-                        {{ comment_form.content.label(class="form-label") }}
-                        {{ comment_form.content(class="form-control", rows=4) }}
-                        {% if comment_form.content.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in comment_form.content.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                        {{ comment_form.content(class="form-control", rows=3, placeholder="Add your comment...") }}
                     </div>
-                    
-                    {{ comment_form.submit(class="btn btn-primary") }}
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i> Post Comment
+                        </button>
+                    </div>
                 </form>
             </div>
         {% else %}
-            <div class="alert alert-info mt-4">
-                <a href="{{ url_for('auth.login') }}">Log in</a> to leave a comment.
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <a href="{{ url_for('auth.login') }}">Log in</a> to post a comment.
             </div>
         {% endif %}
+        
+        <div class="comments">
+            {% if comments %}
+                {% for comment in comments %}
+                    {% include 'comment/comment.html' %}
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-comment-slash fa-3x mb-3"></i>
+                    <p>No comments yet. Be the first to comment!</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js"></script>
+<script>
+    // Initialize clipboard.js
+    var clipboard = new ClipboardJS('.btn-copy');
+    
+    clipboard.on('success', function(e) {
+        var originalText = e.trigger.innerHTML;
+        e.trigger.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+        
+        setTimeout(function() {
+            e.trigger.innerHTML = originalText;
+        }, 2000);
+        
+        e.clearSelection();
+    });
+    
+    // Add confirmation for delete buttons
+    document.querySelectorAll('[data-confirm]').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            if (!confirm(this.dataset.confirm)) {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    // Initialize countdown timer
+    document.querySelectorAll('.countdown').forEach(function(element) {
+        const expiresAt = new Date(element.dataset.expires);
+        
+        function updateCountdown() {
+            const now = new Date();
+            const diff = expiresAt - now;
+            
+            if (diff <= 0) {
+                element.innerHTML = 'Expired';
+                return;
+            }
+            
+            // Calculate days, hours, minutes, seconds
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            // Format the countdown
+            if (days > 0) {
+                element.innerHTML = `${days}d : ${hours}h : ${minutes}m : ${seconds}s`;
+            } else if (hours > 0) {
+                element.innerHTML = `${hours}h : ${minutes}m : ${seconds}s`;
+            } else {
+                element.innerHTML = `${minutes}m : ${seconds}s`;
+            }
+        }
+        
+        // Update immediately and then every second
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    });
+</script>
 {% endblock %}
