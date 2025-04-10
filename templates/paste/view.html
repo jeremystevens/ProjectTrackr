@@ -15,7 +15,6 @@
     
     .expiration-countdown {
         font-weight: bold;
-        min-width: 150px;
         display: inline-block;
     }
     
@@ -104,12 +103,8 @@
                 <div class="col-md-4 text-md-end">
                     {% if paste.expires_at %}
                         <span class="text-muted">
-                            <i class="fas fa-clock me-1"></i> 
-                            Expires in: 
-                            <span class="countdown expiration-countdown" 
-                                  data-expires-timestamp="{{ paste.expires_at.timestamp() }}">
-                                Loading...
-                            </span>
+                            <i class="fas fa-clock me-1"></i> Expires in: 
+                            <span class="countdown expiration-countdown" data-expires-timestamp="{{ paste.expires_at.timestamp() }}">Loading...</span>
                         </span>
                     {% else %}
                         <span class="text-muted">
