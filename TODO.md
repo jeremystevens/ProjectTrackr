@@ -4,8 +4,6 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## High Priority
 
-- [x] Add paste comments/discussion functionality
-- [x] Implement rate limiting to prevent abuse
 
 ## Medium Priority
 
@@ -49,12 +47,14 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Create automated paste pruning system
 - [x] Fix database integrity issues with paste deletion
 - [x] Add CSRF protection for all forms
-- [x] Implement password reset functionality with security questions
-- [x] Implement account lockout protection after failed attempts
-- [x] Add password strength requirements and validation
 - [x] Add password strength meter to registration form
 - [x] Implement security answer validation to prevent common answers
 - [x] Add two-factor security for account recovery (security questions)
 - [x] Implement comprehensive error handling with custom error pages
 - [x] Create comment system with reply functionality
-- [x] Implement rate limiting to prevent abuse of key routes
+- [x] Implement rate limiting to prevent abuse
+- [x] Add paste comments/discussion functionality
+- [x] Improve error pages with more helpful messages
+- [x] Implement password reset functionality with security questions
+- [x] Implement account lockout protection after failed attempts
+- [x] Add password strength requirements and validation
