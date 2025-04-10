@@ -106,6 +106,13 @@
                                         {% endif %}
                                     </a>
                                 </li>
+                                {% if current_user.is_admin_user() %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                        <i class="fas fa-shield-alt me-2"></i>Admin Panel
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
