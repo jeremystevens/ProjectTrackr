@@ -56,14 +56,6 @@ pre.has-line-numbers {
   padding-left: 3.5rem;
 }
 
-[data-bs-theme="light"] .line-numbers-wrapper {
-  color: #6c757d;
-}
-
-[data-bs-theme="dark"] .line-numbers-wrapper {
-  color: #adb5bd;
-}
-
 .line-numbers-wrapper {
   position: absolute;
   top: 1rem;
@@ -74,30 +66,6 @@ pre.has-line-numbers {
   color: var(--bs-secondary-color);
   border-right: 1px solid var(--bs-border-color);
   user-select: none;
-}
-
-[data-bs-theme="light"] [data-bs-theme="light"] .line-numbers-wrapper {
-  color: #6c757d;
-}
-
-[data-bs-theme="dark"] .line-numbers-wrapper {
-  color: #adb5bd;
-}
-
-.line-numbers-wrapper {
-  color: #6c757d;
-}
-
-[data-bs-theme="dark"] [data-bs-theme="light"] .line-numbers-wrapper {
-  color: #6c757d;
-}
-
-[data-bs-theme="dark"] .line-numbers-wrapper {
-  color: #adb5bd;
-}
-
-.line-numbers-wrapper {
-  color: #adb5bd;
 }
 
 .line-number {

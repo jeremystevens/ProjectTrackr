@@ -28,15 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
       themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     }
     
-    // Toggle theme-specific CSS stylesheets
-    document.querySelectorAll('link[data-theme]').forEach(stylesheet => {
-      if (stylesheet.getAttribute('data-theme') === theme) {
-        stylesheet.removeAttribute('disabled');
-      } else {
-        stylesheet.setAttribute('disabled', 'disabled');
-      }
-    });
-    
     // Store the preference
     localStorage.setItem('flaskbin-theme', theme);
     
