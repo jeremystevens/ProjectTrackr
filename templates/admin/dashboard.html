@@ -72,7 +72,7 @@
                 {% endfor %}
             </div>
             <div class="card-footer">
-                <a href="{{ url_for('search.advanced') }}" class="btn btn-sm btn-outline-secondary">View all pastes</a>
+                <a href="{{ url_for('paste.archive') }}" class="btn btn-sm btn-outline-secondary">View all pastes</a>
             </div>
         </div>
     </div>
@@ -131,7 +131,7 @@
                         <small>
                             <a href="{{ url_for('paste.view', short_id=comment.paste.short_id) }}">View paste</a>
                         </small>
-                        <form method="post" action="{{ url_for('admin.api_flag_paste') }}" style="display: inline;">
+                        <form method="post" action="{{ url_for('admin.api_flag_comment') }}" style="display: inline;">
                             <input type="hidden" name="comment_id" value="{{ comment.id }}">
                             <input type="hidden" name="reason" value="admin_review">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Flag</button>

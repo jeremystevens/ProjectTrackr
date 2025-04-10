@@ -489,3 +489,47 @@ def api_flag_paste():
     )
     
     return jsonify({'success': True, 'message': 'Paste has been flagged for review'})
+
+# API endpoint to manually flag a comment
+@admin_bp.route('/api/flag-comment', methods=['POST'])
+@login_required
+@admin_required
+def api_flag_comment():
+    comment_id = request.form.get('comment_id')
+    reason = request.form.get('reason', 'admin_flagged')
+    details = request.form.get('details', 'Manually flagged by admin')
+    
+    if not comment_id:
+        return jsonify({'success': False, 'message': 'Comment ID is required'}), 400
+    
+    comment = Comment.query.get(comment_id)
+    if not comment:
+        return jsonify({'success': False, 'message': 'Comment not found'}), 404
+    
+    # Check if already flagged
+    existing_flag = FlaggedComment.query.filter_by(comment_id=comment_id, status='pending').first()
+    if existing_flag:
+        return jsonify({'success': False, 'message': 'This comment is already flagged'}), 400
+    
+    # Create the flag
+    flag = FlaggedComment(
+        comment_id=comment_id,
+        reporter_id=current_user.id,
+        reason=reason,
+        details=details
+    )
+    
+    db.session.add(flag)
+    db.session.commit()
+    
+    # Log the action
+    AuditLog.log(
+        admin_id=current_user.id,
+        action="manually_flag_comment",
+        entity_type='comment',
+        entity_id=comment_id,
+        details=f"Reason: {reason}, Details: {details}",
+        ip_address=request.remote_addr
+    )
+    
+    return jsonify({'success': True, 'message': 'Comment has been flagged for review'})
