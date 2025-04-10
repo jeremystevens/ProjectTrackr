@@ -24,6 +24,12 @@ class User(UserMixin, db.Model):
     total_views = db.Column(db.Integer, default=0)
     security_question = db.Column(db.String(255), nullable=True)
     security_answer_hash = db.Column(db.String(256), nullable=True)
+    
+    # Account security fields
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    failed_reset_attempts = db.Column(db.Integer, default=0)
+    account_locked_until = db.Column(db.DateTime, nullable=True)
+    last_failed_attempt = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     pastes = db.relationship('Paste', backref='author', lazy='dynamic', cascade='all, delete-orphan')
@@ -44,6 +50,53 @@ class User(UserMixin, db.Model):
         if not self.security_answer_hash:
             return False
         return check_password_hash(self.security_answer_hash, answer.lower().strip())
+        
+    def is_account_locked(self):
+        """Check if the account is temporarily locked"""
+        if self.account_locked_until and self.account_locked_until > datetime.utcnow():
+            return True
+        return False
+        
+    def get_lockout_remaining_time(self):
+        """Get the remaining time (in minutes) until account is unlocked"""
+        if not self.is_account_locked():
+            return 0
+            
+        remaining = self.account_locked_until - datetime.utcnow()
+        return max(0, int(remaining.total_seconds() // 60))
+        
+    def record_failed_login(self):
+        """Record a failed login attempt and lock account if needed"""
+        self.failed_login_attempts += 1
+        self.last_failed_attempt = datetime.utcnow()
+        
+        # Lock account after 5 failed attempts
+        if self.failed_login_attempts >= 5:
+            lockout_minutes = min(15 * (self.failed_login_attempts - 4), 60)  # Progressive lockout
+            self.account_locked_until = datetime.utcnow() + timedelta(minutes=lockout_minutes)
+            
+        db.session.commit()
+        
+    def record_failed_reset_attempt(self):
+        """Record a failed password reset attempt and lock reset functionality if needed"""
+        self.failed_reset_attempts += 1
+        self.last_failed_attempt = datetime.utcnow()
+        
+        # Lock account after 3 failed reset attempts (stricter than login)
+        if self.failed_reset_attempts >= 3:
+            lockout_minutes = min(30 * (self.failed_reset_attempts - 2), 120)  # Progressive lockout
+            self.account_locked_until = datetime.utcnow() + timedelta(minutes=lockout_minutes)
+            
+        db.session.commit()
+        
+    def reset_failed_attempts(self, login_only=False):
+        """Reset failed attempt counters after successful authentication"""
+        self.failed_login_attempts = 0
+        
+        if not login_only:
+            self.failed_reset_attempts = 0
+            
+        db.session.commit()
 
     def get_avatar_url(self, size=80):
         email_hash = hashlib.md5(self.email.lower().encode()).hexdigest()

@@ -19,4 +19,6 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "sendgrid>=6.11.0",
     "openai>=1.72.0",
+    "oauthlib>=3.2.2",
+    "twilio>=9.5.2",
 ]

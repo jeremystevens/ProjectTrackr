@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 
+{% block title %}Register - FlaskBin{% endblock %}
+
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/password-strength.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const securityQuestionSelect = document.getElementById("security_question");
@@ -22,7 +25,6 @@
     });
 </script>
 {% endblock %}
-{% block title %}Register - FlaskBin{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -69,6 +71,14 @@
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">Password</label>
                             {{ form.password(class="form-control", placeholder="Create a password", id="password") }}
+                            
+                            <!-- Password Strength Meter -->
+                            <div class="mt-2">
+                                <label class="form-label small text-muted">Password Strength</label>
+                                <meter id="password-strength-meter" class="form-control" min="0" max="4" value="0" low="2" high="3" optimum="4"></meter>
+                                <small id="password-strength-text" class="form-text"></small>
+                            </div>
+                            
                             {% if form.password.errors %}
                                 <div class="text-danger">
                                     {% for error in form.password.errors %}
@@ -77,7 +87,7 @@
                                 </div>
                             {% endif %}
                             <small class="form-text text-muted">
-                                Password must be at least 8 characters long.
+                                Passwords require: 8+ characters, a number, an uppercase letter, and a special character.
                             </small>
                         </div>
                         
@@ -146,26 +156,4 @@
         </div>
     </div>
 </div>
-{% block scripts %}
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const securityQuestionSelect = document.getElementById("security_question");
-        const customQuestionContainer = document.getElementById("custom_question_container");
-        
-        // Show/hide custom question field based on selection
-        securityQuestionSelect.addEventListener("change", function() {
-            if (this.value === "custom") {
-                customQuestionContainer.classList.remove("d-none");
-            } else {
-                customQuestionContainer.classList.add("d-none");
-            }
-        });
-        
-        // Initial check in case the page reloads with "custom" selected
-        if (securityQuestionSelect.value === "custom") {
-            customQuestionContainer.classList.remove("d-none");
-        }
-    });
-</script>
-{% endblock %}
 {% endblock %}

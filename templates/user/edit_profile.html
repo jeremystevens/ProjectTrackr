@@ -2,6 +2,10 @@
 
 {% block title %}Edit Profile - FlaskBin{% endblock %}
 
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/password-strength.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
@@ -109,7 +113,15 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="new_password" class="form-label">New Password</label>
-                            {{ form.new_password(class="form-control", id="new_password") }}
+                            {{ form.new_password(class="form-control", id="password") }}
+                            
+                            <!-- Password Strength Meter -->
+                            <div class="mt-2">
+                                <label class="form-label small text-muted">Password Strength</label>
+                                <meter id="password-strength-meter" class="form-control" min="0" max="4" value="0" low="2" high="3" optimum="4"></meter>
+                                <small id="password-strength-text" class="form-text"></small>
+                            </div>
+                            
                             {% if form.new_password.errors %}
                                 <div class="text-danger">
                                     {% for error in form.new_password.errors %}
@@ -118,7 +130,7 @@
                                 </div>
                             {% endif %}
                             <small class="form-text text-muted">
-                                Password must be at least 8 characters long.
+                                Passwords require: 8+ characters, a number, an uppercase letter, and a special character.
                             </small>
                         </div>
                         <div class="col-md-6">

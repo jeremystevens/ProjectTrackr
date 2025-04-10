@@ -17,9 +17,37 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         
-        if user is None or not user.check_password(form.password.data):
+        # Check if user exists first
+        if user is None:
             flash('Invalid username or password', 'danger')
             return render_template('auth/login.html', form=form)
+            
+        # Account lockout check
+        if user.is_account_locked():
+            remaining_mins = user.get_lockout_remaining_time()
+            flash(f'This account is temporarily locked due to too many failed attempts. ' +
+                  f'Please try again in {remaining_mins} minute(s).', 'danger')
+            return render_template('auth/login.html', form=form)
+        
+        # Password check
+        if not user.check_password(form.password.data):
+            # Record the failed login attempt and check if account is now locked
+            user.record_failed_login()
+            
+            if user.is_account_locked():
+                remaining_mins = user.get_lockout_remaining_time()
+                flash(f'Too many failed login attempts. Your account has been locked for ' +
+                      f'{remaining_mins} minute(s).', 'danger')
+            else:
+                # Calculate remaining attempts
+                remaining_attempts = 5 - user.failed_login_attempts
+                flash(f'Invalid username or password. {remaining_attempts} attempts remaining ' +
+                      f'before your account is temporarily locked.', 'danger')
+            
+            return render_template('auth/login.html', form=form)
+        
+        # Successful login - reset failed attempt counters
+        user.reset_failed_attempts(login_only=True)
         
         # Update last login time
         user.last_login = datetime.utcnow()
@@ -94,14 +122,36 @@ def security_question(user_id):
     # Get the user
     user = User.query.get_or_404(user_id)
     
+    # Check for account lockout
+    if user.is_account_locked():
+        remaining_mins = user.get_lockout_remaining_time()
+        flash(f'This account is temporarily locked due to too many failed attempts. ' +
+              f'Please try again in {remaining_mins} minute(s).', 'danger')
+        return redirect(url_for('auth.reset_request'))
+    
     form = SecurityAnswerForm()
     if form.validate_on_submit():
         if user.check_security_answer(form.security_answer.data):
+            # Reset failed attempts on successful verification
+            user.reset_failed_attempts()
+            
             # Generate the token
             token = user.generate_reset_token()
             return redirect(url_for('auth.reset_token', token=token))
         else:
-            flash('Incorrect security answer. Please try again.', 'danger')
+            # Record failed reset attempt
+            user.record_failed_reset_attempt()
+            
+            if user.is_account_locked():
+                remaining_mins = user.get_lockout_remaining_time()
+                flash(f'Too many failed attempts. Password reset has been locked for ' +
+                     f'{remaining_mins} minute(s).', 'danger')
+                return redirect(url_for('auth.reset_request'))
+            else:
+                # Calculate remaining attempts
+                remaining_attempts = 3 - user.failed_reset_attempts
+                flash(f'Incorrect security answer. {remaining_attempts} attempts remaining ' +
+                     f'before password reset is temporarily locked.', 'danger')
     
     return render_template('auth/security_question.html', form=form, security_question=user.security_question)
     

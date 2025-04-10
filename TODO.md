@@ -4,8 +4,6 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## High Priority
 
-- [ ] Add API endpoints for programmatic paste creation and access
-- [ ] Implement password reset functionality
 - [ ] Add email verification for new user registrations
 - [ ] Improve error pages with more helpful messages
 - [ ] Add paste comments/discussion functionality
@@ -13,7 +11,6 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## Medium Priority
 
-- [ ] Add two-factor authentication option for users
 - [ ] Create a user dashboard with more detailed statistics
 - [ ] Add support for paste versioning (history of edits)
 - [ ] Implement paste templates (common layouts/snippets)
@@ -24,6 +21,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## Low Priority
 
+- [ ] Add API endpoints for programmatic paste creation and access
 - [ ] Add user notification system
 - [ ] Create paste collections/folders for organization
 - [ ] Implement language detection for unspecified syntax
@@ -33,6 +31,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Add support for custom paste syntax themes
 - [ ] Implement paste encryption for added security
 - [ ] Add internationalization (i18n) support
+- [ ] Add OpenAI integration for smart features
 
 ## Technical Debt
 
@@ -51,3 +50,9 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Create automated paste pruning system
 - [x] Fix database integrity issues with paste deletion
 - [x] Add CSRF protection for all forms
+- [x] Implement password reset functionality with security questions
+- [x] Implement account lockout protection after failed attempts
+- [x] Add password strength requirements and validation
+- [x] Add password strength meter to registration form
+- [x] Implement security answer validation to prevent common answers
+- [x] Add two-factor security for account recovery (security questions)
