@@ -38,7 +38,7 @@
                 <div>
                     {% if current_user.is_authenticated and current_user.id != comment.user_id %}
                     <a href="{{ url_for('comment.flag_comment', comment_id=comment.id) }}" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-flag"></i> Report
+                        <i class="bi bi-flag-fill"></i> Report
                     </a>
                     {% endif %}
                 </div>

@@ -172,7 +172,7 @@
             
             {% if current_user.is_authenticated and current_user.id != paste.user_id %}
             <a href="{{ url_for('paste.flag_paste', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-danger ms-2">
-                <i class="fas fa-flag me-1"></i> Report
+                <i class="bi bi-flag-fill me-1"></i> Report
             </a>
             {% endif %}
         </div>
