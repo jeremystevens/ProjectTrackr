@@ -1,12 +1,12 @@
 # FlaskBin TODO List
 This document tracks future enhancements and features planned for the FlaskBin application.
 ## Medium Priority
-- [ ] Create a browser extension for quick pasting
 - [ ] [Undecided] Add support for image/file uploads within pastes (content moderation concerns)
 - [ ] Implement a dark/light theme toggle
 ## Low Priority
 - [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
+- [ ] Create a browser extension for quick pasting
 - [ ] Add user notification system
 - [ ] Create paste collections/folders for organization
 - [ ] Implement language detection for unspecified syntax
