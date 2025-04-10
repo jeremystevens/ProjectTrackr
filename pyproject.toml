@@ -22,4 +22,5 @@ dependencies = [
     "oauthlib>=3.2.2",
     "twilio>=9.5.2",
     "flask-limiter>=3.12",
+    "trafilatura>=2.0.0",
 ]

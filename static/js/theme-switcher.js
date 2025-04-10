@@ -49,12 +49,18 @@ document.addEventListener('DOMContentLoaded', function() {
     applyTheme(newTheme);
   }
   
-  // Set up the click handler
-  themeToggleBtn.addEventListener('click', function(e) {
-    console.log("Theme toggle button clicked");
-    e.preventDefault();
-    toggleTheme();
-  });
+  // Temporarily disable the theme toggle button
+  // as light mode needs to be fixed
+  themeToggleBtn.classList.add('disabled');
+  themeToggleBtn.setAttribute('disabled', 'disabled');
+  themeToggleBtn.title = 'Light mode temporarily disabled';
+  
+  // This event listener is disabled for now
+  // themeToggleBtn.addEventListener('click', function(e) {
+  //   console.log("Theme toggle button clicked");
+  //   e.preventDefault();
+  //   toggleTheme();
+  // });
   
   // Initialize theme from local storage or default to dark
   const storedTheme = localStorage.getItem('flaskbin-theme');
