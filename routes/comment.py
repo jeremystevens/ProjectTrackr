@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user, login_required
 from datetime import datetime
 from app import db, limiter
-from models import Comment, Paste, User
+from models import Comment, Paste, User, Notification
 from forms import CommentForm, CommentEditForm
 from utils import sanitize_html
 
@@ -39,6 +39,33 @@ def add_comment(short_id):
         
         db.session.add(comment)
         db.session.commit()
+        
+        # Create notification for the paste owner (if not the commenter)
+        if paste.user_id and paste.user_id != current_user.id:
+            paste_title = paste.title if paste.title else "Untitled"
+            notification_message = f"commented on your paste: '{paste_title}'"
+            Notification.create_notification(
+                user_id=paste.user_id,
+                type='comment',
+                message=notification_message,
+                sender_id=current_user.id,
+                paste_id=paste.id,
+                comment_id=comment.id
+            )
+            
+        # If this is a reply, notify the parent comment author
+        if form.parent_id.data:
+            parent_comment = Comment.query.get(form.parent_id.data)
+            if parent_comment and parent_comment.user_id != current_user.id:
+                notification_message = f"replied to your comment on '{paste.title}'"
+                Notification.create_notification(
+                    user_id=parent_comment.user_id,
+                    type='comment',
+                    message=notification_message,
+                    sender_id=current_user.id,
+                    paste_id=paste.id,
+                    comment_id=comment.id
+                )
         
         flash('Your comment has been added.', 'success')
     else:
