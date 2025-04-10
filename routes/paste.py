@@ -42,6 +42,10 @@ def create():
         if hasattr(form, 'comments_enabled') and form.comments_enabled is not None:
             comments_enabled = form.comments_enabled.data
             
+        burn_after_read = False  # Default to False
+        if hasattr(form, 'burn_after_read') and form.burn_after_read is not None:
+            burn_after_read = form.burn_after_read.data
+            
         # Get template content if a template was selected
         content = form.content.data
         syntax = form.syntax.data
@@ -65,7 +69,8 @@ def create():
             visibility=form.visibility.data,
             expires_at=expiry_time,
             short_id=short_id,
-            comments_enabled=comments_enabled
+            comments_enabled=comments_enabled,
+            burn_after_read=burn_after_read
         )
         
         # Set user if logged in
@@ -205,6 +210,7 @@ def edit(short_id):
         form.syntax.data = paste.syntax
         form.visibility.data = paste.visibility
         form.comments_enabled.data = paste.comments_enabled
+        form.burn_after_read.data = paste.burn_after_read
         # We don't pre-fill expiration as it's relative
         
     if form.validate_on_submit():
@@ -222,6 +228,7 @@ def edit(short_id):
         paste.syntax = form.syntax.data
         paste.visibility = form.visibility.data
         paste.comments_enabled = form.comments_enabled.data
+        paste.burn_after_read = form.burn_after_read.data
         
         # Only update expiration if it's changed
         if form.expiration.data != '0' or paste.expires_at is None:
