@@ -38,6 +38,10 @@ def create():
         expiry_time = Paste.set_expiration(expiration_option)
         logging.debug(f"Calculated expiry time: {expiry_time}")
         
+        comments_enabled = True  # Default to True
+        if hasattr(form, 'comments_enabled') and form.comments_enabled is not None:
+            comments_enabled = form.comments_enabled.data
+            
         paste = Paste(
             title=form.title.data or 'Untitled',
             content=form.content.data,
@@ -45,7 +49,7 @@ def create():
             visibility=form.visibility.data,
             expires_at=expiry_time,
             short_id=short_id,
-            comments_enabled=form.comments_enabled.data
+            comments_enabled=comments_enabled
         )
         
         # Set user if logged in
@@ -190,7 +194,11 @@ def edit(short_id):
     if form.validate_on_submit():
         # For registered users only: save current state as a revision before updating
         if current_user.is_authenticated:
-            paste.save_revision(description=form.edit_description.data)
+            # Get edit description if it exists, otherwise use empty string
+            edit_description = ""
+            if hasattr(form, 'edit_description') and form.edit_description is not None:
+                edit_description = form.edit_description.data
+            paste.save_revision(description=edit_description)
             
         # Update paste content
         paste.title = form.title.data
