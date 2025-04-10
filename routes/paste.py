@@ -17,6 +17,7 @@ def index():
 
 @paste_bp.route('/create', methods=['POST'])
 @limiter.limit("20 per hour")
+@check_shadowban
 def create():
     # Pass current_user to populate collection choices
     form = PasteForm(current_user=current_user)

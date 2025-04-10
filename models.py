@@ -168,7 +168,8 @@ class User(UserMixin, db.Model):
         
     def is_shadowbanned(self):
         """Check if the user account is shadowbanned."""
-        return self.is_shadowbanned
+        # Directly use the column value 
+        return bool(self.is_shadowbanned)
     
     # Fixed the duplicate method error
     def get_ban_remaining_time(self):
