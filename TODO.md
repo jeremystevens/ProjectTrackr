@@ -2,10 +2,6 @@
 
 This document tracks future enhancements and features planned for the FlaskBin application.
 
-## High Priority
-
-- [ ] Add support for paste versioning (history of edits) for registered users
-
 ## Medium Priority
 
 - [ ] Implement paste templates (common layouts/snippets)
@@ -42,6 +38,11 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## Completed Items
 
+- [x] Add support for paste versioning (history of edits) for registered users
+- [x] Fix UI issues with paste expiration countdown display
+- [x] Redesign metadata layout for better spacing and consistency
+- [x] Improve UI styling with italic timestamp and compact date format
+- [x] Fix duplicate "Enable comments" checkbox in paste form
 - [x] Create a user dashboard with more detailed statistics
 - [x] Implement real-time expiration countdown
 - [x] Create automated paste pruning system

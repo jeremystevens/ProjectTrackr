@@ -327,3 +327,32 @@ def view_revision(short_id, revision_number):
                           highlighted_code=highlighted_code, 
                           css=css, 
                           form=form)
+                          
+@paste_bp.route('/<short_id>/fork', methods=['POST'])
+@limiter.limit("20 per hour")
+def fork(short_id):
+    """Fork an existing paste"""
+    original_paste = Paste.query.filter_by(short_id=short_id).first_or_404()
+    
+    # Check if paste has expired
+    if original_paste.is_expired():
+        flash('Cannot fork an expired paste.', 'warning')
+        return redirect(url_for('paste.index'))
+    
+    # Check if paste is private and user is not the author
+    if original_paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != original_paste.user_id):
+        abort(403)
+    
+    # Get the visibility (default to same as original)
+    visibility = request.form.get('visibility', original_paste.visibility)
+    
+    # Check if the visibility is valid
+    if visibility not in ['public', 'private', 'unlisted']:
+        visibility = 'public'
+    
+    # Create the fork
+    user_id = current_user.id if current_user.is_authenticated else None
+    fork = original_paste.fork(user_id=user_id, visibility=visibility)
+    
+    flash('Paste forked successfully!', 'success')
+    return redirect(url_for('paste.view', short_id=fork.short_id))

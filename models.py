@@ -170,6 +170,18 @@ class Paste(db.Model):
     size = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
     
+    # Forking relationship
+    forked_from_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=True)
+    fork_count = db.Column(db.Integer, default=0)
+    
+    # Relationship for forks
+    forks = db.relationship(
+        'Paste', 
+        backref=db.backref('forked_from', remote_side=[id]), 
+        lazy='dynamic',
+        foreign_keys='Paste.forked_from_id'
+    )
+    
     # Relationship for comments
     comments = db.relationship('Comment', backref='paste', lazy='dynamic', 
                                cascade='all, delete-orphan', 
@@ -359,6 +371,51 @@ class Paste(db.Model):
         else:
             return None
 
+    def fork(self, user_id=None, visibility='public'):
+        """
+        Create a fork of this paste
+        
+        Args:
+            user_id: The ID of the user creating the fork (None for anonymous)
+            visibility: The visibility of the forked paste
+            
+        Returns:
+            The newly created fork (Paste object)
+        """
+        # Generate a unique short_id for the fork
+        short_id = str(uuid.uuid4())[:8]
+        
+        # Create the fork
+        fork = Paste(
+            title=f"Fork of {self.title}",
+            content=self.content,
+            syntax=self.syntax,
+            user_id=user_id,
+            visibility=visibility,
+            short_id=short_id,
+            forked_from_id=self.id,
+            comments_enabled=self.comments_enabled
+        )
+        
+        # Calculate the size of the fork
+        fork.calculate_size()
+        
+        # Increment the fork count of the original paste
+        self.fork_count += 1
+        
+        # Add and commit
+        db.session.add(fork)
+        db.session.commit()
+        
+        # If the user is logged in, update their total pastes count
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                user.total_pastes += 1
+                db.session.commit()
+        
+        return fork
+        
     def __repr__(self):
         return f'<Paste {self.id}: {self.title}>'
 

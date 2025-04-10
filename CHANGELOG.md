@@ -3,6 +3,10 @@
 All notable changes to the FlaskBin project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+- Added support for paste versioning (history of edits) for registered users
+- Redesigned paste metadata display with flexible single-row layout
+- Improved UI styling with italic timestamps and compact date format
+- Fixed spacing issues between visibility indicator and expiration time
 - Added comprehensive user dashboard with detailed statistics and visualizations
 - Enhanced error handling for database operations
 - Added paste comments/discussion functionality
