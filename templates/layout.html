@@ -137,6 +137,14 @@
     </nav>
 
     <main class="container py-4 main-content">
+        <!-- Admin Shadowban Indicator -->
+        {% if current_user.is_authenticated and current_user.is_admin_user() and g.is_shadowbanned %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fas fa-eye-slash me-2"></i><strong>Shadowban Mode</strong> - You are viewing content from a shadowbanned user. This content is only visible to you and the user.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
+        
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
