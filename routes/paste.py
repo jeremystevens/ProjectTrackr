@@ -3,8 +3,8 @@ from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
 from app import db, app
-from models import Paste, User, PasteView
-from forms import PasteForm
+from models import Paste, User, PasteView, Comment
+from forms import PasteForm, CommentForm
 from utils import generate_short_id, highlight_code, sanitize_html
 
 paste_bp = Blueprint('paste', __name__)
@@ -43,7 +43,8 @@ def create():
             syntax=form.syntax.data,
             visibility=form.visibility.data,
             expires_at=expiry_time,
-            short_id=short_id
+            short_id=short_id,
+            comments_enabled=form.comments_enabled.data
         )
         
         # Set user if logged in
@@ -90,12 +91,21 @@ def view(short_id):
     # Syntax highlighting
     highlighted_code, css = highlight_code(paste.content, paste.syntax)
     
-    # Create a minimal form instance for CSRF token
+    # Initialize comment form if comments are enabled and user is logged in
+    comment_form = None
+    if paste.comments_enabled and current_user.is_authenticated:
+        comment_form = CommentForm()
+    
+    # Get all comments for this paste
+    comments = Comment.query.filter_by(paste_id=paste.id, parent_id=None).order_by(Comment.created_at.asc()).all()
+    
+    # Create a minimal form instance for CSRF token (for delete button)
     from flask_wtf import FlaskForm
     form = FlaskForm()
     
     return render_template('paste/view.html', paste=paste, 
-                          highlighted_code=highlighted_code, css=css, form=form)
+                          highlighted_code=highlighted_code, css=css, form=form,
+                          comment_form=comment_form, comments=comments)
 
 @paste_bp.route('/raw/<short_id>')
 def raw(short_id):
@@ -172,6 +182,7 @@ def edit(short_id):
         form.content.data = paste.content
         form.syntax.data = paste.syntax
         form.visibility.data = paste.visibility
+        form.comments_enabled.data = paste.comments_enabled
         # We don't pre-fill expiration as it's relative
         
     if form.validate_on_submit():
@@ -179,6 +190,7 @@ def edit(short_id):
         paste.content = form.content.data
         paste.syntax = form.syntax.data
         paste.visibility = form.visibility.data
+        paste.comments_enabled = form.comments_enabled.data
         
         # Only update expiration if it's changed
         if form.expiration.data != '0' or paste.expires_at is None:

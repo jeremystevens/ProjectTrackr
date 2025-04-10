@@ -57,12 +57,14 @@ with app.app_context():
     from routes.paste import paste_bp
     from routes.user import user_bp
     from routes.search import search_bp
+    from routes.comment import comment_bp
     
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(paste_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(search_bp)
+    app.register_blueprint(comment_bp)
     
     # Create database tables
     db.create_all()
