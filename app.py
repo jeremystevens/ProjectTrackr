@@ -9,6 +9,15 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import sentry_sdk
+
+# Initialize Sentry SDK
+sentry_sdk.init(
+    dsn="https://ea15360e41b2c867bdc005baebf0889c@o1129642.ingest.us.sentry.io/4509130694787072",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

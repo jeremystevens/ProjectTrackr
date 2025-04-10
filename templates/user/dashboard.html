@@ -271,7 +271,7 @@
                                             </p>
                                             <div class="d-flex justify-content-between">
                                                 <span class="badge bg-secondary">
-                                                    {{ collection.pastes|length }} paste{% if collection.pastes|length != 1 %}s{% endif %}
+                                                    {{ collection.paste_count }} paste{% if collection.paste_count != 1 %}s{% endif %}
                                                 </span>
                                                 <span class="badge {% if collection.is_public %}bg-success{% else %}bg-secondary{% endif %}">
                                                     {% if collection.is_public %}Public{% else %}Private{% endif %}

@@ -23,4 +23,5 @@ dependencies = [
     "twilio>=9.5.2",
     "flask-limiter>=3.12",
     "trafilatura>=2.0.0",
+    "sentry-sdk[flask]>=2.25.1",
 ]
