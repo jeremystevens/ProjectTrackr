@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block title %}404 - Page Not Found - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center py-5">
+        <div class="error-container">
+            <h1 class="display-1 fw-bold text-danger">404</h1>
+            <h2 class="mb-4">Page Not Found</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p class="lead">The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+                    <p>Here are some helpful links instead:</p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{{ url_for('paste.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                        <a href="{{ url_for('paste.create') }}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Create New Paste
+                        </a>
+                        <a href="{{ url_for('paste.archive') }}" class="btn btn-secondary">
+                            <i class="fas fa-archive me-2"></i>Browse Archives
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Did you know?</h5>
+                </div>
+                <div class="card-body">
+                    <p>If you're looking for a specific paste, try:</p>
+                    <ul class="text-start">
+                        <li>Checking if the paste ID is correct</li>
+                        <li>Making sure the paste hasn't expired</li>
+                        <li>Using the search function if you have keywords from the paste</li>
+                        <li>If it was your paste, check your profile for a list of your pastes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

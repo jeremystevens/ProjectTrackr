@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}403 - Forbidden - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center py-5">
+        <div class="error-container">
+            <h1 class="display-1 fw-bold text-danger">403</h1>
+            <h2 class="mb-4">Access Forbidden</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p class="lead">You don't have permission to access this resource.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span>If you think this is a mistake, try checking the following:</span>
+                    </div>
+                    <ul class="text-start list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-user-check me-2"></i>
+                            Make sure you're logged in with the correct account
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-key me-2"></i>
+                            The paste might be private and only accessible to its creator
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-clock me-2"></i>
+                            If it's your paste, it might have expired
+                        </li>
+                    </ul>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{{ url_for('paste.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Return to Home
+                        </a>
+                        <a href="{{ url_for('paste.create') }}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Create New Paste
+                        </a>
+                        {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Log In
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

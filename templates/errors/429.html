@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+{% block title %}429 - Too Many Requests - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center py-5">
+        <div class="error-container">
+            <h1 class="display-1 fw-bold text-danger">429</h1>
+            <h2 class="mb-4">Too Many Requests</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p class="lead">You've made too many requests in a short period of time.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-hourglass-half me-2"></i>
+                        <span>Our rate limiting system has been triggered.</span>
+                    </div>
+                    
+                    {% if retry_after %}
+                    <div class="countdown-container my-4">
+                        <h5>Please try again in:</h5>
+                        <div class="display-6 countdown-timer" data-seconds="{{ retry_after }}">
+                            {{ retry_after }} seconds
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h5>Why does this happen?</h5>
+                        <p>Rate limiting protects our service from excessive use and ensures fair access for all users.</p>
+                        <ul class="text-start list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                It prevents abuse and spam
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-balance-scale me-2"></i>
+                                It ensures fair resource allocation
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-server me-2"></i>
+                                It helps maintain service stability
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <a href="{{ url_for('paste.index') }}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>Return to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if retry_after %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const countdownElement = document.querySelector('.countdown-timer');
+    if (countdownElement) {
+        let seconds = parseInt(countdownElement.dataset.seconds);
+        const countdownInterval = setInterval(function() {
+            seconds--;
+            if (seconds <= 0) {
+                clearInterval(countdownInterval);
+                window.location.reload();
+            } else {
+                countdownElement.textContent = seconds + ' seconds';
+            }
+        }, 1000);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
