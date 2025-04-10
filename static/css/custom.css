@@ -180,3 +180,45 @@ pre.has-line-numbers {
     word-break: break-all;
   }
 }
+
+/* Theme toggle button styling */
+#theme-toggle {
+  border: none;
+  padding: 0.4rem 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--bs-secondary-color);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+#theme-toggle:hover {
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+}
+
+#theme-toggle:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  outline: none;
+}
+
+/* Transition effect when changing themes */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Ensure proper contrast in both themes */
+[data-bs-theme="light"] {
+  --hljs-bg: #f0f0f0;
+}
+
+[data-bs-theme="dark"] {
+  --hljs-bg: #282c34;
+}
+
+/* Override highlight.js background to match theme */
+pre {
+  background-color: var(--hljs-bg) !important;
+}

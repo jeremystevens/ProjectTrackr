@@ -59,6 +59,15 @@
                     </div>
                 </form>
                 
+                <!-- Theme Toggle Button -->
+                <ul class="navbar-nav me-2">
+                    <li class="nav-item">
+                        <button id="theme-toggle" class="btn btn-outline-secondary" title="Toggle theme">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                    </li>
+                </ul>
+                
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
@@ -148,6 +157,7 @@
     
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme-switcher.js') }}"></script>
     <script src="{{ url_for('static', filename='js/templates.js') }}"></script>
     <script src="{{ url_for('static', filename='js/templates.js') }}"></script>
     <script src="{{ url_for('static', filename='js/syntax.js') }}"></script>
