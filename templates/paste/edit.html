@@ -34,28 +34,7 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="syntax" class="form-label">Syntax Highlighting</label>
-                    <select class="form-select" id="syntax-selector" name="syntax">
-                        <option value="text" {% if form.syntax.data == 'text' %}selected{% endif %}>Plain Text</option>
-                        <option value="python" {% if form.syntax.data == 'python' %}selected{% endif %}>Python</option>
-                        <option value="javascript" {% if form.syntax.data == 'javascript' %}selected{% endif %}>JavaScript</option>
-                        <option value="html" {% if form.syntax.data == 'html' %}selected{% endif %}>HTML</option>
-                        <option value="css" {% if form.syntax.data == 'css' %}selected{% endif %}>CSS</option>
-                        <option value="java" {% if form.syntax.data == 'java' %}selected{% endif %}>Java</option>
-                        <option value="c" {% if form.syntax.data == 'c' %}selected{% endif %}>C</option>
-                        <option value="cpp" {% if form.syntax.data == 'cpp' %}selected{% endif %}>C++</option>
-                        <option value="csharp" {% if form.syntax.data == 'csharp' %}selected{% endif %}>C#</option>
-                        <option value="php" {% if form.syntax.data == 'php' %}selected{% endif %}>PHP</option>
-                        <option value="ruby" {% if form.syntax.data == 'ruby' %}selected{% endif %}>Ruby</option>
-                        <option value="go" {% if form.syntax.data == 'go' %}selected{% endif %}>Go</option>
-                        <option value="rust" {% if form.syntax.data == 'rust' %}selected{% endif %}>Rust</option>
-                        <option value="swift" {% if form.syntax.data == 'swift' %}selected{% endif %}>Swift</option>
-                        <option value="bash" {% if form.syntax.data == 'bash' %}selected{% endif %}>Bash/Shell</option>
-                        <option value="sql" {% if form.syntax.data == 'sql' %}selected{% endif %}>SQL</option>
-                        <option value="xml" {% if form.syntax.data == 'xml' %}selected{% endif %}>XML</option>
-                        <option value="json" {% if form.syntax.data == 'json' %}selected{% endif %}>JSON</option>
-                        <option value="markdown" {% if form.syntax.data == 'markdown' %}selected{% endif %}>Markdown</option>
-                        <option value="yaml" {% if form.syntax.data == 'yaml' %}selected{% endif %}>YAML</option>
-                    </select>
+                    {{ form.syntax(class="form-select", id="syntax-selector") }}
                 </div>
                 
                 <div class="col-md-6">
