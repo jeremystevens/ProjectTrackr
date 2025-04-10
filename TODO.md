@@ -4,10 +4,8 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## High Priority
 
-- [ ] Add email verification for new user registrations
-- [x] Improve error pages with more helpful messages
 - [x] Add paste comments/discussion functionality
-- [ ] Implement rate limiting to prevent abuse
+- [x] Implement rate limiting to prevent abuse
 
 ## Medium Priority
 
@@ -21,6 +19,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## Low Priority
 
+- [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
 - [ ] Add user notification system
 - [ ] Create paste collections/folders for organization
@@ -58,3 +57,4 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Add two-factor security for account recovery (security questions)
 - [x] Implement comprehensive error handling with custom error pages
 - [x] Create comment system with reply functionality
+- [x] Implement rate limiting to prevent abuse of key routes

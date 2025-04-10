@@ -7,6 +7,7 @@ All notable changes to the FlaskBin project will be documented in this file. The
 - Added paste comments/discussion functionality
 - Implemented custom error pages with detailed error information
 - Added support for nested comment replies
+- Implemented rate limiting to prevent abuse of key routes
 
 ## [1.0.0] - 2025-04-09
 ### Added
