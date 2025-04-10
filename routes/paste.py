@@ -11,7 +11,7 @@ paste_bp = Blueprint('paste', __name__)
 
 @paste_bp.route('/')
 def index():
-    form = PasteForm()
+    form = PasteForm(current_user=current_user)
     recent_pastes = Paste.get_recent_public_pastes(10)
     return render_template('index.html', form=form, recent_pastes=recent_pastes)
 
@@ -389,7 +389,8 @@ def edit(short_id):
         flash('This paste has expired and cannot be edited.', 'warning')
         return redirect(url_for('paste.index'))
     
-    form = PasteForm()
+    # Pass current_user to populate collection choices
+    form = PasteForm(current_user=current_user)
     
     if request.method == 'GET':
         form.title.data = paste.title
@@ -398,6 +399,9 @@ def edit(short_id):
         form.visibility.data = paste.visibility
         form.comments_enabled.data = paste.comments_enabled
         form.burn_after_read.data = paste.burn_after_read
+        # Set collection if paste is in a collection
+        if hasattr(form, 'collection_id') and paste.collection_id:
+            form.collection_id.data = paste.collection_id
         # Set post_as_guest to true if this paste was posted as a guest by the current user
         if hasattr(form, 'post_as_guest') and paste.user_id is None:
             form.post_as_guest.data = True
@@ -430,6 +434,20 @@ def edit(short_id):
         paste.visibility = form.visibility.data
         paste.comments_enabled = form.comments_enabled.data
         paste.burn_after_read = form.burn_after_read.data
+        
+        # Update collection if applicable
+        if current_user.is_authenticated and hasattr(form, 'collection_id'):
+            import logging
+            if form.collection_id.data and form.collection_id.data > 0:
+                # Verify the collection exists and belongs to the user
+                collection = PasteCollection.query.get(form.collection_id.data)
+                if collection and collection.user_id == current_user.id:
+                    paste.collection_id = collection.id
+                    logging.debug(f"Updated paste collection to {collection.name} (ID: {collection.id})")
+            else:
+                # Remove from collection if "None" is selected
+                paste.collection_id = None
+                logging.debug("Removed paste from collection")
         
         # Only update expiration if it's changed
         if form.expiration.data != '0' or paste.expires_at is None:
