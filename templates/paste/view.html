@@ -5,6 +5,26 @@
 {% block additional_styles %}
 <style>
     {{ css | safe }}
+
+    /* Custom styles for paste view */
+    .paste-info {
+        padding: 12px;
+        border-bottom: 1px solid rgba(80, 80, 80, 0.2);
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .expiration-countdown {
+        font-weight: bold;
+        min-width: 150px;
+        display: inline-block;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .paste-info .row > div {
+            margin-bottom: 8px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -52,22 +72,23 @@
     </div>
     
     <div class="card-body p-0">
-        <div class="paste-info p-2 border-bottom">
-            <div class="row">
-                <div class="col-md-4">
-                    <span class="text-muted small me-3">
+        <div class="paste-info">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <span class="text-muted me-3">
                         <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | timesince }}
                     </span>
-                    <span class="text-muted small me-3">
+                    <span class="text-muted me-3">
                         <i class="fas fa-eye me-1"></i> Views: {{ paste.views }}
                     </span>
-                    <span class="text-muted small">
+                    <span class="text-muted">
                         <i class="fas fa-code me-1"></i> Syntax: {{ paste.syntax }}
                     </span>
                 </div>
-                <div class="col-md-4">
+                
+                <div class="col-md-3">
                     {% if paste.user_id %}
-                        <span class="text-muted small me-3">
+                        <span class="text-muted me-3">
                             <i class="fas fa-user me-1"></i> Author: 
                             <a href="{{ url_for('user.profile', username=paste.author.username) }}">
                                 {{ paste.author.username }}
@@ -75,22 +96,23 @@
                         </span>
                     {% endif %}
                     
-                    <span class="text-muted small">
+                    <span class="text-muted">
                         <i class="fas fa-eye-slash me-1"></i> {{ paste.visibility | capitalize }}
                     </span>
                 </div>
+                
                 <div class="col-md-4 text-md-end">
                     {% if paste.expires_at %}
-                        <span class="text-muted small">
+                        <span class="text-muted">
                             <i class="fas fa-clock me-1"></i> 
                             Expires in: 
-                            <span class="countdown fw-bold" 
+                            <span class="countdown expiration-countdown" 
                                   data-expires="{{ paste.expires_at.isoformat() }}">
-                                ...
+                                Loading...
                             </span>
                         </span>
                     {% else %}
-                        <span class="text-muted small">
+                        <span class="text-muted">
                             <i class="fas fa-infinity me-1"></i> No expiration
                         </span>
                     {% endif %}
