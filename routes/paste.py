@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
 from app import db, app, limiter
-from models import Paste, User, PasteView, Comment, PasteRevision
+from models import Paste, User, PasteView, Comment, PasteRevision, Notification
 from forms import PasteForm, CommentForm
 from utils import generate_short_id, highlight_code, sanitize_html
 
@@ -385,6 +385,21 @@ def fork(short_id):
     # Create the fork
     user_id = current_user.id if current_user.is_authenticated else None
     fork = original_paste.fork(user_id=user_id, visibility=visibility)
+    
+    # Create a notification for the original paste owner if they're a registered user
+    if original_paste.user_id and user_id and original_paste.user_id != user_id:
+        paste_title = original_paste.title if original_paste.title else "Untitled"
+        user = User.query.get(user_id)
+        username = user.username if user else "Anonymous"
+        notification_message = f"forked your paste: '{paste_title}'"
+        
+        Notification.create_notification(
+            user_id=original_paste.user_id,
+            type='fork',
+            message=notification_message,
+            sender_id=user_id,
+            paste_id=fork.id  # Link to the new fork
+        )
     
     flash('Paste forked successfully!', 'success')
     return redirect(url_for('paste.view', short_id=fork.short_id))
