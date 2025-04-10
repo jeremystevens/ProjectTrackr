@@ -22,7 +22,7 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
             <div class="card h-100 bg-primary-subtle border-primary">
                 <div class="card-body text-center">
                     <h5 class="card-title">
@@ -43,30 +43,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 bg-success-subtle border-success">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-folder me-2"></i>Collections
-                    </h5>
-                    <h2 class="display-4">{{ stats.total_collections }}</h2>
-                    <p class="card-text">
-                        {% if stats.collections %}
-                            <a href="{{ url_for('collection.list_collections') }}" class="btn btn-sm btn-outline-success">View All</a>
-                        {% else %}
-                            <a href="{{ url_for('collection.create') }}" class="btn btn-sm btn-outline-success">Create First</a>
-                        {% endif %}
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent">
-                    <small class="text-muted">
-                        <i class="fas fa-layer-group me-1"></i>Organize your pastes
-                    </small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
             <div class="card h-100 bg-info-subtle border-info">
                 <div class="card-body text-center">
                     <h5 class="card-title">
@@ -92,7 +69,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
             <div class="card h-100 bg-success-subtle border-success">
                 <div class="card-body text-center">
                     <h5 class="card-title">
@@ -108,26 +85,6 @@
                     <small class="text-muted">
                         <i class="fas fa-calendar-alt me-1"></i>
                         {{ stats.comments_received_last_week }} received in last week
-                    </small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 bg-warning-subtle border-warning">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-chart-line me-2"></i>Activity
-                    </h5>
-                    <h2 class="display-4">{{ stats.pastes_last_month }}</h2>
-                    <p class="card-text">
-                        <span class="badge bg-warning text-dark">Pastes in last 30 days</span>
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent">
-                    <small class="text-muted">
-                        <i class="fas fa-calendar-alt me-1"></i>
-                        {{ stats.pastes_last_week }} in last week
                     </small>
                 </div>
             </div>
