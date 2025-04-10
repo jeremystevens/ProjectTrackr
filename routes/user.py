@@ -14,12 +14,33 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     
     page = request.args.get('page', 1, type=int)
+    collections = None
     
-    # If viewing own profile, show all pastes, otherwise show only public and unlisted
+    # If viewing own profile, show all pastes and collections, otherwise show only public and unlisted
     if current_user.is_authenticated and current_user.id == user.id:
         pastes = Paste.query.filter_by(user_id=user.id).order_by(
             Paste.created_at.desc()
         ).paginate(page=page, per_page=10)
+        
+        # Get collections with paste count for each collection
+        collections_query = db.session.query(
+            PasteCollection,
+            func.count(Paste.id).label('paste_count')
+        ).outerjoin(
+            Paste, Paste.collection_id == PasteCollection.id
+        ).filter(
+            PasteCollection.user_id == user.id
+        ).group_by(
+            PasteCollection.id
+        ).order_by(
+            PasteCollection.name
+        ).all()
+        
+        # Convert to a list of collection objects with paste_count attribute
+        collections = []
+        for collection, paste_count in collections_query:
+            collection.paste_count = paste_count
+            collections.append(collection)
     else:
         pastes = Paste.query.filter(
             Paste.user_id == user.id,
@@ -27,7 +48,7 @@ def profile(username):
             or_(Paste.expires_at.is_(None), Paste.expires_at > datetime.utcnow())
         ).order_by(Paste.created_at.desc()).paginate(page=page, per_page=10)
     
-    return render_template('user/profile.html', user=user, pastes=pastes)
+    return render_template('user/profile.html', user=user, pastes=pastes, collections=collections)
 
 @user_bp.route('/dashboard')
 @login_required

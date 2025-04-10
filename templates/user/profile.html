@@ -61,6 +61,56 @@
 </div>
 
 <div class="row">
+    {% if collections and current_user.is_authenticated and current_user.id == user.id %}
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-folder me-2"></i>Folders</h4>
+                
+                <a href="{{ url_for('collection.create') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-folder-plus me-1"></i> New Folder
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if collections %}
+                <div class="list-group list-group-flush">
+                    {% for collection in collections %}
+                    <a href="{{ url_for('collection.view', collection_id=collection.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-folder text-primary me-2"></i>{{ collection.name }}
+                            {% if collection.description %}
+                            <small class="text-muted d-block ms-4">{{ collection.description }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-primary rounded-pill me-3">{{ collection.paste_count }} {% if collection.paste_count == 1 %}paste{% else %}pastes{% endif %}</span>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('collection.edit', collection_id=collection.id) }}" class="btn btn-outline-secondary" title="Edit folder">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="if(confirm('Are you sure you want to delete this folder? All pastes will remain but will be removed from this folder.')) document.getElementById('delete-collection-form-{{ collection.id }}').submit();" 
+                                        title="Delete folder">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                <form id="delete-collection-form-{{ collection.id }}" action="{{ url_for('collection.delete', collection_id=collection.id) }}" method="POST" class="d-none">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                </form>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center">
+                    <p class="text-muted mb-0">No folders found. Create folders to organize your pastes!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
