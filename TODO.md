@@ -9,7 +9,6 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Create a browser extension for quick pasting
 - [x] Create paste collections/folders for organization
 - [x] Create administrator dashboard for site monitoring and moderation
-- [ ] Implement language detection for unspecified syntax
 - [ ] Add export/import functionality for user pastes
 - [ ] Support collaborative real-time editing
 - [ ] Create a desktop application using Electron
@@ -27,6 +26,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Set up CI/CD pipeline for automated testing and deployment
 - [ ] Add performance metrics and analytics
 ## Completed Items
+- [x] Implement language detection for unspecified syntax
 - [x] Add user notification system
 - [x] Add paste forking functionality
 - [x] Add support for paste versioning (history of edits) for registered users

@@ -28,6 +28,9 @@ All notable changes to the FlaskBin project will be documented in this file. The
 - Added site-wide settings management for configuration options
 - Implemented comprehensive audit logging for administrator actions
 - Added security features for account lockout and protection against abuse
+- Implemented automatic programming language detection for pastes
+- Fixed shadowban toggle functionality in admin panel
+- Enhanced content flagging system with clear UI and improved button styling
 
 ## [1.0.0] - 2025-04-09
 ### Added
