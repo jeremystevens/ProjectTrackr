@@ -22,6 +22,12 @@ All notable changes to the FlaskBin project will be documented in this file. The
 - Added Sentry integration for error monitoring and tracking
 - Improved folder selection UI with a clean dropdown interface
 - Moved folder display from dashboard to profile page to match Pastebin's UI
+- Implemented administrator dashboard for site moderation and management
+- Added content moderation system with flagging and review functionality
+- Added admin-only user management tools for handling user roles and permissions
+- Added site-wide settings management for configuration options
+- Implemented comprehensive audit logging for administrator actions
+- Added security features for account lockout and protection against abuse
 
 ## [1.0.0] - 2025-04-09
 ### Added

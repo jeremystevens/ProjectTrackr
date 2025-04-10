@@ -8,6 +8,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Add API endpoints for programmatic paste creation and access
 - [ ] Create a browser extension for quick pasting
 - [x] Create paste collections/folders for organization
+- [x] Create administrator dashboard for site monitoring and moderation
 - [ ] Implement language detection for unspecified syntax
 - [ ] Add export/import functionality for user pastes
 - [ ] Support collaborative real-time editing
@@ -51,4 +52,5 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Implement account lockout protection after failed attempts
 - [x] Add password strength requirements and validation
 - [x] Implement a dark/light theme toggle with customized styling
+- [x] Create administrator dashboard for site monitoring and moderation
 - [ ] Fix light mode styling issues (temporarily disabled theme toggle)
