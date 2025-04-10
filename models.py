@@ -256,6 +256,61 @@ class Paste(db.Model):
     def calculate_size(self):
         """Calculate and update the paste size in bytes"""
         self.size = len(self.content.encode('utf-8'))
+        
+    def save_revision(self, description=None):
+        """
+        Save the current state of the paste as a revision.
+        Only for registered users (pastes with user_id).
+        
+        Args:
+            description: Optional description of the changes made
+            
+        Returns:
+            The created PasteRevision object or None if not applicable
+        """
+        if not self.user_id:
+            # Anonymous pastes don't have revisions
+            return None
+            
+        # Get the next revision number
+        next_revision = 1
+        latest_revision = PasteRevision.query.filter_by(
+            paste_id=self.id
+        ).order_by(PasteRevision.revision_number.desc()).first()
+        
+        if latest_revision:
+            next_revision = latest_revision.revision_number + 1
+            
+        # Create a new revision
+        revision = PasteRevision(
+            paste_id=self.id,
+            content=self.content,
+            title=self.title,
+            syntax=self.syntax,
+            revision_number=next_revision,
+            edit_description=description
+        )
+        
+        db.session.add(revision)
+        db.session.commit()
+        
+        return revision
+        
+    def get_revisions(self):
+        """
+        Get all revisions of this paste, ordered by newest first.
+        Only for registered users (pastes with user_id).
+        
+        Returns:
+            A list of PasteRevision objects or empty list if not applicable
+        """
+        if not self.user_id:
+            # Anonymous pastes don't have revisions
+            return []
+            
+        return PasteRevision.query.filter_by(
+            paste_id=self.id
+        ).order_by(PasteRevision.revision_number.desc()).all()
 
     @staticmethod
     def get_recent_public_pastes(limit=10):
@@ -341,6 +396,7 @@ class PasteView(db.Model):
         viewer_id = str(uuid.uuid4())
         session['viewer_id'] = viewer_id
         return viewer_id
+
 
 
 class Comment(db.Model):

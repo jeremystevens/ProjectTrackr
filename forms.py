@@ -113,7 +113,8 @@ class PasteForm(FlaskForm):
         ('private', 'Private')
     ])
     comments_enabled = BooleanField('Enable Comments', default=True)
-    submit = SubmitField('Create Paste')
+    edit_description = StringField('Edit Description (for existing pastes)', validators=[Optional(), Length(max=255)])
+    submit = SubmitField('Save Paste')
 
 class ProfileEditForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
