@@ -37,14 +37,18 @@
                     <td>{{ user.created_at|timesince }}</td>
                     <td>{{ user.total_pastes }}</td>
                     <td>
-                        {% if user.is_admin %}
+                        {% if user.is_account_banned() %}
+                        <span class="badge bg-danger me-1">Banned</span>
+                        {% elif user.is_shadowbanned %}
+                        <span class="badge bg-warning text-dark me-1">Shadowbanned</span>
+                        {% elif user.is_account_locked() %}
+                        <span class="badge bg-danger me-1">Locked</span>
+                        {% elif user.is_admin %}
                         <span class="badge bg-danger me-1">Admin</span>
-                        {% endif %}
-                        {% if user.is_premium %}
-                        <span class="badge bg-warning text-dark">Premium</span>
-                        {% endif %}
-                        {% if user.is_account_locked() %}
-                        <span class="badge bg-danger">Locked</span>
+                        {% elif user.is_premium %}
+                        <span class="badge bg-warning text-dark me-1">Premium</span>
+                        {% else %}
+                        <span class="badge bg-success me-1">Active</span>
                         {% endif %}
                     </td>
                     <td>
