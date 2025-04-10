@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
-from sqlalchemy import or_
-from datetime import datetime
+from sqlalchemy import or_, func, desc, case, extract
+from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash
 from app import db
-from models import User, Paste
+from models import User, Paste, Comment, PasteView
 from forms import ProfileEditForm
 
 user_bp = Blueprint('user', __name__, url_prefix='/u')
