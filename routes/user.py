@@ -29,6 +29,154 @@ def profile(username):
     
     return render_template('user/profile.html', user=user, pastes=pastes)
 
+@user_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """
+    Display a detailed dashboard with enhanced user statistics
+    """
+    # Time periods for statistics
+    now = datetime.utcnow()
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+    
+    # Basic stats
+    total_pastes = Paste.query.filter_by(user_id=current_user.id).count()
+    active_pastes = Paste.query.filter(
+        Paste.user_id == current_user.id,
+        or_(Paste.expires_at.is_(None), Paste.expires_at > now)
+    ).count()
+    expired_pastes = Paste.query.filter(
+        Paste.user_id == current_user.id,
+        Paste.expires_at.isnot(None),
+        Paste.expires_at <= now
+    ).count()
+    
+    # Recent activity
+    pastes_last_week = Paste.query.filter(
+        Paste.user_id == current_user.id,
+        Paste.created_at >= week_ago
+    ).count()
+    
+    pastes_last_month = Paste.query.filter(
+        Paste.user_id == current_user.id,
+        Paste.created_at >= month_ago
+    ).count()
+    
+    # Total views stats
+    total_views = db.session.query(func.count(PasteView.id)).join(Paste).filter(
+        Paste.user_id == current_user.id
+    ).scalar() or 0
+    
+    views_last_week = db.session.query(func.count(PasteView.id)).join(Paste).filter(
+        Paste.user_id == current_user.id,
+        PasteView.created_at >= week_ago
+    ).scalar() or 0
+    
+    views_last_month = db.session.query(func.count(PasteView.id)).join(Paste).filter(
+        Paste.user_id == current_user.id,
+        PasteView.created_at >= month_ago
+    ).scalar() or 0
+    
+    # Comments stats
+    total_comments = db.session.query(func.count(Comment.id)).join(Paste).filter(
+        Paste.user_id == current_user.id
+    ).scalar() or 0
+    
+    comments_received_last_week = db.session.query(func.count(Comment.id)).join(Paste).filter(
+        Paste.user_id == current_user.id,
+        Comment.created_at >= week_ago
+    ).scalar() or 0
+    
+    # Get comments made by the user on others' pastes
+    comments_made = Comment.query.filter(
+        Comment.user_id == current_user.id
+    ).count()
+    
+    comments_made_last_week = Comment.query.filter(
+        Comment.user_id == current_user.id,
+        Comment.created_at >= week_ago
+    ).count()
+    
+    # Most viewed pastes
+    most_viewed_pastes = db.session.query(
+        Paste, func.count(PasteView.id).label('view_count')
+    ).join(PasteView).filter(
+        Paste.user_id == current_user.id
+    ).group_by(Paste.id).order_by(desc('view_count')).limit(5).all()
+    
+    # Most commented pastes
+    most_commented_pastes = db.session.query(
+        Paste, func.count(Comment.id).label('comment_count')
+    ).join(Comment).filter(
+        Paste.user_id == current_user.id
+    ).group_by(Paste.id).order_by(desc('comment_count')).limit(5).all()
+    
+    # Paste syntax distribution
+    syntax_distribution = db.session.query(
+        Paste.syntax, func.count(Paste.id).label('count')
+    ).filter(
+        Paste.user_id == current_user.id
+    ).group_by(Paste.syntax).order_by(desc('count')).all()
+    
+    # Paste visibility distribution
+    visibility_distribution = db.session.query(
+        Paste.visibility, func.count(Paste.id).label('count')
+    ).filter(
+        Paste.user_id == current_user.id
+    ).group_by(Paste.visibility).all()
+    
+    # Weekly activity (for charts)
+    day_labels = [(now - timedelta(days=i)).strftime('%a') for i in range(6, -1, -1)]
+    
+    # Pastes created by day of week
+    daily_pastes = []
+    for i in range(6, -1, -1):
+        day_start = now - timedelta(days=i)
+        day_end = now - timedelta(days=i-1) if i > 0 else now
+        count = Paste.query.filter(
+            Paste.user_id == current_user.id,
+            Paste.created_at >= day_start,
+            Paste.created_at < day_end
+        ).count()
+        daily_pastes.append(count)
+    
+    # Views received by day of week
+    daily_views = []
+    for i in range(6, -1, -1):
+        day_start = now - timedelta(days=i)
+        day_end = now - timedelta(days=i-1) if i > 0 else now
+        count = db.session.query(func.count(PasteView.id)).join(Paste).filter(
+            Paste.user_id == current_user.id,
+            PasteView.created_at >= day_start,
+            PasteView.created_at < day_end
+        ).scalar() or 0
+        daily_views.append(count)
+    
+    stats = {
+        'total_pastes': total_pastes,
+        'active_pastes': active_pastes,
+        'expired_pastes': expired_pastes,
+        'pastes_last_week': pastes_last_week,
+        'pastes_last_month': pastes_last_month,
+        'total_views': total_views,
+        'views_last_week': views_last_week,
+        'views_last_month': views_last_month,
+        'total_comments': total_comments,
+        'comments_received_last_week': comments_received_last_week,
+        'comments_made': comments_made,
+        'comments_made_last_week': comments_made_last_week,
+        'most_viewed_pastes': most_viewed_pastes,
+        'most_commented_pastes': most_commented_pastes,
+        'syntax_distribution': syntax_distribution,
+        'visibility_distribution': visibility_distribution,
+        'day_labels': day_labels,
+        'daily_pastes': daily_pastes,
+        'daily_views': daily_views
+    }
+    
+    return render_template('user/dashboard.html', stats=stats)
+
 @user_bp.route('/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
