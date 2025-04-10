@@ -1,61 +1,59 @@
-/**
- * Theme Switcher for FlaskBin
- * Manages dark/light theme preferences and toggle functionality
- */
 document.addEventListener('DOMContentLoaded', function() {
   console.log("Theme switcher initialized");
   
-  // Get DOM elements
-  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeToggle = document.getElementById('theme-toggle');
   const themeIcon = document.getElementById('theme-icon');
   
-  if (!themeToggleBtn || !themeIcon) {
+  if (!themeToggle || !themeIcon) {
     console.error("Theme toggle elements not found");
     return;
   }
   
   console.log("Theme toggle elements found");
   
-  // Function to set theme
-  function setTheme(isDark) {
-    // Update HTML element
-    document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+  // Function to switch between dark and light themes
+  function toggleTheme() {
+    console.log("Toggle theme called");
+    
+    // Get current theme
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    console.log(`Switching from ${currentTheme} to ${newTheme}`);
+    
+    // Update the theme
+    document.documentElement.setAttribute('data-bs-theme', newTheme);
     
     // Update icon
-    themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     
-    // Update highlight.js theme
-    const highlightTheme = isDark ? 'atom-one-dark' : 'atom-one-light';
-    const stylesheets = document.querySelectorAll('link');
-    for (let i = 0; i < stylesheets.length; i++) {
-      const href = stylesheets[i].getAttribute('href');
-      if (href && href.includes('highlight.js')) {
-        const newHref = href.replace(/\/styles\/.*\.min\.css/, `/styles/${highlightTheme}.min.css`);
-        stylesheets[i].setAttribute('href', newHref);
-        console.log(`Updated syntax theme to ${highlightTheme}`);
-        break;
-      }
+    // Store preference in localStorage
+    localStorage.setItem('flaskbin-theme', newTheme);
+    
+    // Update syntax highlighting theme if on a page with code
+    const syntaxStyle = document.querySelector('link[href*="highlight.js"]');
+    if (syntaxStyle) {
+      const theme = newTheme === 'dark' ? 'atom-one-dark' : 'atom-one-light';
+      syntaxStyle.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/${theme}.min.css`;
+      console.log(`Updated syntax theme to ${theme}`);
     }
-    
-    // Save preference
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    console.log(`Theme set to ${isDark ? 'dark' : 'light'}`);
   }
   
-  // Set up click handler
-  themeToggleBtn.addEventListener('click', function() {
-    console.log("Theme toggle button clicked");
-    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-    setTheme(currentTheme !== 'dark'); // Toggle
+  // Add click event listener
+  themeToggle.addEventListener('click', function(e) {
+    console.log("Theme toggle clicked");
+    e.preventDefault();
+    toggleTheme();
   });
   
-  // Initialize theme from localStorage or default to dark
-  const savedTheme = localStorage.getItem('theme');
+  // Initialize theme based on localStorage or default to dark
+  const savedTheme = localStorage.getItem('flaskbin-theme');
+  console.log(`Saved theme: ${savedTheme}`);
+  
   if (savedTheme) {
-    setTheme(savedTheme === 'dark');
-  } else {
-    // Default to system preference, fallback to dark
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(prefersDark);
+    // Use saved preference
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    console.log(`Applied saved theme: ${savedTheme}`);
   }
 });

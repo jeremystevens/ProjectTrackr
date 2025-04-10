@@ -43,6 +43,12 @@
                 </ul>
                 
                 <!-- Search Form -->
+                <!-- Theme Toggle -->
+                <div class="me-3">
+                    <button id="theme-toggle" class="btn btn-outline-secondary" type="button">
+                        <i id="theme-icon" class="fas fa-moon"></i>
+                    </button>
+                </div>
                 <form class="d-flex me-auto" action="{{ url_for('search.search') }}" method="get">
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Search pastes..." 
@@ -59,14 +65,6 @@
                     </div>
                 </form>
                 
-                <!-- Theme Toggle Button -->
-                <ul class="navbar-nav me-2">
-                    <li class="nav-item">
-                        <button id="theme-toggle" class="btn btn-outline-secondary" title="Toggle theme">
-                            <i class="fas fa-moon" id="theme-icon"></i>
-                        </button>
-                    </li>
-                </ul>
                 
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
