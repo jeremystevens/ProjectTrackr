@@ -78,6 +78,15 @@
                 <small class="form-text text-muted d-block">This paste will be permanently deleted after it is viewed for the first time by someone other than you.</small>
             </div>
             
+            {% if current_user.is_authenticated %}
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="post_as_guest" name="post_as_guest" 
+                       {% if form.post_as_guest.data %}checked{% endif %}>
+                <label class="form-check-label" for="post_as_guest">Paste as a guest</label>
+                <small class="form-text text-muted d-block">Your paste will be posted anonymously without being linked to your account.</small>
+            </div>
+            {% endif %}
+            
             <div class="mb-3">
                 <label for="edit_description" class="form-label">Edit Description</label>
                 <input type="text" class="form-control" id="edit_description" name="edit_description" 
@@ -111,7 +120,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   // Select elements

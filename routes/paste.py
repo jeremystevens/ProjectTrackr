@@ -73,8 +73,12 @@ def create():
             burn_after_read=burn_after_read
         )
         
-        # Set user if logged in
-        if current_user.is_authenticated:
+        # Set user if logged in and not posting as guest
+        post_as_guest = False
+        if hasattr(form, 'post_as_guest') and form.post_as_guest is not None:
+            post_as_guest = form.post_as_guest.data
+            
+        if current_user.is_authenticated and not post_as_guest:
             paste.user_id = current_user.id
             current_user.total_pastes += 1
         
@@ -385,6 +389,9 @@ def edit(short_id):
         form.visibility.data = paste.visibility
         form.comments_enabled.data = paste.comments_enabled
         form.burn_after_read.data = paste.burn_after_read
+        # Set post_as_guest to true if this paste was posted as a guest by the current user
+        if hasattr(form, 'post_as_guest') and paste.user_id is None:
+            form.post_as_guest.data = True
         # We don't pre-fill expiration as it's relative
         
     if form.validate_on_submit():
@@ -395,6 +402,17 @@ def edit(short_id):
             if hasattr(form, 'edit_description') and form.edit_description is not None:
                 edit_description = form.edit_description.data
             paste.save_revision(description=edit_description)
+            
+        # Handle post_as_guest option
+        post_as_guest = False
+        if hasattr(form, 'post_as_guest') and form.post_as_guest is not None:
+            post_as_guest = form.post_as_guest.data
+            
+        # Update user_id based on post_as_guest preference
+        if post_as_guest:
+            paste.user_id = None
+        elif current_user.is_authenticated:
+            paste.user_id = current_user.id
             
         # Update paste content
         paste.title = form.title.data
