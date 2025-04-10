@@ -4,11 +4,10 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## High Priority
 
+- [ ] Add support for paste versioning (history of edits) for registered users
 
 ## Medium Priority
 
-- [ ] Create a user dashboard with more detailed statistics
-- [ ] Add support for paste versioning (history of edits)
 - [ ] Implement paste templates (common layouts/snippets)
 - [ ] Add paste forking functionality
 - [ ] Create a browser extension for quick pasting
@@ -43,6 +42,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## Completed Items
 
+- [x] Create a user dashboard with more detailed statistics
 - [x] Implement real-time expiration countdown
 - [x] Create automated paste pruning system
 - [x] Fix database integrity issues with paste deletion
