@@ -94,7 +94,7 @@ def check_shadowban(func):
         
         # Check if user is logged in and shadowbanned
         if current_user.is_authenticated and hasattr(current_user, 'is_shadowbanned'):
-            if current_user.is_shadowbanned():
+            if current_user.is_shadowbanned:
                 g.is_shadowbanned = True
                 current_app.logger.info(f"Shadowbanned user {current_user.id} accessed {request.path}")
         

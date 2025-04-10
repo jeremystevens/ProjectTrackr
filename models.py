@@ -166,7 +166,7 @@ class User(UserMixin, db.Model):
         db.session.commit()
         return False
         
-    def is_shadowbanned(self):
+    def get_shadowban_status(self):
         """Check if the user account is shadowbanned."""
         # Directly use the column value 
         return bool(self.is_shadowbanned)
