@@ -63,6 +63,13 @@ def create():
                 
                 # Increment template usage count
                 template.increment_usage()
+        
+        # If syntax is set to 'text' (the default), try to auto-detect the language
+        if syntax == 'text' and content.strip():
+            from utils import detect_language
+            detected_syntax = detect_language(content)
+            current_app.logger.info(f"Auto-detected language: {detected_syntax}")
+            syntax = detected_syntax
                 
         paste = Paste(
             title=form.title.data or 'Untitled',

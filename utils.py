@@ -7,7 +7,7 @@ from flask import request, session, abort, current_app, g
 from flask_login import current_user
 from functools import wraps
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name, get_all_lexers
+from pygments.lexers import get_lexer_by_name, get_all_lexers, guess_lexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
 
@@ -50,6 +50,35 @@ def highlight_code(code, syntax='text'):
 def get_available_lexers():
     """Get all available syntax highlighting lexers"""
     return sorted([(lexer[1][0], lexer[0]) for lexer in get_all_lexers()])
+
+def detect_language(code):
+    """
+    Detect the programming language of code using Pygments lexer guessing
+    Returns the alias of the detected lexer (e.g., 'python', 'javascript', etc.)
+    Falls back to 'text' if detection fails
+    """
+    try:
+        # Ensure code is not empty to avoid errors
+        if not code or code.strip() == '':
+            return 'text'
+            
+        # Attempt to guess the lexer
+        lexer = guess_lexer(code)
+        
+        # Get the aliases (short names) of the detected lexer
+        aliases = lexer.aliases
+        
+        # Return the first alias, which is typically the most common one
+        # (e.g., 'py' or 'python' for Python code)
+        if aliases and len(aliases) > 0:
+            return aliases[0]
+        
+        # If no aliases are found, return the lexer name
+        return lexer.name.lower()
+    except Exception as e:
+        # Log the error and fall back to 'text'
+        current_app.logger.warning(f"Language detection failed: {str(e)}")
+        return 'text'
 
 def format_size(size_bytes):
     """Format bytes to human-readable format"""
