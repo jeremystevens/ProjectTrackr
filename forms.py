@@ -78,6 +78,7 @@ class RegistrationForm(FlaskForm):
 class PasteForm(FlaskForm):
     title = StringField('Title', validators=[Length(max=255)])
     template = SelectField('Use Template', validators=[Optional()], coerce=int)
+    collection_id = SelectField('Add to Collection', validators=[Optional()], coerce=int)
     content = TextAreaField('Content', validators=[DataRequired()])
     syntax = SelectField('Syntax Highlighting', choices=[
         # Common and plain text formats
@@ -170,7 +171,10 @@ class PasteForm(FlaskForm):
     submit = SubmitField('Save Paste')
     
     def __init__(self, *args, **kwargs):
+        # Extract current_user from kwargs if provided
+        current_user = kwargs.pop('current_user', None)
         super(PasteForm, self).__init__(*args, **kwargs)
+        
         # Populate template choices from database
         from models import PasteTemplate
         template_choices = [(0, 'None - Start from scratch')]
@@ -182,6 +186,21 @@ class PasteForm(FlaskForm):
             template_choices.append((template.id, f"{template.name} ({template.category})"))
             
         self.template.choices = template_choices
+        
+        # Populate collection choices if user is authenticated
+        collection_choices = [(0, 'None - No Collection')]
+        
+        if current_user and current_user.is_authenticated:
+            from models import PasteCollection
+            from app import db
+            user_collections = PasteCollection.query.filter_by(user_id=current_user.id).order_by(
+                PasteCollection.name
+            ).all()
+            
+            for collection in user_collections:
+                collection_choices.append((collection.id, collection.name))
+                
+        self.collection_id.choices = collection_choices
 
 class ProfileEditForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])

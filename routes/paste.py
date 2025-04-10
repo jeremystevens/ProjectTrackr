@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
 from app import db, app, limiter
-from models import Paste, User, PasteView, Comment, PasteRevision, Notification
+from models import Paste, User, PasteView, Comment, PasteRevision, Notification, PasteCollection
 from forms import PasteForm, CommentForm
 from utils import generate_short_id, highlight_code, sanitize_html
 
@@ -18,7 +18,8 @@ def index():
 @paste_bp.route('/create', methods=['POST'])
 @limiter.limit("20 per hour")
 def create():
-    form = PasteForm()
+    # Pass current_user to populate collection choices
+    form = PasteForm(current_user=current_user)
     if form.validate_on_submit():
         # Generate a unique short ID
         while True:
@@ -81,6 +82,14 @@ def create():
         if current_user.is_authenticated and not post_as_guest:
             paste.user_id = current_user.id
             current_user.total_pastes += 1
+            
+            # Add to collection if selected and user is authenticated
+            if hasattr(form, 'collection_id') and form.collection_id.data and form.collection_id.data > 0:
+                # Verify the collection exists and belongs to the user
+                collection = PasteCollection.query.get(form.collection_id.data)
+                if collection and collection.user_id == current_user.id:
+                    paste.collection_id = collection.id
+                    logging.debug(f"Added paste to collection {collection.name} (ID: {collection.id})")
         
         # Calculate paste size
         paste.calculate_size()
