@@ -5,7 +5,6 @@ This document tracks future enhancements and features planned for the FlaskBin a
 ## Medium Priority
 
 - [ ] Implement paste templates (common layouts/snippets)
-- [ ] Add paste forking functionality
 - [ ] Create a browser extension for quick pasting
 - [ ] Add support for image/file uploads within pastes
 - [ ] Implement a dark/light theme toggle
@@ -38,6 +37,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 
 ## Completed Items
 
+- [x] Add paste forking functionality
 - [x] Add support for paste versioning (history of edits) for registered users
 - [x] Fix UI issues with paste expiration countdown display
 - [x] Redesign metadata layout for better spacing and consistency

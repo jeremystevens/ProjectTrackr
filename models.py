@@ -502,3 +502,54 @@ class Comment(db.Model):
     
     def __repr__(self):
         return f'<Comment {self.id}: by {self.user.username if self.user else "unknown"} on paste {self.paste_id}>'
+        
+        
+class PasteTemplate(db.Model):
+    """
+    Model for paste templates, providing common layouts and snippets for users.
+    These templates can be selected when creating a new paste.
+    """
+    __tablename__ = 'paste_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    content = db.Column(db.Text, nullable=False)
+    syntax = db.Column(db.String(50), default='text')
+    category = db.Column(db.String(50), default='General')
+    is_public = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    usage_count = db.Column(db.Integer, default=0)
+    
+    # Relationship back to User (creator)
+    author = db.relationship('User', backref=db.backref('created_templates', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<PasteTemplate {self.id}: {self.name}>'
+        
+    @staticmethod
+    def get_public_templates():
+        """Get all public templates"""
+        return PasteTemplate.query.filter_by(is_public=True).order_by(PasteTemplate.name).all()
+        
+    @staticmethod
+    def get_templates_by_category():
+        """Get all public templates grouped by category"""
+        templates = PasteTemplate.query.filter_by(is_public=True).order_by(
+            PasteTemplate.category, PasteTemplate.name
+        ).all()
+        
+        # Group templates by category
+        categorized = {}
+        for template in templates:
+            if template.category not in categorized:
+                categorized[template.category] = []
+            categorized[template.category].append(template)
+            
+        return categorized
+        
+    def increment_usage(self):
+        """Increment the usage count for this template"""
+        self.usage_count += 1
+        db.session.commit()
