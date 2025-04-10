@@ -164,27 +164,52 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Syntax preview functionality
   function updateSyntaxPreview() {
+  function updateSyntaxPreview() {
+    const content = contentArea.value;
     const content = contentArea.value;
     const syntax = syntaxSelector.value;
+    const syntax = syntaxSelector.value;
+    const previewContainer = document.getElementById("syntax-preview");
     const previewContainer = document.getElementById("syntax-preview");
     
+    
+    if (content.trim() === "") {
     if (content.trim() === "") {
       previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+      previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+      return;
       return;
     }
+    }
+    
     
     previewContainer.innerHTML = "<div class=\"alert alert-info\">" +
+    previewContainer.innerHTML = "<div class=\"alert alert-info\">" +
+      "<i class=\"fas fa-info-circle me-2\"></i>" +
       "<i class=\"fas fa-info-circle me-2\"></i>" +
       "A preview would be shown here with " + syntax + " syntax highlighting." +
+      "A preview would be shown here with " + syntax + " syntax highlighting." +
+    "</div>";
     "</div>";
   }
+  }
+  
   
   // Set up syntax preview events
+  // Set up syntax preview events
+  contentArea.addEventListener("input", updateSyntaxPreview);
   contentArea.addEventListener("input", updateSyntaxPreview);
   syntaxSelector.addEventListener("change", updateSyntaxPreview);
+  syntaxSelector.addEventListener("change", updateSyntaxPreview);
+  
   
   // Initial syntax preview update
+  // Initial syntax preview update
+  updateSyntaxPreview();
   updateSyntaxPreview();
 });
+});
 </script>
+</script>
+{% endblock %}
 {% endblock %}
