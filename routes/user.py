@@ -4,7 +4,7 @@ from sqlalchemy import or_, func, desc, case, extract
 from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash
 from app import db
-from models import User, Paste, Comment, PasteView
+from models import User, Paste, Comment, PasteView, PasteCollection
 from forms import ProfileEditForm
 
 user_bp = Blueprint('user', __name__, url_prefix='/u')
@@ -153,6 +153,12 @@ def dashboard():
         ).scalar() or 0
         daily_views.append(count)
     
+    # Get user collections
+    collections = PasteCollection.query.filter_by(user_id=current_user.id).order_by(PasteCollection.name).all()
+    
+    # Limit to 3 collections for dashboard preview
+    preview_collections = collections[:3] if collections else []
+    
     stats = {
         'total_pastes': total_pastes,
         'active_pastes': active_pastes,
@@ -172,7 +178,9 @@ def dashboard():
         'visibility_distribution': visibility_distribution,
         'day_labels': day_labels,
         'daily_pastes': daily_pastes,
-        'daily_views': daily_views
+        'daily_views': daily_views,
+        'collections': preview_collections,
+        'total_collections': len(collections)
     }
     
     return render_template('user/dashboard.html', stats=stats)
