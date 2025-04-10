@@ -1,7 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import or_, func, desc, case, extract
 from datetime import datetime, timedelta
+import json
+import csv
+import io
+from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 from app import db
 from models import User, Paste, Comment, PasteView, PasteCollection
@@ -248,3 +252,314 @@ def edit_profile():
         return redirect(url_for('user.profile', username=current_user.username))
     
     return render_template('user/edit_profile.html', form=form)
+
+@user_bp.route('/export', methods=['GET', 'POST'])
+@login_required
+def export_pastes():
+    """
+    Export user's pastes in various formats (JSON, CSV, etc.)
+    """
+    if request.method == 'GET':
+        # Get all user collections for the dropdown
+        collections = PasteCollection.query.filter_by(user_id=current_user.id).all()
+        return render_template('user/export.html', collections=collections)
+    
+    # Handle export request (POST)
+    export_format = request.form.get('format', 'json')
+    collection_id = request.form.get('collection_id', None)
+    include_private = 'include_private' in request.form
+    
+    # Query pastes based on filters
+    query = Paste.query.filter_by(user_id=current_user.id)
+    
+    # Filter by collection if specified
+    if collection_id and collection_id != '0':
+        query = query.filter_by(collection_id=int(collection_id))
+    
+    # Filter by visibility unless include_private is checked
+    if not include_private:
+        query = query.filter(Paste.visibility != 'private')
+    
+    pastes = query.order_by(Paste.created_at.desc()).all()
+    
+    # If no pastes found
+    if not pastes:
+        flash('No pastes found matching your criteria.', 'warning')
+        return redirect(url_for('user.export_pastes'))
+    
+    # Format data for export
+    if export_format == 'json':
+        paste_data = []
+        for paste in pastes:
+            # Format dates as ISO strings
+            created_at = paste.created_at.isoformat() if paste.created_at else None
+            expires_at = paste.expires_at.isoformat() if paste.expires_at else None
+            
+            data = {
+                'title': paste.title,
+                'content': paste.content,
+                'syntax': paste.syntax,
+                'visibility': paste.visibility,
+                'created_at': created_at,
+                'expires_at': expires_at,
+                'size': paste.size,
+                'comments_enabled': paste.comments_enabled,
+                'burn_after_read': paste.burn_after_read,
+                'short_id': paste.short_id
+            }
+            paste_data.append(data)
+        
+        # Create a filename with timestamp
+        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        filename = f"flaskbin_export_{current_user.username}_{timestamp}.json"
+        
+        # Create response with JSON data
+        response = Response(
+            json.dumps(paste_data, indent=2),
+            mimetype='application/json'
+        )
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
+        
+    elif export_format == 'csv':
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header row
+        writer.writerow([
+            'Title', 'Content', 'Syntax', 'Visibility', 
+            'Created At', 'Expires At', 'Size', 
+            'Comments Enabled', 'Burn After Read', 'Short ID'
+        ])
+        
+        # Write data rows
+        for paste in pastes:
+            created_at = paste.created_at.isoformat() if paste.created_at else ''
+            expires_at = paste.expires_at.isoformat() if paste.expires_at else ''
+            
+            writer.writerow([
+                paste.title,
+                paste.content,
+                paste.syntax,
+                paste.visibility,
+                created_at,
+                expires_at,
+                paste.size,
+                paste.comments_enabled,
+                paste.burn_after_read,
+                paste.short_id
+            ])
+        
+        # Create a filename with timestamp
+        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        filename = f"flaskbin_export_{current_user.username}_{timestamp}.csv"
+        
+        # Set response headers for CSV download
+        output.seek(0)
+        response = Response(
+            output.getvalue(),
+            mimetype='text/csv'
+        )
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
+        
+    elif export_format == 'plaintext':
+        # For plaintext export, we'll create a single text file with all paste contents
+        output = io.StringIO()
+        
+        for paste in pastes:
+            # Write paste metadata as comments
+            output.write(f"# Title: {paste.title}\n")
+            output.write(f"# Syntax: {paste.syntax}\n")
+            output.write(f"# Created: {paste.created_at}\n")
+            output.write(f"# Short ID: {paste.short_id}\n")
+            output.write(f"# Visibility: {paste.visibility}\n")
+            output.write("#" + "-" * 40 + "\n\n")
+            
+            # Write paste content
+            output.write(paste.content)
+            output.write("\n\n" + "#" + "=" * 60 + "\n\n")
+        
+        # Create a filename with timestamp
+        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        filename = f"flaskbin_export_{current_user.username}_{timestamp}.txt"
+        
+        # Set response headers for text download
+        output.seek(0)
+        response = Response(
+            output.getvalue(),
+            mimetype='text/plain'
+        )
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
+    
+    # If format not supported
+    flash('Unsupported export format selected.', 'danger')
+    return redirect(url_for('user.export_pastes'))
+
+@user_bp.route('/import', methods=['GET', 'POST'])
+@login_required
+def import_pastes():
+    """
+    Import pastes from a file (JSON, CSV, etc.)
+    """
+    from utils import generate_short_id
+    
+    if request.method == 'GET':
+        # Get all user collections for the dropdown
+        collections = PasteCollection.query.filter_by(user_id=current_user.id).all()
+        return render_template('user/import.html', collections=collections)
+    
+    # Handle import request (POST)
+    if 'import_file' not in request.files:
+        flash('No file selected for import.', 'danger')
+        return redirect(url_for('user.import_pastes'))
+    
+    import_file = request.files['import_file']
+    if import_file.filename == '':
+        flash('No file selected for import.', 'danger')
+        return redirect(url_for('user.import_pastes'))
+    
+    import_format = request.form.get('format', 'json')
+    collection_id = request.form.get('collection_id', None)
+    
+    # Convert collection_id to int if provided, otherwise None
+    if collection_id and collection_id != '0':
+        collection_id = int(collection_id)
+        # Verify the collection exists and belongs to the user
+        collection = PasteCollection.query.get(collection_id)
+        if not collection or collection.user_id != current_user.id:
+            flash('Invalid collection selected.', 'danger')
+            return redirect(url_for('user.import_pastes'))
+    else:
+        collection_id = None
+    
+    success_count = 0
+    error_count = 0
+    
+    try:
+        if import_format == 'json':
+            # Parse JSON file
+            content = import_file.read().decode('utf-8')
+            paste_data = json.loads(content)
+            
+            # Handle both single object and array formats
+            if not isinstance(paste_data, list):
+                paste_data = [paste_data]
+            
+            for data in paste_data:
+                try:
+                    # Generate a unique short ID
+                    while True:
+                        short_id = generate_short_id()
+                        if not Paste.query.filter_by(short_id=short_id).first():
+                            break
+                    
+                    # Create the paste
+                    paste = Paste(
+                        title=data.get('title', 'Imported Paste'),
+                        content=data.get('content', ''),
+                        syntax=data.get('syntax', 'text'),
+                        visibility=data.get('visibility', 'private'),
+                        user_id=current_user.id,
+                        short_id=short_id,
+                        comments_enabled=data.get('comments_enabled', True),
+                        burn_after_read=data.get('burn_after_read', False),
+                        collection_id=collection_id
+                    )
+                    
+                    # Set expiration if provided, otherwise never expires
+                    if 'expires_at' in data and data['expires_at']:
+                        try:
+                            expires_at = datetime.fromisoformat(data['expires_at'])
+                            # Only set if it's in the future
+                            if expires_at > datetime.utcnow():
+                                paste.expires_at = expires_at
+                        except ValueError:
+                            # Invalid date format, leave as None (never expires)
+                            pass
+                    
+                    # Calculate paste size
+                    paste.calculate_size()
+                    
+                    db.session.add(paste)
+                    success_count += 1
+                except Exception as e:
+                    error_count += 1
+                    import logging
+                    logging.error(f"Error importing paste: {str(e)}")
+            
+            db.session.commit()
+                
+        elif import_format == 'csv':
+            # Parse CSV file
+            content = import_file.read().decode('utf-8')
+            reader = csv.reader(io.StringIO(content))
+            
+            # Skip header row
+            next(reader, None)
+            
+            for row in reader:
+                try:
+                    # Ensure the row has enough columns
+                    if len(row) < 3:
+                        continue
+                    
+                    # Generate a unique short ID
+                    while True:
+                        short_id = generate_short_id()
+                        if not Paste.query.filter_by(short_id=short_id).first():
+                            break
+                    
+                    # Extract data from row
+                    title = row[0] if len(row) > 0 else 'Imported Paste'
+                    content = row[1] if len(row) > 1 else ''
+                    syntax = row[2] if len(row) > 2 else 'text'
+                    visibility = row[3] if len(row) > 3 else 'private'
+                    
+                    # Create the paste
+                    paste = Paste(
+                        title=title,
+                        content=content,
+                        syntax=syntax,
+                        visibility=visibility,
+                        user_id=current_user.id,
+                        short_id=short_id,
+                        comments_enabled=True,
+                        burn_after_read=False,
+                        collection_id=collection_id
+                    )
+                    
+                    # Calculate paste size
+                    paste.calculate_size()
+                    
+                    db.session.add(paste)
+                    success_count += 1
+                except Exception as e:
+                    error_count += 1
+                    app.logger.error(f"Error importing paste from CSV: {str(e)}")
+            
+            db.session.commit()
+        
+        else:
+            flash('Unsupported import format selected.', 'danger')
+            return redirect(url_for('user.import_pastes'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Import failed: {str(e)}', 'danger')
+        return redirect(url_for('user.import_pastes'))
+    
+    # Update user's total pastes count
+    if success_count > 0:
+        current_user.total_pastes += success_count
+        db.session.commit()
+    
+    # Show results
+    if success_count > 0:
+        flash(f'Successfully imported {success_count} pastes.', 'success')
+    if error_count > 0:
+        flash(f'Failed to import {error_count} pastes due to errors.', 'warning')
+    
+    return redirect(url_for('user.profile', username=current_user.username))
