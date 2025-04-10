@@ -1,0 +1,93 @@
+/* Theme styles for FlaskBin */
+
+/* Light theme variables */
+:root[data-bs-theme="light"] {
+  --main-bg-color: #f8f9fa;
+  --main-text-color: #212529;
+  --navbar-bg-color: #ffffff;
+  --card-bg-color: #ffffff;
+  --card-border-color: #e9ecef;
+  --input-bg-color: #ffffff;
+  --input-text-color: #212529;
+  --input-border-color: #ced4da;
+  --link-color: #0d6efd;
+  --link-hover-color: #0a58ca;
+  --button-primary-bg: #0d6efd;
+  --button-secondary-bg: #6c757d;
+}
+
+/* Dark theme variables */
+:root[data-bs-theme="dark"] {
+  --main-bg-color: #212529;
+  --main-text-color: #f8f9fa;
+  --navbar-bg-color: #343a40;
+  --card-bg-color: #2b3035;
+  --card-border-color: #495057;
+  --input-bg-color: #343a40;
+  --input-text-color: #f8f9fa;
+  --input-border-color: #495057;
+  --link-color: #6ea8fe;
+  --link-hover-color: #8bb9fe;
+  --button-primary-bg: #0d6efd;
+  --button-secondary-bg: #6c757d;
+}
+
+/* Base styles */
+body {
+  background-color: var(--main-bg-color);
+  color: var(--main-text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.navbar {
+  background-color: var(--navbar-bg-color) !important;
+  transition: background-color 0.3s ease;
+}
+
+.card {
+  background-color: var(--card-bg-color) !important;
+  border-color: var(--card-border-color) !important;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.form-control, .form-select {
+  background-color: var(--input-bg-color) !important;
+  color: var(--input-text-color) !important;
+  border-color: var(--input-border-color) !important;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+a {
+  color: var(--link-color);
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--link-hover-color);
+}
+
+.btn-primary {
+  background-color: var(--button-primary-bg) !important;
+}
+
+.btn-secondary {
+  background-color: var(--button-secondary-bg) !important;
+}
+
+/* Dark mode specific overrides */
+[data-bs-theme="dark"] .navbar-brand {
+  color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .nav-link {
+  color: #ced4da !important;
+}
+
+[data-bs-theme="dark"] .nav-link:hover {
+  color: #f8f9fa !important;
+}
+
+/* Theme transition */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

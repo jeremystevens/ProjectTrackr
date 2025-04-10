@@ -15,7 +15,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
     
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     
     {% block additional_styles %}{% endblock %}
 </head>
@@ -45,7 +47,7 @@
                 <!-- Search Form -->
                 <!-- Theme Toggle -->
                 <div class="me-3">
-                    <button id="theme-toggle" class="btn btn-outline-secondary" type="button">
+                    <button id="theme-toggle" class="btn btn-lg btn-outline-info" type="button" title="Toggle light/dark theme">
                         <i id="theme-icon" class="fas fa-moon"></i>
                     </button>
                 </div>

@@ -1,59 +1,71 @@
+/**
+ * Theme Switcher for FlaskBin
+ * Manages dark/light theme preferences and toggle functionality
+ */
 document.addEventListener('DOMContentLoaded', function() {
-  console.log("Theme switcher initialized");
+  console.log("Theme switcher loading...");
   
-  const themeToggle = document.getElementById('theme-toggle');
+  // Theme toggle button
+  const themeToggleBtn = document.getElementById('theme-toggle');
   const themeIcon = document.getElementById('theme-icon');
   
-  if (!themeToggle || !themeIcon) {
-    console.error("Theme toggle elements not found");
+  if (!themeToggleBtn || !themeIcon) {
+    console.error("Theme toggle elements not found in the DOM");
     return;
   }
   
-  console.log("Theme toggle elements found");
+  console.log("Theme toggle elements found in the DOM");
   
-  // Function to switch between dark and light themes
-  function toggleTheme() {
-    console.log("Toggle theme called");
+  // Apply the given theme
+  function applyTheme(theme) {
+    console.log(`Applying theme: ${theme}`);
     
-    // Get current theme
-    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    // Set the data attribute on the html element
+    document.documentElement.setAttribute('data-bs-theme', theme);
     
-    console.log(`Switching from ${currentTheme} to ${newTheme}`);
-    
-    // Update the theme
-    document.documentElement.setAttribute('data-bs-theme', newTheme);
-    
-    // Update icon
-    themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-    
-    // Store preference in localStorage
-    localStorage.setItem('flaskbin-theme', newTheme);
-    
-    // Update syntax highlighting theme if on a page with code
-    const syntaxStyle = document.querySelector('link[href*="highlight.js"]');
-    if (syntaxStyle) {
-      const theme = newTheme === 'dark' ? 'atom-one-dark' : 'atom-one-light';
-      syntaxStyle.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/${theme}.min.css`;
-      console.log(`Updated syntax theme to ${theme}`);
+    // Update the icon
+    if (themeIcon) {
+      themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     }
+    
+    // Store the preference
+    localStorage.setItem('flaskbin-theme', theme);
+    
+    console.log(`Theme applied: ${theme}`);
+    
+    // Force redraw of the page (helps with some browsers)
+    document.body.style.display = 'none';
+    setTimeout(() => {
+      document.body.style.display = '';
+    }, 5);
   }
   
-  // Add click event listener
-  themeToggle.addEventListener('click', function(e) {
-    console.log("Theme toggle clicked");
+  // Toggle the current theme
+  function toggleTheme() {
+    console.log("Toggle theme function called");
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    console.log(`Toggling from ${currentTheme} to ${newTheme}`);
+    applyTheme(newTheme);
+  }
+  
+  // Set up the click handler
+  themeToggleBtn.addEventListener('click', function(e) {
+    console.log("Theme toggle button clicked");
     e.preventDefault();
     toggleTheme();
   });
   
-  // Initialize theme based on localStorage or default to dark
-  const savedTheme = localStorage.getItem('flaskbin-theme');
-  console.log(`Saved theme: ${savedTheme}`);
+  // Initialize theme from local storage or default to dark
+  const storedTheme = localStorage.getItem('flaskbin-theme');
+  console.log(`Retrieved stored theme: ${storedTheme}`);
   
-  if (savedTheme) {
-    // Use saved preference
-    document.documentElement.setAttribute('data-bs-theme', savedTheme);
-    themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-    console.log(`Applied saved theme: ${savedTheme}`);
+  if (storedTheme) {
+    applyTheme(storedTheme);
+  } else {
+    // Default to dark theme if no preference is stored
+    applyTheme('dark');
   }
+  
+  console.log("Theme switcher initialization complete");
 });
