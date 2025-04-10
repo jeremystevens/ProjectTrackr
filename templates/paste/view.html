@@ -107,7 +107,8 @@
                             <i class="fas fa-clock me-1"></i> 
                             Expires in: 
                             <span class="countdown expiration-countdown" 
-                                  data-expires="{{ paste.expires_at.isoformat() }}">
+                                  data-expires="{{ paste.expires_at.isoformat() }}"
+                                  data-expires-timestamp="{{ paste.expires_at.timestamp() * 1000 }}">
                                 Loading...
                             </span>
                         </span>
@@ -220,13 +221,14 @@
         });
     });
     
-    // Initialize countdown timer
+    // Initialize countdown timer with better browser compatibility
     document.querySelectorAll('.countdown').forEach(function(element) {
-        const expiresAt = new Date(element.dataset.expires);
+        // Use timestamp for better cross-browser compatibility
+        const expiresAtTimestamp = parseInt(element.dataset.expiresTimestamp);
         
         function updateCountdown() {
-            const now = new Date();
-            const diff = expiresAt - now;
+            const now = new Date().getTime();
+            const diff = expiresAtTimestamp - now;
             
             if (diff <= 0) {
                 element.innerHTML = 'Expired';
@@ -250,6 +252,7 @@
         }
         
         // Update immediately and then every second
+        console.log("Initializing countdown for expiration timestamp:", expiresAtTimestamp);
         updateCountdown();
         setInterval(updateCountdown, 1000);
     });
