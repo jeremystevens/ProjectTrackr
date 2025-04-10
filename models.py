@@ -445,15 +445,26 @@ class PasteView(db.Model):
         """
         Get or create a unique viewer ID based on session ID or IP address
         """
-        # Use session ID if available
-        if session.get('viewer_id'):
-            return session['viewer_id']
-
-        # Otherwise generate one based on IP address and a random component
-        # to protect privacy while still being consistent per visitor
-        viewer_id = str(uuid.uuid4())
-        session['viewer_id'] = viewer_id
-        return viewer_id
+        # Debug the session information
+        import logging
+        logging.debug(f"Session data: {session}")
+        
+        # Check for existing viewer_id
+        session_id = session.get('viewer_id')
+        logging.debug(f"Current session viewer_id: {session_id}")
+        
+        # If no session ID, generate a new one
+        if not session_id:
+            # Create a UUID based partly on IP address to ensure consistency for the same user
+            # But still with randomness to maintain privacy
+            import hashlib
+            hash_base = hashlib.md5(ip_address.encode()).hexdigest()[:8]
+            viewer_id = f"{hash_base}-{str(uuid.uuid4())}"
+            session['viewer_id'] = viewer_id
+            logging.debug(f"Created new viewer_id: {viewer_id}")
+            return viewer_id
+            
+        return session_id
 
 
 class PasteRevision(db.Model):

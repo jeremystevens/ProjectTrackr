@@ -136,24 +136,40 @@ def view(short_id):
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
     burn_notice = None
-    if is_burn_after_read and is_new_view and not is_paste_owner:
-        burn_notice = "This paste was set to burn after reading. It will be permanently deleted after you view it."
+    
+    # Add debug logging
+    import logging
+    logging.debug(f"Burn after read: {is_burn_after_read}")
+    logging.debug(f"Is new view: {is_new_view}")
+    logging.debug(f"Is paste owner: {is_paste_owner}")
+    
+    if is_burn_after_read:
+        logging.debug(f"This is a burn-after-read paste")
+        # Add burn notice even for paste owners, but don't delete
+        burn_notice = "This paste was set to burn after reading. It will be permanently deleted after someone else views it."
         
-        # We'll delete the paste after showing it to the user
-        @after_this_request
-        def delete_burned_paste(response):
-            try:
-                # Delete associated views first
-                PasteView.query.filter_by(paste_id=paste.id).delete()
-                
-                # Delete the paste
-                db.session.delete(paste)
-                db.session.commit()
-                app.logger.info(f"Burn after read paste {short_id} was deleted after viewing")
-            except Exception as e:
-                db.session.rollback()
-                app.logger.error(f"Error deleting burn after read paste: {e}")
-            return response
+        # Only delete if it's not the owner and this is a new view
+        if is_new_view and not is_paste_owner:
+            logging.debug(f"Will delete paste {short_id} after this request")
+            burn_notice = "This paste was set to burn after reading. It will be permanently deleted after this view."
+            
+            # We'll delete the paste after showing it to the user
+            @after_this_request
+            def delete_burned_paste(response):
+                try:
+                    logging.debug(f"Executing burn after read deletion for paste {short_id}")
+                    # Delete associated views first
+                    view_count = PasteView.query.filter_by(paste_id=paste.id).delete()
+                    logging.debug(f"Deleted {view_count} views for paste {short_id}")
+                    
+                    # Delete the paste
+                    db.session.delete(paste)
+                    db.session.commit()
+                    logging.debug(f"Successfully deleted burn after read paste {short_id}")
+                except Exception as e:
+                    db.session.rollback()
+                    logging.error(f"Error deleting burn after read paste: {e}")
+                return response
     
     return render_template('paste/view.html', paste=paste, 
                           highlighted_code=highlighted_code, css=css, form=form,
@@ -186,20 +202,31 @@ def raw(short_id):
     
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
+    
+    # Add debug logging
+    import logging
+    logging.debug(f"RAW: Burn after read: {is_burn_after_read}")
+    logging.debug(f"RAW: Is new view: {is_new_view}")
+    logging.debug(f"RAW: Is paste owner: {is_paste_owner}")
+    
     if is_burn_after_read and is_new_view and not is_paste_owner:
+        logging.debug(f"RAW: Will delete paste {short_id} after this request")
+        
         @after_this_request
         def delete_burned_paste(response):
             try:
+                logging.debug(f"RAW: Executing burn after read deletion for paste {short_id}")
                 # Delete associated views first
-                PasteView.query.filter_by(paste_id=paste.id).delete()
+                view_count = PasteView.query.filter_by(paste_id=paste.id).delete()
+                logging.debug(f"RAW: Deleted {view_count} views for paste {short_id}")
                 
                 # Delete the paste
                 db.session.delete(paste)
                 db.session.commit()
-                app.logger.info(f"Burn after read paste {short_id} was deleted after viewing")
+                logging.debug(f"RAW: Successfully deleted burn after read paste {short_id}")
             except Exception as e:
                 db.session.rollback()
-                app.logger.error(f"Error deleting burn after read paste: {e}")
+                logging.error(f"RAW: Error deleting burn after read paste: {e}")
             return response
     
     # Return plain text
@@ -236,20 +263,31 @@ def download(short_id):
     
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
+    
+    # Add debug logging
+    import logging
+    logging.debug(f"DOWNLOAD: Burn after read: {is_burn_after_read}")
+    logging.debug(f"DOWNLOAD: Is new view: {is_new_view}")
+    logging.debug(f"DOWNLOAD: Is paste owner: {is_paste_owner}")
+    
     if is_burn_after_read and is_new_view and not is_paste_owner:
+        logging.debug(f"DOWNLOAD: Will delete paste {short_id} after this request")
+        
         @after_this_request
         def delete_burned_paste(resp):
             try:
+                logging.debug(f"DOWNLOAD: Executing burn after read deletion for paste {short_id}")
                 # Delete associated views first
-                PasteView.query.filter_by(paste_id=paste.id).delete()
+                view_count = PasteView.query.filter_by(paste_id=paste.id).delete()
+                logging.debug(f"DOWNLOAD: Deleted {view_count} views for paste {short_id}")
                 
                 # Delete the paste
                 db.session.delete(paste)
                 db.session.commit()
-                app.logger.info(f"Burn after read paste {short_id} was deleted after downloading")
+                logging.debug(f"DOWNLOAD: Successfully deleted burn after read paste {short_id}")
             except Exception as e:
                 db.session.rollback()
-                app.logger.error(f"Error deleting burn after read paste: {e}")
+                logging.error(f"DOWNLOAD: Error deleting burn after read paste: {e}")
             return resp
     
     return response
@@ -284,23 +322,40 @@ def embed(short_id):
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
     burn_notice = None
-    if is_burn_after_read and is_new_view and not is_paste_owner:
-        burn_notice = "This paste was set to burn after reading. It will be permanently deleted after you view it."
+    
+    # Add debug logging
+    import logging
+    logging.debug(f"EMBED: Burn after read: {is_burn_after_read}")
+    logging.debug(f"EMBED: Is new view: {is_new_view}")
+    logging.debug(f"EMBED: Is paste owner: {is_paste_owner}")
+    
+    if is_burn_after_read:
+        logging.debug(f"EMBED: This is a burn-after-read paste")
+        # Add burn notice even for paste owners, but don't delete
+        burn_notice = "This paste was set to burn after reading. It will be permanently deleted after someone else views it."
         
-        @after_this_request
-        def delete_burned_paste(response):
-            try:
-                # Delete associated views first
-                PasteView.query.filter_by(paste_id=paste.id).delete()
-                
-                # Delete the paste
-                db.session.delete(paste)
-                db.session.commit()
-                app.logger.info(f"Burn after read paste {short_id} was deleted after embedding")
-            except Exception as e:
-                db.session.rollback()
-                app.logger.error(f"Error deleting burn after read paste: {e}")
-            return response
+        # Only delete if it's not the owner and this is a new view
+        if is_new_view and not is_paste_owner:
+            logging.debug(f"EMBED: Will delete paste {short_id} after this request")
+            burn_notice = "This paste was set to burn after reading. It will be permanently deleted after this view."
+            
+            # We'll delete the paste after showing it to the user
+            @after_this_request
+            def delete_burned_paste(response):
+                try:
+                    logging.debug(f"EMBED: Executing burn after read deletion for paste {short_id}")
+                    # Delete associated views first
+                    view_count = PasteView.query.filter_by(paste_id=paste.id).delete()
+                    logging.debug(f"EMBED: Deleted {view_count} views for paste {short_id}")
+                    
+                    # Delete the paste
+                    db.session.delete(paste)
+                    db.session.commit()
+                    logging.debug(f"EMBED: Successfully deleted burn after read paste {short_id}")
+                except Exception as e:
+                    db.session.rollback()
+                    logging.error(f"EMBED: Error deleting burn after read paste: {e}")
+                return response
     
     return render_template('paste/embed.html', paste=paste, 
                           highlighted_code=highlighted_code, css=css,
