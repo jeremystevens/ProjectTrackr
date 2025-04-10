@@ -17,15 +17,18 @@
   --input-bg-color: #ffffff;
   --input-text-color: #2c3e50;
   --input-border-color: #ced4da;
-  --link-color: #3498db;
-  --link-hover-color: #2980b9;
+  --link-color: #2980b9;
+  --link-hover-color: #1a5a82;
   --button-primary-bg: #3498db;
   --button-primary-text: white;
   --button-secondary-bg: #6c757d;
+  --button-secondary-text: white;
   --footer-bg-color: #f0f4f8;
   --footer-text-color: #6c757d;
   --syntax-tag-bg: #e3f2fd;
   --syntax-tag-text: #0d6efd;
+  --code-text-color: #212529;
+  --code-bg-color: #f8f9fa;
 }
 
 /* Dark theme variables */
