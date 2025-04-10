@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify
 from flask_login import current_user, login_required
 from datetime import datetime
-from app import db
+from app import db, limiter
 from models import Comment, Paste, User
 from forms import CommentForm, CommentEditForm
 from utils import sanitize_html
@@ -10,6 +10,7 @@ comment_bp = Blueprint('comment', __name__)
 
 @comment_bp.route('/paste/<short_id>/comment', methods=['POST'])
 @login_required
+@limiter.limit("30 per hour")
 def add_comment(short_id):
     """Add a comment to a paste"""
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
@@ -49,6 +50,7 @@ def add_comment(short_id):
 
 @comment_bp.route('/comment/<int:comment_id>/edit', methods=['GET', 'POST'])
 @login_required
+@limiter.limit("30 per hour")
 def edit_comment(comment_id):
     """Edit an existing comment"""
     comment = Comment.query.get_or_404(comment_id)
@@ -83,6 +85,7 @@ def edit_comment(comment_id):
 
 @comment_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required
+@limiter.limit("15 per hour")
 def delete_comment(comment_id):
     """Delete a comment"""
     comment = Comment.query.get_or_404(comment_id)

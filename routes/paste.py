@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
-from app import db, app
+from app import db, app, limiter
 from models import Paste, User, PasteView, Comment
 from forms import PasteForm, CommentForm
 from utils import generate_short_id, highlight_code, sanitize_html
@@ -16,6 +16,7 @@ def index():
     return render_template('index.html', form=form, recent_pastes=recent_pastes)
 
 @paste_bp.route('/create', methods=['POST'])
+@limiter.limit("20 per hour")
 def create():
     form = PasteForm()
     if form.validate_on_submit():
@@ -163,6 +164,7 @@ def embed(short_id):
 
 @paste_bp.route('/edit/<short_id>', methods=['GET', 'POST'])
 @login_required
+@limiter.limit("20 per hour")
 def edit(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
@@ -207,6 +209,7 @@ def edit(short_id):
 
 @paste_bp.route('/delete/<short_id>', methods=['POST'])
 @login_required
+@limiter.limit("10 per hour")
 def delete(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
