@@ -222,3 +222,28 @@ html {
 pre {
   background-color: var(--hljs-bg) !important;
 }
+
+/* Syntax highlighting preview styles */
+.syntax-preview {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    padding: 1rem;
+    background-color: var(--bs-body-bg);
+    max-height: 200px;
+    overflow: auto;
+    position: relative;
+}
+
+.syntax-preview .preview-code {
+    margin: 0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.syntax-preview pre {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+}

@@ -485,6 +485,24 @@ def get_template(template_id):
         'content': template.content,
         'syntax': template.syntax
     }
+    
+@paste_bp.route('/api/highlight', methods=['POST'])
+def highlight_preview():
+    """API endpoint for syntax highlighting preview"""
+    content = request.form.get('content', '')
+    syntax = request.form.get('syntax', 'text')
+    
+    if not content.strip():
+        return {'highlighted': '<div class="text-muted">No content to highlight</div>', 'css': ''}
+    
+    # Get highlighted code
+    highlighted_code, css = highlight_code(content, syntax)
+    
+    # Return the highlighted code as JSON
+    return {
+        'highlighted': highlighted_code,
+        'css': css
+    }
 
 @paste_bp.route('/<short_id>/fork', methods=['POST'])
 @limiter.limit("20 per hour")

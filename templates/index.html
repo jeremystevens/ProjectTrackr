@@ -53,6 +53,24 @@
                     <div class="mb-3 form-check">
                         {{ form.comments_enabled(class="form-check-input") }}
                         <label class="form-check-label" for="comments_enabled">Enable comments</label>
+                    <div class="mb-3 form-check">
+                        {{ form.burn_after_read(class="form-check-input") }}
+                        <label class="form-check-label" for="burn_after_read">{{ form.burn_after_read.label.text }}</label>
+                        <small class="form-text text-muted d-block">This paste will be permanently deleted after it is viewed for the first time by someone other than you.</small>
+                    </div>
+
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.burn_after_read(class="form-check-input") }}
+                        <label class="form-check-label" for="burn_after_read">{{ form.burn_after_read.label.text }}</label>
+                        <small class="form-text text-muted d-block">This paste will be permanently deleted after it's viewed for the first time by someone other than you.</small>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.burn_after_read(class="form-check-input") }}
+                        <label class="form-check-label" for="burn_after_read">{{ form.burn_after_read.label.text }}</label>
+                        <small class="form-text text-muted d-block">This paste will be permanently deleted after it's viewed for the first time by someone other than you.</small>
                     </div>
                     
                     <div id="syntax-preview" class="syntax-preview mb-3">
@@ -183,6 +201,33 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if (content.trim() === "") {
       previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+      return;
+    }
+
+    // Send the content to the server for highlighting
+    const formData = new FormData();
+    formData.append("content", content);
+    formData.append("syntax", syntax);
+
+    previewContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div></div>';
+
+    fetch("/api/highlight", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      previewContainer.innerHTML = '<div class="preview-code">' + data.highlighted + '</div>';
+    })
+    .catch(error => {
+      console.error("Error getting syntax preview:", error);
+      previewContainer.innerHTML = '<div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-2"></i>Error generating preview.
+      </div>';
+    });
+  }
       return;
     }
     
