@@ -37,7 +37,7 @@
                             {% for revision in revisions %}
                                 <tr>
                                     <td>{{ revision.revision_number }}</td>
-                                    <td>{{ revision.created_at | datetime }}</td>
+                                    <td>{{ revision.created_at | timesince }}</td>
                                     <td>{{ revision.title }}</td>
                                     <td>
                                         <span class="badge bg-secondary text-white">{{ revision.syntax }}</span>
