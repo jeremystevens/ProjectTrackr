@@ -64,12 +64,23 @@ def create():
                 # Increment template usage count
                 template.increment_usage()
         
+        # Test if we're reaching this code block
+        import logging
+        logging.debug(f"Syntax before detection check: {syntax}")
+        
         # If syntax is set to 'text' (the default), try to auto-detect the language
         if syntax == 'text' and content.strip():
             from utils import detect_language
             from flask import current_app
+            
+            # Debug the content that we're attempting to detect
+            sample = content[:100] + ("..." if len(content) > 100 else "")
+            logging.debug(f"Content sample for detection: {sample}")
+            
             detected_syntax = detect_language(content)
             current_app.logger.info(f"Auto-detected language: {detected_syntax}")
+            logging.debug(f"Auto-detection returned: {detected_syntax}")
+            
             syntax = detected_syntax
                 
         paste = Paste(

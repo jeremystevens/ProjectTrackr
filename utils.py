@@ -57,26 +57,40 @@ def detect_language(code):
     Returns the alias of the detected lexer (e.g., 'python', 'javascript', etc.)
     Falls back to 'text' if detection fails
     """
+    import logging
+    from flask import current_app
+    
     try:
         # Ensure code is not empty to avoid errors
         if not code or code.strip() == '':
+            logging.debug("Empty code, returning 'text'")
             return 'text'
             
+        # Add detailed logging
+        logging.debug(f"Attempting to detect language for code: {code[:100]}...")
+        
         # Attempt to guess the lexer
         lexer = guess_lexer(code)
         
         # Get the aliases (short names) of the detected lexer
         aliases = lexer.aliases
         
+        # Log lexer info for debugging
+        logging.debug(f"Detected lexer: {lexer.name}")
+        logging.debug(f"Lexer aliases: {aliases}")
+        
         # Return the first alias, which is typically the most common one
         # (e.g., 'py' or 'python' for Python code)
         if aliases and len(aliases) > 0:
+            logging.debug(f"Using alias: {aliases[0]}")
             return aliases[0]
         
         # If no aliases are found, return the lexer name
+        logging.debug(f"No aliases found, using lexer name: {lexer.name.lower()}")
         return lexer.name.lower()
     except Exception as e:
         # Log the error and fall back to 'text'
+        logging.error(f"Language detection failed: {str(e)}")
         current_app.logger.warning(f"Language detection failed: {str(e)}")
         return 'text'
 
