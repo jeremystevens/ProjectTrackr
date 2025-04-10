@@ -398,6 +398,28 @@ class PasteView(db.Model):
         return viewer_id
 
 
+class PasteRevision(db.Model):
+    """
+    Model for paste revisions, tracking the edit history of pastes.
+    Only available for registered users.
+    """
+    __tablename__ = 'paste_revisions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    paste_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    syntax = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    revision_number = db.Column(db.Integer, nullable=False)
+    edit_description = db.Column(db.String(255), nullable=True)
+    
+    # Relationship back to Paste
+    paste = db.relationship('Paste', backref=db.backref('revisions', lazy='dynamic', order_by='PasteRevision.revision_number.desc()'))
+    
+    def __repr__(self):
+        return f'<PasteRevision {self.revision_number} of paste {self.paste_id}>'
+
 
 class Comment(db.Model):
     """

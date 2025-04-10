@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
 from app import db, app, limiter
-from models import Paste, User, PasteView, Comment
+from models import Paste, User, PasteView, Comment, PasteRevision
 from forms import PasteForm, CommentForm
 from utils import generate_short_id, highlight_code, sanitize_html
 
@@ -188,6 +188,11 @@ def edit(short_id):
         # We don't pre-fill expiration as it's relative
         
     if form.validate_on_submit():
+        # For registered users only: save current state as a revision before updating
+        if current_user.is_authenticated:
+            paste.save_revision(description=form.edit_description.data)
+            
+        # Update paste content
         paste.title = form.title.data
         paste.content = form.content.data
         paste.syntax = form.syntax.data
@@ -265,3 +270,52 @@ def archive():
     ).order_by(Paste.created_at.desc()).paginate(page=page, per_page=20)
     
     return render_template('archive/index.html', pastes=pastes)
+
+@paste_bp.route('/<short_id>/revisions')
+@login_required
+def revisions(short_id):
+    """View revision history for a paste (registered users only)"""
+    paste = Paste.query.filter_by(short_id=short_id).first_or_404()
+    
+    # Check if user has permission to view revisions
+    if current_user.id != paste.user_id:
+        abort(403)
+        
+    # Get all revisions of this paste
+    revisions = paste.get_revisions()
+    
+    # Create form for CSRF token
+    from flask_wtf import FlaskForm
+    form = FlaskForm()
+    
+    return render_template('paste/revisions.html', paste=paste, revisions=revisions, form=form)
+
+@paste_bp.route('/<short_id>/revision/<int:revision_number>')
+@login_required
+def view_revision(short_id, revision_number):
+    """View a specific revision of a paste (registered users only)"""
+    paste = Paste.query.filter_by(short_id=short_id).first_or_404()
+    
+    # Check if user has permission to view revisions
+    if current_user.id != paste.user_id:
+        abort(403)
+        
+    # Get the specific revision
+    revision = PasteRevision.query.filter_by(
+        paste_id=paste.id, 
+        revision_number=revision_number
+    ).first_or_404()
+    
+    # Syntax highlighting
+    highlighted_code, css = highlight_code(revision.content, revision.syntax)
+    
+    # Create form for CSRF token
+    from flask_wtf import FlaskForm
+    form = FlaskForm()
+    
+    return render_template('paste/view_revision.html', 
+                          paste=paste, 
+                          revision=revision, 
+                          highlighted_code=highlighted_code, 
+                          css=css, 
+                          form=form)
