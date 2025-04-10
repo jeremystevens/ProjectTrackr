@@ -145,6 +145,7 @@
 {% block scripts %}
 {{ super() }}
 <script>
+<script>
 document.addEventListener("DOMContentLoaded", function() {
   // Select elements
   const templateSelector = document.getElementById("template-selector");
@@ -192,20 +193,23 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     
-    // Create a new FormData instance
-    const formData = new FormData();
-    
-    // Add the data
-    formData.append("content", content);
-    formData.append("syntax", syntax);
-    
     // Show loading indicator
     previewContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     
     // Make the fetch request
     fetch("/api/highlight", {
       method: "POST",
-      body: formData
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken
+      },
+      body: new URLSearchParams({
+        'content': content.substring(0, 500),  // Limit to 500 chars for preview
+        'syntax': syntax
+      })
     })
     .then(response => {
       console.log("Response status:", response.status);
@@ -213,7 +217,23 @@ document.addEventListener("DOMContentLoaded", function() {
     })
     .then(data => {
       console.log("Got highlight data:", data);
+      
+      // Add the highlighted HTML and CSS
+      if (data.css && !document.getElementById('pygments-css')) {
+        const style = document.createElement('style');
+        style.id = 'pygments-css';
+        style.textContent = data.css;
+        document.head.appendChild(style);
+      }
+      
       previewContainer.innerHTML = '<div class="preview-code">' + data.highlighted + '</div>';
+      
+      if (content.length > 500) {
+        const ellipsis = document.createElement('div');
+        ellipsis.className = 'text-muted';
+        ellipsis.textContent = '... (preview truncated)';
+        previewContainer.appendChild(ellipsis);
+      }
     })
     .catch(error => {
       console.error("Error getting syntax preview:", error);
