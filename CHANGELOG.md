@@ -31,6 +31,9 @@ All notable changes to the FlaskBin project will be documented in this file. The
 - Implemented automatic programming language detection for pastes
 - Fixed shadowban toggle functionality in admin panel
 - Enhanced content flagging system with clear UI and improved button styling
+- Added comprehensive paste export functionality with multiple format options (JSON, CSV, plaintext)
+- Added paste import functionality with support for JSON and CSV formats
+- Added dedicated user interface for import/export operations with collection filtering
 
 ## [1.0.0] - 2025-04-09
 ### Added

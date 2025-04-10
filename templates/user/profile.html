@@ -54,6 +54,12 @@
                     <a href="{{ url_for('user.edit_profile') }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-edit me-1"></i> Edit Profile
                     </a>
+                    <a href="{{ url_for('user.export_pastes') }}" class="btn btn-sm btn-outline-success ms-2">
+                        <i class="fas fa-file-export me-1"></i> Export Pastes
+                    </a>
+                    <a href="{{ url_for('user.import_pastes') }}" class="btn btn-sm btn-outline-info ms-2">
+                        <i class="fas fa-file-import me-1"></i> Import Pastes
+                    </a>
                 </div>
             {% endif %}
         </div>

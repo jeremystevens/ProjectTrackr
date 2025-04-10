@@ -538,7 +538,8 @@ def import_pastes():
                     success_count += 1
                 except Exception as e:
                     error_count += 1
-                    app.logger.error(f"Error importing paste from CSV: {str(e)}")
+                    import logging
+                    logging.error(f"Error importing paste from CSV: {str(e)}")
             
             db.session.commit()
         

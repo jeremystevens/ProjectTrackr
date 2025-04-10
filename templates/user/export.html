@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+
+{% block title %}Export Pastes - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0"><i class="bi bi-box-arrow-up"></i> Export Pastes</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export your pastes in various formats. Choose the options below to customize your export.</p>
+                    
+                    <form method="POST" action="{{ url_for('user.export_pastes') }}">
+                        {{ csrf_token() }}
+                        
+                        <div class="mb-3">
+                            <label for="format" class="form-label">Export Format</label>
+                            <select class="form-select" id="format" name="format" required>
+                                <option value="json" selected>JSON (Best for reimporting)</option>
+                                <option value="csv">CSV (Spreadsheet format)</option>
+                                <option value="plaintext">Plain Text (Simple format)</option>
+                            </select>
+                            <div class="form-text">
+                                <ul class="mt-2">
+                                    <li><strong>JSON:</strong> Complete export with all metadata, can be reimported</li>
+                                    <li><strong>CSV:</strong> Tabular format, can be opened in spreadsheet applications</li>
+                                    <li><strong>Plain Text:</strong> Simple text format with basic metadata as comments</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="collection_id" class="form-label">Filter by Collection</label>
+                            <select class="form-select" id="collection_id" name="collection_id">
+                                <option value="0">All Collections</option>
+                                {% for collection in collections %}
+                                <option value="{{ collection.id }}">{{ collection.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select a specific collection to export or choose "All Collections".</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="include_private" name="include_private">
+                            <label class="form-check-label" for="include_private">Include Private Pastes</label>
+                            <div class="form-text">If unchecked, only public and unlisted pastes will be exported.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-download me-2"></i> Export Pastes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Note:</strong> Exported files may be large depending on the number of pastes and their content.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <a href="{{ url_for('user.profile', username=current_user.username) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
