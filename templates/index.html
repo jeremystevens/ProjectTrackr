@@ -61,6 +61,14 @@
                         <small class="form-text text-muted d-block">This paste will be permanently deleted after it is viewed for the first time by someone other than you.</small>
                     </div>
                     
+                    {% if current_user.is_authenticated %}
+                    <div class="mb-3 form-check">
+                        {{ form.post_as_guest(class="form-check-input") }}
+                        <label class="form-check-label" for="post_as_guest">Paste as a guest</label>
+                    </div>
+                    {% endif %}
+                    </div>
+                    
                     <div id="syntax-preview" class="syntax-preview mb-3">
                         <div class="text-muted">Enter some code to see syntax highlighting preview</div>
                     </div>

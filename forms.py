@@ -165,6 +165,7 @@ class PasteForm(FlaskForm):
     ])
     comments_enabled = BooleanField('Enable Comments', default=True)
     burn_after_read = BooleanField('Burn After Read (delete after first view)', default=False)
+    post_as_guest = BooleanField('Paste as a guest', default=False)
     edit_description = StringField('Edit Description (for existing pastes)', validators=[Optional(), Length(max=255)])
     submit = SubmitField('Save Paste')
     
