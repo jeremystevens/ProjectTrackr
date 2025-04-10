@@ -67,6 +67,7 @@ def create():
         # If syntax is set to 'text' (the default), try to auto-detect the language
         if syntax == 'text' and content.strip():
             from utils import detect_language
+            from flask import current_app
             detected_syntax = detect_language(content)
             current_app.logger.info(f"Auto-detected language: {detected_syntax}")
             syntax = detected_syntax
@@ -438,7 +439,17 @@ def edit(short_id):
         # Update paste content
         paste.title = form.title.data
         paste.content = form.content.data
-        paste.syntax = form.syntax.data
+        
+        # If syntax is set to 'text' (the default), try to auto-detect the language
+        syntax = form.syntax.data
+        if syntax == 'text' and paste.content.strip():
+            from utils import detect_language
+            from flask import current_app
+            detected_syntax = detect_language(paste.content)
+            current_app.logger.info(f"Auto-detected language during edit: {detected_syntax}")
+            syntax = detected_syntax
+            
+        paste.syntax = syntax
         paste.visibility = form.visibility.data
         paste.comments_enabled = form.comments_enabled.data
         paste.burn_after_read = form.burn_after_read.data
@@ -613,6 +624,15 @@ def highlight_preview():
     if not content or not content.strip():
         logging.debug("No content to highlight")
         return {'highlighted': '<div class="text-muted">No content to highlight</div>', 'css': ''}
+        
+    # If syntax is set to 'text', try to auto-detect the language
+    if syntax == 'text' and content.strip():
+        from utils import detect_language
+        from flask import current_app
+        detected_syntax = detect_language(content)
+        current_app.logger.info(f"Auto-detected language in preview: {detected_syntax}")
+        syntax = detected_syntax
+        logging.debug(f"Using auto-detected syntax: {syntax}")
     
     try:
         # Get highlighted code
