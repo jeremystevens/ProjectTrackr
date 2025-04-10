@@ -27,11 +27,22 @@
             <div class="comment-content">{{ comment.content|safe }}</div>
         </div>
         <div class="card-footer text-muted">
-            {% if current_user.is_authenticated and paste.comments_enabled %}
-            <a href="{{ url_for('comment.reply_form', comment_id=comment.id) }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-reply"></i> Reply
-            </a>
-            {% endif %}
+            <div class="d-flex justify-content-between">
+                <div>
+                    {% if current_user.is_authenticated and paste.comments_enabled %}
+                    <a href="{{ url_for('comment.reply_form', comment_id=comment.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-reply"></i> Reply
+                    </a>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if current_user.is_authenticated and current_user.id != comment.user_id %}
+                    <a href="{{ url_for('comment.flag_comment', comment_id=comment.id) }}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-flag"></i> Report
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
     
