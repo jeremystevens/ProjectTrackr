@@ -1,12 +1,12 @@
 import os
 import logging
 from datetime import datetime
-from flask import Flask, g
+from flask import Flask, g, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -23,6 +23,10 @@ csrf = CSRFProtect()
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Needed for url_for to generate with https
+
+# Configure custom error pages
+app.config['TRAP_HTTP_EXCEPTIONS'] = True
+app.config['ERROR_INCLUDE_MESSAGE'] = True
 
 # Configure the database
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
@@ -117,3 +121,70 @@ def utility_processor():
         'now': datetime.utcnow(),
         'is_ten_minute_expiration': is_ten_minute_expiration
     }
+
+# Error handlers
+@app.errorhandler(400)
+def bad_request_error(error):
+    """Handle 400 Bad Request errors"""
+    app.logger.error(f"400 Error: {error}")
+    error_details = str(error) if app.debug else None
+    return render_template('errors/400.html', error_details=error_details), 400
+
+@app.errorhandler(401)
+def unauthorized_error(error):
+    """Handle 401 Unauthorized errors"""
+    app.logger.error(f"401 Error: {error}")
+    return render_template('errors/401.html'), 401
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Handle 403 Forbidden errors"""
+    app.logger.error(f"403 Error: {error}")
+    return render_template('errors/403.html'), 403
+
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 Not Found errors"""
+    app.logger.error(f"404 Error: {error}")
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(405)
+def method_not_allowed_error(error):
+    """Handle 405 Method Not Allowed errors"""
+    app.logger.error(f"405 Error: {error}")
+    allowed_methods = error.get_headers().get('Allow', '').split(', ') if hasattr(error, 'get_headers') else []
+    return render_template('errors/405.html', allowed_methods=allowed_methods), 405
+
+@app.errorhandler(429)
+def too_many_requests_error(error):
+    """Handle 429 Too Many Requests errors"""
+    app.logger.error(f"429 Error: {error}")
+    # Extract retry-after value if available
+    retry_after = None
+    if hasattr(error, 'description') and isinstance(error.description, dict):
+        retry_after = error.description.get('retry_after')
+    return render_template('errors/429.html', retry_after=retry_after), 429
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    """Handle 500 Internal Server errors"""
+    # Generate a unique error ID for tracking
+    error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+    app.logger.critical(f"500 Error ID {error_id}: {error}")
+    app.logger.exception("Exception details:")
+    return render_template('errors/500.html', error_id=error_id), 500
+
+@app.errorhandler(Exception)
+def handle_unhandled_exception(error):
+    """Handle any unhandled exceptions"""
+    error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+    app.logger.critical(f"Unhandled Exception ID {error_id}: {error}")
+    app.logger.exception("Exception details:")
+    return render_template('errors/500.html', error_id=error_id), 500
+
+# CSRF error handler
+@app.errorhandler(CSRFError)
+def csrf_error(error):
+    """Handle CSRF errors"""
+    app.logger.error(f"CSRF Error: {error}")
+    return render_template('errors/csrf_error.html'), 400
