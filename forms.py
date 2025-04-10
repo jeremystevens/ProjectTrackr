@@ -188,7 +188,7 @@ class PasteForm(FlaskForm):
         self.template.choices = template_choices
         
         # Populate collection choices if user is authenticated
-        collection_choices = [(0, 'None - No Collection')]
+        collection_choices = [(0, 'No Folder Selected')]
         
         if current_user and current_user.is_authenticated:
             from models import PasteCollection
