@@ -14,7 +14,7 @@
                     <p class="card-text">Import pastes from a file. Supported formats include JSON and CSV.</p>
                     
                     <form method="POST" action="{{ url_for('user.import_pastes') }}" enctype="multipart/form-data">
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <div class="mb-3">
                             <label for="import_file" class="form-label">Select File to Import</label>

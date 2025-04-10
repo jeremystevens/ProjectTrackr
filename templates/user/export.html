@@ -14,7 +14,7 @@
                     <p class="card-text">Export your pastes in various formats. Choose the options below to customize your export.</p>
                     
                     <form method="POST" action="{{ url_for('user.export_pastes') }}">
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <div class="mb-3">
                             <label for="format" class="form-label">Export Format</label>
