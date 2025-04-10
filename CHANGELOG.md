@@ -3,6 +3,7 @@
 All notable changes to the FlaskBin project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+- Added dark/light theme toggle with automatic mode detection
 - Added paste templates for common layouts and code snippets
 - Added paste templates for common layouts and code snippets
 - Added paste forking functionality with visibility options

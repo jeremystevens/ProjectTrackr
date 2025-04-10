@@ -2,7 +2,6 @@
 This document tracks future enhancements and features planned for the FlaskBin application.
 ## Medium Priority
 - [ ] [Undecided] Add support for image/file uploads within pastes (content moderation concerns)
-- [ ] Implement a dark/light theme toggle
 ## Low Priority
 - [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
@@ -50,3 +49,4 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Implement password reset functionality with security questions
 - [x] Implement account lockout protection after failed attempts
 - [x] Add password strength requirements and validation
+- [x] Implement a dark/light theme toggle with customized styling

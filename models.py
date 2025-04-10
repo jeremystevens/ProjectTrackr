@@ -553,3 +553,76 @@ class PasteTemplate(db.Model):
         """Increment the usage count for this template"""
         self.usage_count += 1
         db.session.commit()
+
+
+class Notification(db.Model):
+    """
+    Notification model for user notification system.
+    Stores notifications for users about various events (comments, forks, mentions, etc.)
+    """
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    paste_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
+    type = db.Column(db.String(50), nullable=False)  # comment, fork, mention, system
+    message = db.Column(db.Text, nullable=False)
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], 
+                           backref=db.backref('notifications', lazy='dynamic'))
+    sender = db.relationship('User', foreign_keys=[sender_id], 
+                             backref=db.backref('sent_notifications', lazy='dynamic'))
+    paste = db.relationship('Paste', backref=db.backref('notifications', lazy='dynamic'))
+    comment = db.relationship('Comment', backref=db.backref('notifications', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<Notification {self.id}: {self.type} for user {self.user_id}>'
+    
+    @staticmethod
+    def create_notification(user_id, type, message, sender_id=None, paste_id=None, comment_id=None):
+        """
+        Create a new notification
+        """
+        notification = Notification(
+            user_id=user_id,
+            sender_id=sender_id,
+            paste_id=paste_id,
+            comment_id=comment_id,
+            type=type,
+            message=message
+        )
+        db.session.add(notification)
+        db.session.commit()
+        return notification
+    
+    @staticmethod
+    def mark_as_read(notification_id):
+        """
+        Mark a notification as read
+        """
+        notification = Notification.query.get(notification_id)
+        if notification:
+            notification.read = True
+            db.session.commit()
+            return True
+        return False
+    
+    @staticmethod
+    def mark_all_as_read(user_id):
+        """
+        Mark all notifications for a user as read
+        """
+        Notification.query.filter_by(user_id=user_id, read=False).update({'read': True})
+        db.session.commit()
+        
+    @staticmethod
+    def get_unread_count(user_id):
+        """
+        Get the count of unread notifications for a user
+        """
+        return Notification.query.filter_by(user_id=user_id, read=False).count()
