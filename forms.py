@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, SelectField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField, BooleanField, SubmitField, HiddenField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, URL, Optional, ValidationError
 import re
 from models import User
@@ -112,6 +112,7 @@ class PasteForm(FlaskForm):
         ('unlisted', 'Unlisted'),
         ('private', 'Private')
     ])
+    comments_enabled = BooleanField('Enable Comments', default=True)
     submit = SubmitField('Create Paste')
 
 class ProfileEditForm(FlaskForm):
@@ -201,3 +202,22 @@ class ResetPasswordForm(FlaskForm):
             
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password.data):
             raise ValidationError('Password must contain at least one special character.')
+
+
+class CommentForm(FlaskForm):
+    """Form for adding comments to pastes"""
+    content = TextAreaField('Comment', validators=[
+        DataRequired(), 
+        Length(min=1, max=2000, message="Comment must be between 1 and 2000 characters.")
+    ])
+    parent_id = HiddenField('Parent Comment ID')
+    submit = SubmitField('Post Comment')
+
+
+class CommentEditForm(FlaskForm):
+    """Form for editing existing comments"""
+    content = TextAreaField('Edit Comment', validators=[
+        DataRequired(), 
+        Length(min=1, max=2000, message="Comment must be between 1 and 2000 characters.")
+    ])
+    submit = SubmitField('Update Comment')

@@ -168,6 +168,12 @@ class Paste(db.Model):
     visibility = db.Column(db.String(20), default='public')  # public, private, unlisted
     short_id = db.Column(db.String(16), unique=True, nullable=False)
     size = db.Column(db.Integer, default=0)
+    comments_enabled = db.Column(db.Boolean, default=True)
+    
+    # Relationship for comments
+    comments = db.relationship('Comment', backref='paste', lazy='dynamic', 
+                               cascade='all, delete-orphan', 
+                               primaryjoin="and_(Paste.id==Comment.paste_id, Comment.parent_id==None)")
 
     def is_expired(self):
         if self.expires_at is None:
@@ -335,3 +341,29 @@ class PasteView(db.Model):
         viewer_id = str(uuid.uuid4())
         session['viewer_id'] = viewer_id
         return viewer_id
+
+
+class Comment(db.Model):
+    """
+    Model for comments on pastes, allowing users to discuss and collaborate on code snippets.
+    """
+    __tablename__ = 'comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    paste_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('comments', lazy='dynamic'))
+    replies = db.relationship(
+        'Comment', 
+        backref=db.backref('parent', remote_side=[id]),
+        lazy='dynamic'
+    )
+    
+    def __repr__(self):
+        return f'<Comment {self.id}: by {self.user.username if self.user else "unknown"} on paste {self.paste_id}>'
