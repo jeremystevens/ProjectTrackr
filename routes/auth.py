@@ -2,13 +2,14 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
 from datetime import datetime
-from app import db
+from app import db, limiter
 from models import User
 from forms import LoginForm, RegistrationForm, RequestPasswordResetForm, SecurityAnswerForm, ResetPasswordForm
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('paste.index'))
@@ -65,6 +66,7 @@ def login():
     return render_template('auth/login.html', form=form)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('paste.index'))
@@ -101,6 +103,7 @@ def logout():
     return redirect(url_for('paste.index'))
 
 @auth_bp.route('/reset_password', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
 def reset_request():
     if current_user.is_authenticated:
         return redirect(url_for('paste.index'))
@@ -115,6 +118,7 @@ def reset_request():
     return render_template('auth/reset_request.html', form=form)
     
 @auth_bp.route('/reset_password/security_question/<int:user_id>', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
 def security_question(user_id):
     if current_user.is_authenticated:
         return redirect(url_for('paste.index'))

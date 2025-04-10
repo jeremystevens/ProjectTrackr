@@ -21,4 +21,5 @@ dependencies = [
     "openai>=1.72.0",
     "oauthlib>=3.2.2",
     "twilio>=9.5.2",
+    "flask-limiter>=3.12",
 ]

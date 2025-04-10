@@ -1,12 +1,14 @@
 import os
 import logging
 from datetime import datetime
-from flask import Flask, g, render_template
+from flask import Flask, g, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,6 +20,12 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 csrf = CSRFProtect()
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
 
 # Create the application
 app = Flask(__name__)
@@ -40,6 +48,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 login_manager.init_app(app)
 csrf.init_app(app)
+limiter.init_app(app)
 login_manager.login_view = 'auth.login'
 login_manager.login_message_category = 'info'
 

@@ -5,8 +5,8 @@ This document tracks future enhancements and features planned for the FlaskBin a
 ## High Priority
 
 - [ ] Add email verification for new user registrations
-- [ ] Improve error pages with more helpful messages
-- [ ] Add paste comments/discussion functionality
+- [x] Improve error pages with more helpful messages
+- [x] Add paste comments/discussion functionality
 - [ ] Implement rate limiting to prevent abuse
 
 ## Medium Priority
@@ -56,3 +56,5 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Add password strength meter to registration form
 - [x] Implement security answer validation to prevent common answers
 - [x] Add two-factor security for account recovery (security questions)
+- [x] Implement comprehensive error handling with custom error pages
+- [x] Create comment system with reply functionality
