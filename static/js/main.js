@@ -111,14 +111,13 @@ document.addEventListener('DOMContentLoaded', function() {
           const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
           const seconds = Math.floor((distance % (1000 * 60)) / 1000);
           
-          // Format the countdown with concise format (e.g., 29D 18H 25M 8S)
+          // Format the countdown with concise format (29D 18H 25M 8S)
           let countdownText = '';
           
           if (days > 0) {
             countdownText += `${days}D `;
           }
           
-          // Always show hours, minutes, and seconds
           countdownText += `${hours}H ${minutes}M ${seconds}S`;
           
           element.textContent = countdownText;
