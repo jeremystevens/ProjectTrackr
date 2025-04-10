@@ -489,20 +489,39 @@ def get_template(template_id):
 @paste_bp.route('/api/highlight', methods=['POST'])
 def highlight_preview():
     """API endpoint for syntax highlighting preview"""
+    import logging
+    logging.debug("API highlight called")
+    
+    # Log the request data for debugging
+    logging.debug(f"Request form: {request.form}")
+    logging.debug(f"Request data: {request.get_data(as_text=True)}")
+    
     content = request.form.get('content', '')
     syntax = request.form.get('syntax', 'text')
     
-    if not content.strip():
+    logging.debug(f"Content: {content[:100]}...")  # Log first 100 chars
+    logging.debug(f"Syntax: {syntax}")
+    
+    if not content or not content.strip():
+        logging.debug("No content to highlight")
         return {'highlighted': '<div class="text-muted">No content to highlight</div>', 'css': ''}
     
-    # Get highlighted code
-    highlighted_code, css = highlight_code(content, syntax)
-    
-    # Return the highlighted code as JSON
-    return {
-        'highlighted': highlighted_code,
-        'css': css
-    }
+    try:
+        # Get highlighted code
+        highlighted_code, css = highlight_code(content, syntax)
+        logging.debug(f"Highlighted code length: {len(highlighted_code)}")
+        
+        # Return the highlighted code as JSON
+        return {
+            'highlighted': highlighted_code,
+            'css': css
+        }
+    except Exception as e:
+        logging.error(f"Error highlighting code: {e}")
+        return {
+            'highlighted': f'<div class="alert alert-danger">Error highlighting code: {e}</div>',
+            'css': ''
+        }
 
 @paste_bp.route('/<short_id>/fork', methods=['POST'])
 @limiter.limit("20 per hour")

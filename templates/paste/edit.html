@@ -34,7 +34,7 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="syntax" class="form-label">Syntax Highlighting</label>
-                    <select class="form-select" id="syntax" name="syntax">
+                    <select class="form-select" id="syntax-selector" name="syntax">
                         <option value="text" {% if form.syntax.data == 'text' %}selected{% endif %}>Plain Text</option>
                         <option value="python" {% if form.syntax.data == 'python' %}selected{% endif %}>Python</option>
                         <option value="javascript" {% if form.syntax.data == 'javascript' %}selected{% endif %}>JavaScript</option>
@@ -92,6 +92,13 @@
                 <label class="form-check-label" for="comments_enabled">Enable comments</label>
             </div>
             
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="burn_after_read" name="burn_after_read" 
+                       {% if form.burn_after_read.data %}checked{% endif %}>
+                <label class="form-check-label" for="burn_after_read">Burn After Read (delete after first view)</label>
+                <small class="form-text text-muted d-block">This paste will be permanently deleted after it is viewed for the first time by someone other than you.</small>
+            </div>
+            
             <div class="mb-3">
                 <label for="edit_description" class="form-label">Edit Description</label>
                 <input type="text" class="form-control" id="edit_description" name="edit_description" 
@@ -130,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Select elements
   const templateSelector = document.getElementById("template-selector");
   const contentArea = document.getElementById("content-area");
-  const syntaxSelector = document.getElementById("syntax");
+  const syntaxSelector = document.getElementById("syntax-selector");
   const helpText = document.getElementById("templateHelp");
   
   // Add event listener to template selector
@@ -164,52 +171,63 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Syntax preview functionality
   function updateSyntaxPreview() {
-  function updateSyntaxPreview() {
-    const content = contentArea.value;
     const content = contentArea.value;
     const syntax = syntaxSelector.value;
-    const syntax = syntaxSelector.value;
-    const previewContainer = document.getElementById("syntax-preview");
     const previewContainer = document.getElementById("syntax-preview");
     
-    
-    if (content.trim() === "") {
-    if (content.trim() === "") {
-      previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+    if (!content || content.trim() === "") {
       previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
       return;
-      return;
-    }
     }
     
+    // Create a new FormData instance
+    const formData = new FormData();
     
-    previewContainer.innerHTML = "<div class=\"alert alert-info\">" +
-    previewContainer.innerHTML = "<div class=\"alert alert-info\">" +
-      "<i class=\"fas fa-info-circle me-2\"></i>" +
-      "<i class=\"fas fa-info-circle me-2\"></i>" +
-      "A preview would be shown here with " + syntax + " syntax highlighting." +
-      "A preview would be shown here with " + syntax + " syntax highlighting." +
-    "</div>";
-    "</div>";
+    // Add the data
+    formData.append("content", content);
+    formData.append("syntax", syntax);
+    
+    // Show loading indicator
+    previewContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    
+    // Make the fetch request
+    fetch("/api/highlight", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => {
+      console.log("Response status:", response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log("Got highlight data:", data);
+      previewContainer.innerHTML = '<div class="preview-code">' + data.highlighted + '</div>';
+    })
+    .catch(error => {
+      console.error("Error getting syntax preview:", error);
+      previewContainer.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error generating preview.</div>';
+    });
   }
-  }
-  
   
   // Set up syntax preview events
-  // Set up syntax preview events
-  contentArea.addEventListener("input", updateSyntaxPreview);
-  contentArea.addEventListener("input", updateSyntaxPreview);
-  syntaxSelector.addEventListener("change", updateSyntaxPreview);
+  contentArea.addEventListener("input", debounce(updateSyntaxPreview, 500));
   syntaxSelector.addEventListener("change", updateSyntaxPreview);
   
+  // Debounce function to prevent too many requests
+  function debounce(func, wait) {
+    let timeout;
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(context, args);
+      }, wait);
+    };
+  }
   
   // Initial syntax preview update
-  // Initial syntax preview update
-  updateSyntaxPreview();
-  updateSyntaxPreview();
-});
+  setTimeout(updateSyntaxPreview, 1000);
 });
 </script>
-</script>
-{% endblock %}
 {% endblock %}

@@ -36,7 +36,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="syntax" class="form-label">Syntax Highlighting</label>
-                            {{ form.syntax(class="form-select") }}
+                            {{ form.syntax(class="form-select", id="syntax-selector") }}
                         </div>
                         
                         <div class="col-md-6">
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Select elements
   const templateSelector = document.getElementById("template-selector");
   const contentArea = document.getElementById("content-area");
-  const syntaxSelector = document.getElementById("syntax");
+  const syntaxSelector = document.getElementById("syntax-selector");
   const helpText = document.getElementById("templateHelp");
   
   // Add event listener to template selector
@@ -187,24 +187,32 @@ document.addEventListener("DOMContentLoaded", function() {
     const syntax = syntaxSelector.value;
     const previewContainer = document.getElementById("syntax-preview");
     
-    if (content.trim() === "") {
+    if (!content || content.trim() === "") {
       previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
       return;
     }
     
-    // Send the content to the server for highlighting
+    // Create a new FormData instance
     const formData = new FormData();
+    
+    // Add the data
     formData.append("content", content);
     formData.append("syntax", syntax);
-
+    
+    // Show loading indicator
     previewContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-
+    
+    // Make the fetch request
     fetch("/api/highlight", {
       method: "POST",
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      console.log("Response status:", response.status);
+      return response.json();
+    })
     .then(data => {
+      console.log("Got highlight data:", data);
       previewContainer.innerHTML = '<div class="preview-code">' + data.highlighted + '</div>';
     })
     .catch(error => {
@@ -214,11 +222,24 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // Set up syntax preview events
-  contentArea.addEventListener("input", updateSyntaxPreview);
+  contentArea.addEventListener("input", debounce(updateSyntaxPreview, 500));
   syntaxSelector.addEventListener("change", updateSyntaxPreview);
   
+  // Debounce function to prevent too many requests
+  function debounce(func, wait) {
+    let timeout;
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(context, args);
+      }, wait);
+    };
+  }
+  
   // Initial syntax preview update
-  updateSyntaxPreview();
+  setTimeout(updateSyntaxPreview, 1000);
 });
 </script>
 {% endblock %}
