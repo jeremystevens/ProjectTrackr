@@ -154,6 +154,34 @@ class PasswordResetToken(db.Model):
     def __repr__(self):
         return f'<PasswordResetToken user_id={self.user_id}>'
 
+class PasteCollection(db.Model):
+    """
+    Model for organizing pastes into collections/folders.
+    Only available for registered users.
+    """
+    __tablename__ = 'paste_collections'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_public = db.Column(db.Boolean, default=False)
+    
+    # Relationship with User
+    user = db.relationship('User', backref=db.backref('collections', lazy='dynamic'))
+    
+    # Relationship with Pastes will be defined in the Paste model
+    
+    def __repr__(self):
+        return f'<PasteCollection {self.id}: {self.name} by user {self.user_id}>'
+    
+    def get_paste_count(self):
+        """Get the number of pastes in this collection"""
+        return Paste.query.filter_by(collection_id=self.id).count()
+
+
 class Paste(db.Model):
     __tablename__ = 'pastes'
 
@@ -170,6 +198,8 @@ class Paste(db.Model):
     size = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
     burn_after_read = db.Column(db.Boolean, default=False)
+    # Add collection relationship
+    collection_id = db.Column(db.Integer, db.ForeignKey('paste_collections.id'), nullable=True)
     
     # Forking relationship
     forked_from_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=True)
@@ -182,6 +212,9 @@ class Paste(db.Model):
         lazy='dynamic',
         foreign_keys='Paste.forked_from_id'
     )
+    
+    # Relationship for collection
+    collection = db.relationship('PasteCollection', backref=db.backref('pastes', lazy='dynamic'))
     
     # Relationship for comments
     comments = db.relationship('Comment', backref='paste', lazy='dynamic', 

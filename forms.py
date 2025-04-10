@@ -289,3 +289,18 @@ class CommentEditForm(FlaskForm):
         Length(min=1, max=2000, message="Comment must be between 1 and 2000 characters.")
     ])
     submit = SubmitField('Update Comment')
+
+
+class CollectionForm(FlaskForm):
+    """Form for creating and editing paste collections/folders"""
+    name = StringField('Collection Name', validators=[
+        DataRequired(),
+        Length(min=2, max=100, message="Name must be between 2 and 100 characters.")
+    ])
+    description = TextAreaField('Description', validators=[
+        Optional(),
+        Length(max=500, message="Description must be no more than 500 characters.")
+    ])
+    is_public = BooleanField('Public Collection', default=False, 
+                            description="If enabled, other users can view this collection")
+    submit = SubmitField('Save Collection')
