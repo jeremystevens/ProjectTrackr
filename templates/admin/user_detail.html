@@ -13,48 +13,72 @@
                 <h5 class="card-title mb-0">User Information</h5>
             </div>
             <div class="card-body">
-                <div class="text-center mb-3">
+                <div class="text-center mb-4">
                     <img src="{{ user.get_avatar_url(size=100) }}" alt="{{ user.username }}" class="rounded-circle border">
-                    <h3 class="mt-2">{{ user.username }}</h3>
+                    <h3 class="mt-2 mb-0">{{ user.username }}</h3>
                     {% if user.is_account_locked() %}
-                    <span class="badge bg-danger">Account Locked</span>
+                    <span class="badge bg-danger mt-2">Account Locked</span>
                     <small class="d-block text-muted">
                         Unlocks in {{ user.get_lockout_remaining_time() }} minutes
                     </small>
                     {% endif %}
                 </div>
                 
-                <dl class="row">
-                    <dt class="col-sm-4">User ID</dt>
-                    <dd class="col-sm-8">{{ user.id }}</dd>
+                <div class="mb-4">
+                    <div class="card border-secondary mb-3">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0"><i class="bi bi-person-badge me-2"></i>Account Information</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted">User ID:</div>
+                                <div class="col-7 text-end">{{ user.id }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted">Email:</div>
+                                <div class="col-7 text-end text-break">{{ user.email }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted">Joined:</div>
+                                <div class="col-7 text-end">{{ user.created_at|timesince }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted">Last Login:</div>
+                                <div class="col-7 text-end">
+                                    {% if user.last_login %}
+                                        {{ user.last_login|timesince }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <dt class="col-sm-4">Email</dt>
-                    <dd class="col-sm-8">{{ user.email }}</dd>
-                    
-                    <dt class="col-sm-4">Joined</dt>
-                    <dd class="col-sm-8">{{ user.created_at|timesince }}</dd>
-                    
-                    <dt class="col-sm-4">Last Login</dt>
-                    <dd class="col-sm-8">
-                        {% if user.last_login %}
-                            {{ user.last_login|timesince }}
-                        {% else %}
-                            Never
-                        {% endif %}
-                    </dd>
-                    
-                    <dt class="col-sm-4">Total Pastes</dt>
-                    <dd class="col-sm-8">{{ total_pastes }}</dd>
-                    
-                    <dt class="col-sm-4">Total Comments</dt>
-                    <dd class="col-sm-8">{{ total_comments }}</dd>
-                    
-                    <dt class="col-sm-4">Views</dt>
-                    <dd class="col-sm-8">{{ user.total_views }}</dd>
-                    
-                    <dt class="col-sm-4">Failed Logins</dt>
-                    <dd class="col-sm-8">{{ user.failed_login_attempts }}</dd>
-                </dl>
+                    <div class="card border-secondary">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>Activity Statistics</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row mb-2">
+                                <div class="col-7 text-muted">Total Pastes:</div>
+                                <div class="col-5 text-end fw-bold">{{ total_pastes }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-7 text-muted">Total Comments:</div>
+                                <div class="col-5 text-end fw-bold">{{ total_comments }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-7 text-muted">Views Received:</div>
+                                <div class="col-5 text-end fw-bold">{{ user.total_views }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-7 text-muted">Failed Logins:</div>
+                                <div class="col-5 text-end fw-bold">{{ user.failed_login_attempts }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 {% if user.bio %}
                 <div class="mt-3">
