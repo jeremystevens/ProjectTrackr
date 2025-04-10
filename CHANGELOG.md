@@ -18,6 +18,10 @@ All notable changes to the FlaskBin project will be documented in this file. The
 - Implemented custom error pages with detailed error information
 - Added support for nested comment replies
 - Implemented rate limiting to prevent abuse of key routes
+- Implemented paste collections/folders for better organization
+- Added Sentry integration for error monitoring and tracking
+- Improved folder selection UI with a clean dropdown interface
+- Moved folder display from dashboard to profile page to match Pastebin's UI
 
 ## [1.0.0] - 2025-04-09
 ### Added

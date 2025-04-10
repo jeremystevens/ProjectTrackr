@@ -25,6 +25,10 @@ class User(UserMixin, db.Model):
     security_question = db.Column(db.String(255), nullable=True)
     security_answer_hash = db.Column(db.String(256), nullable=True)
     
+    # User roles
+    is_admin = db.Column(db.Boolean, default=False)
+    is_premium = db.Column(db.Boolean, default=False)
+    
     # Account security fields
     failed_login_attempts = db.Column(db.Integer, default=0)
     failed_reset_attempts = db.Column(db.Integer, default=0)
@@ -134,6 +138,10 @@ class User(UserMixin, db.Model):
             
         return None
 
+    def is_admin_user(self):
+        """Check if the user has admin privileges"""
+        return self.is_admin
+        
     def __repr__(self):
         return f'<User {self.username}>'
 
@@ -671,3 +679,169 @@ class Notification(db.Model):
         Get the count of unread notifications for a user
         """
         return Notification.query.filter_by(user_id=user_id, read=False).count()
+
+
+class FlaggedPaste(db.Model):
+    """
+    Model for storing flagged pastes that require admin review
+    """
+    __tablename__ = 'flagged_pastes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    paste_id = db.Column(db.Integer, db.ForeignKey('pastes.id'), nullable=False)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Can be null for system/AI flags
+    reason = db.Column(db.String(100), nullable=False)  # spam, abuse, illegal, etc.
+    details = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Admin who reviewed it
+    
+    # Relationships
+    paste = db.relationship('Paste', backref=db.backref('flags', lazy='dynamic'))
+    reporter = db.relationship('User', foreign_keys=[reporter_id], backref=db.backref('reported_pastes', lazy='dynamic'))
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id], backref=db.backref('reviewed_pastes', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<FlaggedPaste {self.id} for paste {self.paste_id} reason={self.reason}>'
+        
+    @staticmethod
+    def get_pending_count():
+        """Get count of pastes pending review"""
+        return FlaggedPaste.query.filter_by(status='pending').count()
+
+
+class FlaggedComment(db.Model):
+    """
+    Model for storing flagged comments that require admin review
+    """
+    __tablename__ = 'flagged_comments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Can be null for system flags
+    reason = db.Column(db.String(100), nullable=False)  # spam, abuse, illegal, etc.
+    details = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Admin who reviewed it
+    
+    # Relationships
+    comment = db.relationship('Comment', backref=db.backref('flags', lazy='dynamic'))
+    reporter = db.relationship('User', foreign_keys=[reporter_id], backref=db.backref('reported_comments', lazy='dynamic'))
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id], backref=db.backref('reviewed_comments', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<FlaggedComment {self.id} for comment {self.comment_id} reason={self.reason}>'
+        
+    @staticmethod
+    def get_pending_count():
+        """Get count of comments pending review"""
+        return FlaggedComment.query.filter_by(status='pending').count()
+
+
+class AuditLog(db.Model):
+    """
+    Model for recording admin actions for auditing purposes
+    """
+    __tablename__ = 'audit_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    action = db.Column(db.String(100), nullable=False)  # ban_user, delete_paste, etc.
+    entity_type = db.Column(db.String(50), nullable=False)  # user, paste, comment, etc.
+    entity_id = db.Column(db.Integer, nullable=False)  # ID of the affected entity
+    details = db.Column(db.Text, nullable=True)  # Additional details about the action
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45), nullable=True)  # IPv6 can be up to 45 chars
+    
+    # Relationship back to the admin user
+    admin = db.relationship('User', backref=db.backref('audit_logs', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<AuditLog {self.id} {self.action} on {self.entity_type}:{self.entity_id} by {self.admin_id}>'
+        
+    @staticmethod
+    def log(admin_id, action, entity_type, entity_id, details=None, ip_address=None):
+        """Create a new audit log entry"""
+        log_entry = AuditLog(
+            admin_id=admin_id,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            details=details,
+            ip_address=ip_address
+        )
+        db.session.add(log_entry)
+        db.session.commit()
+        return log_entry
+
+
+class SiteSettings(db.Model):
+    """
+    Model for storing site-wide settings configurable by admins
+    """
+    __tablename__ = 'site_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    value_type = db.Column(db.String(20), default='string')  # string, integer, boolean, json
+    description = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Relationship back to the admin who updated it
+    updated_by = db.relationship('User', backref=db.backref('updated_settings', lazy='dynamic'))
+    
+    @classmethod
+    def get(cls, key, default=None):
+        """Get a setting value by key"""
+        setting = cls.query.filter_by(key=key).first()
+        if not setting:
+            return default
+            
+        # Convert value based on type
+        if setting.value_type == 'integer':
+            return int(setting.value)
+        elif setting.value_type == 'boolean':
+            return setting.value.lower() in ('true', '1', 'yes')
+        elif setting.value_type == 'json':
+            import json
+            return json.loads(setting.value)
+        else:
+            return setting.value
+            
+    @classmethod
+    def set(cls, key, value, value_type='string', description=None, updated_by_id=None):
+        """Set a setting value by key"""
+        import json
+        # Convert value based on type
+        if value_type == 'json' and not isinstance(value, str):
+            value = json.dumps(value)
+        elif value_type == 'boolean' and isinstance(value, bool):
+            value = str(value).lower()
+        elif value_type == 'integer':
+            value = str(int(value))
+            
+        setting = cls.query.filter_by(key=key).first()
+        if setting:
+            setting.value = value
+            setting.value_type = value_type
+            if description:
+                setting.description = description
+            if updated_by_id:
+                setting.updated_by_id = updated_by_id
+        else:
+            setting = cls(
+                key=key, 
+                value=value, 
+                value_type=value_type, 
+                description=description,
+                updated_by_id=updated_by_id
+            )
+            db.session.add(setting)
+            
+        db.session.commit()
+        return setting
