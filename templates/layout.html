@@ -93,6 +93,17 @@
                                         <i class="fas fa-cog me-2"></i>Settings
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('notification.list_notifications') }}">
+                                        <i class="fas fa-bell me-2"></i>Notifications
+                                        {% if current_user.notifications %}
+                                        {% set unread_count = current_user.notifications.filter_by(read=False).count() %}
+                                        {% if unread_count > 0 %}
+                                        <span class="badge bg-danger float-end">{{ unread_count }}</span>
+                                        {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
