@@ -16,13 +16,12 @@
                     
                     <div class="mb-3">
                         <label for="title" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="title" name="title" 
-                               placeholder="Paste title (optional)" maxlength="255">
+                        {{ form.title(class="form-control", placeholder="Paste title (optional)") }}
                     </div>
                     
                     <div class="mb-3">
                         <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="content" name="content" rows="15" required></textarea>
+                        {{ form.content(class="form-control", rows=15, required=True) }}
                         <div class="invalid-feedback">
                             Please enter some content for your paste.
                         </div>
@@ -31,55 +30,22 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="syntax" class="form-label">Syntax Highlighting</label>
-                            <select class="form-select" id="syntax" name="syntax">
-                                <option value="text">Plain Text</option>
-                                <option value="python">Python</option>
-                                <option value="javascript">JavaScript</option>
-                                <option value="html">HTML</option>
-                                <option value="css">CSS</option>
-                                <option value="java">Java</option>
-                                <option value="c">C</option>
-                                <option value="cpp">C++</option>
-                                <option value="csharp">C#</option>
-                                <option value="php">PHP</option>
-                                <option value="ruby">Ruby</option>
-                                <option value="go">Go</option>
-                                <option value="rust">Rust</option>
-                                <option value="swift">Swift</option>
-                                <option value="bash">Bash/Shell</option>
-                                <option value="sql">SQL</option>
-                                <option value="xml">XML</option>
-                                <option value="json">JSON</option>
-                                <option value="markdown">Markdown</option>
-                                <option value="yaml">YAML</option>
-                            </select>
+                            {{ form.syntax(class="form-select") }}
                         </div>
                         
                         <div class="col-md-6">
                             <label for="expiration" class="form-label">Expiration</label>
-                            <select class="form-select" id="expiration" name="expiration">
-                                <option value="0">Never</option>
-                                <option value="1">10 Minutes</option>
-                                <option value="2">1 Hour</option>
-                                <option value="3">1 Day</option>
-                                <option value="4">1 Month</option>
-                            </select>
+                            {{ form.expiration(class="form-select") }}
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <label for="visibility" class="form-label">Visibility</label>
-                        <select class="form-select" id="visibility" name="visibility">
-                            <option value="public">Public (Visible to everyone, listed in archive)</option>
-                            <option value="unlisted">Unlisted (Visible to anyone with the link, not listed)</option>
-                            {% if current_user.is_authenticated %}
-                                <option value="private">Private (Only visible to you)</option>
-                            {% endif %}
-                        </select>
+                        {{ form.visibility(class="form-select") }}
                     </div>
                     
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="comments_enabled" name="comments_enabled" checked>
+                        {{ form.comments_enabled(class="form-check-input") }}
                         <label class="form-check-label" for="comments_enabled">Enable comments</label>
                     </div>
                     
@@ -88,9 +54,7 @@
                     </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Create Paste
-                        </button>
+                        {{ form.submit(class="btn btn-primary") }}
                     </div>
                     
                     {% if not current_user.is_authenticated %}
@@ -163,4 +127,48 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // This script handles the syntax highlighting preview
+    document.getElementById('content').addEventListener('input', updateSyntaxPreview);
+    document.getElementById('syntax').addEventListener('change', updateSyntaxPreview);
+    
+    function updateSyntaxPreview() {
+        const content = document.getElementById('content').value;
+        const syntax = document.getElementById('syntax').value;
+        const previewContainer = document.getElementById('syntax-preview');
+        
+        if (content.trim() === '') {
+            previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+            return;
+        }
+        
+        // For simplicity, just show a preview message
+        // In a real implementation, you might want to use an AJAX request to get syntax highlighted code
+        previewContainer.innerHTML = `<div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            A preview would be shown here with ${syntax} syntax highlighting.
+        </div>`;
+    }
+    
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
 {% endblock %}
