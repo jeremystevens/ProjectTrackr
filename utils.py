@@ -1,7 +1,11 @@
 import random
 import string
 import bleach
+import uuid
 from datetime import datetime
+from flask import request, session, abort, current_app, g
+from flask_login import current_user
+from functools import wraps
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_all_lexers
 from pygments.formatters import HtmlFormatter
@@ -53,3 +57,48 @@ def format_size(size_bytes):
         if size_bytes < 1024 or unit == 'GB':
             return f"{size_bytes:.2f} {unit}" if unit != 'B' else f"{size_bytes} {unit}"
         size_bytes /= 1024
+
+def get_client_ip():
+    """Get the client's IP address from the request"""
+    if request.environ.get('HTTP_X_FORWARDED_FOR'):
+        # For requests going through a proxy
+        ip = request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0].strip()
+    else:
+        # Direct connection
+        ip = request.remote_addr or '127.0.0.1'
+    return ip
+
+def get_viewer_id():
+    """Get a unique identifier for the current viewer"""
+    from models import PasteView
+    return PasteView.get_or_create_viewer_id(session, get_client_ip())
+    
+def check_shadowban(func):
+    """
+    Decorator to check if the current user is shadowbanned.
+    If they are, their actions will only be visible to themselves and admins.
+    This decorator sets a flag in flask.g that can be checked in templates and views.
+    
+    Usage:
+        @check_shadowban
+        @route_bp.route('/some-route', methods=['POST'])
+        def some_function():
+            # g.is_shadowbanned will be True if the user is shadowbanned
+            # Can use g.is_shadowbanned in templates and views to conditionally show content
+            pass
+    """
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        # Set default value
+        g.is_shadowbanned = False
+        
+        # Check if user is logged in and shadowbanned
+        if current_user.is_authenticated and hasattr(current_user, 'is_shadowbanned'):
+            if current_user.is_shadowbanned():
+                g.is_shadowbanned = True
+                current_app.logger.info(f"Shadowbanned user {current_user.id} accessed {request.path}")
+        
+        # Always proceed, since shadowbanned users can still use the site
+        return func(*args, **kwargs)
+    
+    return decorated_function
