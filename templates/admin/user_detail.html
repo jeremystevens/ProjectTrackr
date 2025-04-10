@@ -191,7 +191,7 @@
                 {% endfor %}
             </div>
             <div class="card-footer">
-                <a href="{{ url_for('search.advanced', user=user.username) }}" class="btn btn-sm btn-outline-secondary">
+                <a href="{{ url_for('paste.archive', author=user.username) }}" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-search me-1"></i> View All Pastes
                 </a>
             </div>
