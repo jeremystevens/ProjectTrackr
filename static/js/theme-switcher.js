@@ -3,81 +3,59 @@
  * Manages dark/light theme preferences and toggle functionality
  */
 document.addEventListener('DOMContentLoaded', function() {
+  console.log("Theme switcher initialized");
+  
+  // Get DOM elements
   const themeToggleBtn = document.getElementById('theme-toggle');
   const themeIcon = document.getElementById('theme-icon');
-  const htmlElement = document.documentElement;
   
-  // Function to update theme icons
-  function updateThemeIcon(isDarkTheme) {
-    // Show sun icon if dark theme, moon icon if light theme
-    themeIcon.className = isDarkTheme ? 'fas fa-sun' : 'fas fa-moon';
+  if (!themeToggleBtn || !themeIcon) {
+    console.error("Theme toggle elements not found");
+    return;
   }
+  
+  console.log("Theme toggle elements found");
   
   // Function to set theme
-  function setTheme(theme) {
-    const isDarkTheme = theme === 'dark';
+  function setTheme(isDark) {
+    // Update HTML element
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
     
-    // Set data-bs-theme attribute on html element
-    htmlElement.setAttribute('data-bs-theme', theme);
+    // Update icon
+    themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
     
-    // Update theme icons
-    updateThemeIcon(isDarkTheme);
-    
-    // Set syntax highlighting theme - light or dark version
-    const syntaxTheme = isDarkTheme ? 'atom-one-dark' : 'atom-one-light';
-    
-    // Store the theme preference in localStorage
-    localStorage.setItem('flaskbin-theme', theme);
-    
-    // Find and change the syntax highlighting stylesheet
-    const syntaxStylesheet = document.querySelector('link[href*="highlight.js"]');
-    if (syntaxStylesheet) {
-      syntaxStylesheet.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/${syntaxTheme}.min.css`;
+    // Update highlight.js theme
+    const highlightTheme = isDark ? 'atom-one-dark' : 'atom-one-light';
+    const stylesheets = document.querySelectorAll('link');
+    for (let i = 0; i < stylesheets.length; i++) {
+      const href = stylesheets[i].getAttribute('href');
+      if (href && href.includes('highlight.js')) {
+        const newHref = href.replace(/\/styles\/.*\.min\.css/, `/styles/${highlightTheme}.min.css`);
+        stylesheets[i].setAttribute('href', newHref);
+        console.log(`Updated syntax theme to ${highlightTheme}`);
+        break;
+      }
     }
     
-    // If we have any code blocks with highlight.js, re-highlight them
-    if (window.hljs) {
-      document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block);
-      });
-    }
+    // Save preference
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    console.log(`Theme set to ${isDark ? 'dark' : 'light'}`);
   }
   
-  // Function to toggle theme
-  function toggleTheme() {
-    const currentTheme = htmlElement.getAttribute('data-bs-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-  }
-  
-  // Initialize theme based on localStorage or system preference
-  function initTheme() {
-    // Check if user has previously selected a theme
-    const savedTheme = localStorage.getItem('flaskbin-theme');
-    
-    if (savedTheme) {
-      // Use saved theme preference
-      setTheme(savedTheme);
-    } else {
-      // Check system preference for dark mode
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(prefersDark ? 'dark' : 'light');
-    }
-  }
-  
-  // Set up event listener for theme toggle button
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', toggleTheme);
-  }
-  
-  // Initialize theme on page load
-  initTheme();
-  
-  // Listen for system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    // Only update if user hasn't manually set a preference
-    if (!localStorage.getItem('flaskbin-theme')) {
-      setTheme(e.matches ? 'dark' : 'light');
-    }
+  // Set up click handler
+  themeToggleBtn.addEventListener('click', function() {
+    console.log("Theme toggle button clicked");
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+    setTheme(currentTheme !== 'dark'); // Toggle
   });
+  
+  // Initialize theme from localStorage or default to dark
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    setTheme(savedTheme === 'dark');
+  } else {
+    // Default to system preference, fallback to dark
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark);
+  }
 });
