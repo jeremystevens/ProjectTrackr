@@ -76,6 +76,7 @@ generated-icon.png
 
 # Documentation
 README.md
+# Do not exclude DEPLOYMENT.md as it contains important deployment instructions
 
 # Release directory itself (should be excluded from copying into itself)
 # Using multiple patterns to ensure it's caught in all path formats
