@@ -30,6 +30,12 @@ def account_page():
             'total': tier_limits['ai_search_queries'],
             'percentage': (user.ai_search_queries_remaining / tier_limits['ai_search_queries'] * 100) if tier_limits['ai_search_queries'] > 0 else 0
         },
+        'free_ai_trials': {
+            'remaining': user.get_remaining_free_trials(),
+            'total': 3,  # Maximum number of free trials
+            'used': user.free_ai_trials_used,
+            'percentage': ((3 - user.free_ai_trials_used) / 3 * 100) if user.free_ai_trials_used <= 3 else 0
+        },
         'live_collaboration': tier_limits['live_collaboration'],
         'team_seats': tier_limits['team_seats'],
         'custom_themes': tier_limits['custom_themes'],

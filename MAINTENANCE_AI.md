@@ -2,6 +2,34 @@
 
 This document contains important tips and best practices for the implementation of AI features in FlaskBin's premium subscription model.
 
+## AI Features Overview
+
+1. **AI-Generated Tags**
+   - Automatically generate relevant tags for pastes based on content
+   - Use language-specific models for better accuracy
+   - Limit to 5-7 tags per paste
+
+2. **AI Fix Suggestions**
+   - Analyze code for errors, bugs, and potential improvements
+   - Show inline suggestions with option to apply
+   - Focus on common mistakes and best practices
+
+3. **AI Code Refactoring**
+   - More comprehensive rewrite suggestions for cleaner, more efficient code
+   - Include explanations of why changes are recommended
+   - Multiple refactoring options (readability, performance, maintainability)
+
+4. **AI Code Summarization** ✨
+   - Generate a concise explanation of what the pasted code does
+   - Highlight key functions, patterns, and techniques used
+   - Create documentation-style summaries adaptable by code length
+   - Show directly on paste view page for premium users
+
+5. **Free Trial Features**
+   - Offer 2-3 free uses of AI features for registered (non-guest) users
+   - Track usage in user profile and show "Used: X/3" counter
+   - Present clear upgrade CTA when free uses are exhausted
+
 ## Subscription Implementation Roadmap
 
 The following functionality needs to be implemented to complete the subscription system:

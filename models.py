@@ -38,6 +38,7 @@ class User(UserMixin, db.Model):
     # AI feature usage counters
     ai_calls_remaining = db.Column(db.Integer, default=0)
     ai_search_queries_remaining = db.Column(db.Integer, default=0)
+    free_ai_trials_used = db.Column(db.Integer, default=0)  # Track free AI usage for non-premium users
     
     # Account security fields
     failed_login_attempts = db.Column(db.Integer, default=0)
@@ -281,31 +282,77 @@ class User(UserMixin, db.Model):
         }
         return limits.get(self.subscription_tier, limits['free'])
         
+    def has_free_ai_trials_available(self):
+        """Check if the user has free AI trials available"""
+        # Maximum number of free trials
+        MAX_FREE_TRIALS = 3
+        
+        # Check if user is logged in (not guest) and hasn't used up all trials
+        return (self.id is not None and 
+                self.subscription_tier == 'free' and 
+                self.free_ai_trials_used < MAX_FREE_TRIALS)
+    
+    def get_remaining_free_trials(self):
+        """Get the number of remaining free AI trials"""
+        MAX_FREE_TRIALS = 3
+        if self.subscription_tier != 'free':
+            return 0
+        return max(0, MAX_FREE_TRIALS - self.free_ai_trials_used)
+    
+    def use_free_ai_trial(self):
+        """Use one free AI trial and return True if successful"""
+        if not self.has_free_ai_trials_available():
+            return False
+            
+        self.free_ai_trials_used += 1
+        db.session.commit()
+        return True
+    
     def can_use_ai_feature(self):
-        """Check if the user can use AI features based on their subscription"""
-        return self.ai_calls_remaining > 0 and self.is_subscription_active()
+        """Check if the user can use AI features based on subscription or free trials"""
+        # First check if user has an active paid subscription with remaining calls
+        if self.is_subscription_active() and self.ai_calls_remaining > 0:
+            return True
+            
+        # Then check if they have free trials available
+        return self.has_free_ai_trials_available()
         
     def can_use_ai_search(self):
-        """Check if the user can use AI search based on their subscription"""
-        return self.ai_search_queries_remaining > 0 and self.is_subscription_active()
+        """Check if the user can use AI search based on subscription or free trials"""
+        # First check if user has an active paid subscription with remaining searches
+        if self.is_subscription_active() and self.ai_search_queries_remaining > 0:
+            return True
+            
+        # Then check if they have free trials available
+        return self.has_free_ai_trials_available()
         
     def use_ai_call(self):
-        """Decrement AI call counter and return True if successful"""
-        if not self.can_use_ai_feature():
-            return False
+        """Decrement AI call counter or use a free trial, and return True if successful"""
+        # First check if user has an active subscription with remaining calls
+        if self.is_subscription_active() and self.ai_calls_remaining > 0:
+            self.ai_calls_remaining -= 1
+            db.session.commit()
+            return True
             
-        self.ai_calls_remaining -= 1
-        db.session.commit()
-        return True
+        # Then check if they have free trials available
+        if self.has_free_ai_trials_available():
+            return self.use_free_ai_trial()
+            
+        return False
         
     def use_ai_search(self):
-        """Decrement AI search counter and return True if successful"""
-        if not self.can_use_ai_search():
-            return False
+        """Decrement AI search counter or use a free trial, and return True if successful"""
+        # First check if user has an active subscription with remaining searches
+        if self.is_subscription_active() and self.ai_search_queries_remaining > 0:
+            self.ai_search_queries_remaining -= 1
+            db.session.commit()
+            return True
             
-        self.ai_search_queries_remaining -= 1
-        db.session.commit()
-        return True
+        # Then check if they have free trials available
+        if self.has_free_ai_trials_available():
+            return self.use_free_ai_trial()
+            
+        return False
         
     def reset_monthly_usage(self):
         """Reset AI feature usage counters based on subscription tier"""

@@ -6,10 +6,12 @@ This document tracks future enhancements and features planned for the FlaskBin a
   - [ ] Implement webhooks for payment events
   - [ ] Add billing history view
   - [ ] Setup automated monthly/yearly billing
-- [ ] Create OpenAI integration for AI-powered features (tags, fixes, refactoring)
+- [ ] Create OpenAI integration for AI-powered features (tags, fixes, refactoring, summarization)
   - [ ] Implement API key management
   - [ ] Add queue-based processing for heavy operations
   - [ ] Create result caching system to minimize API costs
+  - [ ] Develop AI Summarization feature that explains what code does
+  - [ ] Implement free trial AI features for non-guest users (2-3 free uses)
 
 ## Subscription Management
 - [ ] Show user's current plan details from database or Stripe
@@ -29,6 +31,8 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] AI-Generated Tags for pastes (Starter+)
 - [ ] AI Fix Suggestions for code pastes (Starter+)
 - [ ] AI Code Refactoring (Pro+)
+- [ ] AI Code Summarization feature (Starter+)
+- [ ] Free AI feature trials for registered users (2-3 uses)
 - [ ] Advanced AI Search (Pro+)
 - [ ] Per-Paste Analytics (Starter+)
 - [ ] Paste Access Insights (Pro+)
