@@ -104,6 +104,11 @@
                                     You'll need this password to decrypt and view the paste later.
                                 </small>
                             </div>
+                            
+                            <div class="mb-3 password-field d-none">
+                                <label for="confirm_encryption_password" class="form-label">Confirm Password</label>
+                                {{ form.confirm_encryption_password(class="form-control", placeholder="Confirm your password") }}
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -225,9 +230,15 @@ document.addEventListener("DOMContentLoaded", function() {
   if (encryptionTypeSelector) {
     encryptionTypeSelector.addEventListener("change", function() {
       if (this.value === "fernet-password") {
-        passwordField.classList.remove("d-none");
+        // Show all password fields
+        document.querySelectorAll('.password-field').forEach(field => {
+          field.classList.remove("d-none");
+        });
       } else {
-        passwordField.classList.add("d-none");
+        // Hide all password fields
+        document.querySelectorAll('.password-field').forEach(field => {
+          field.classList.add("d-none");
+        });
       }
     });
   }
