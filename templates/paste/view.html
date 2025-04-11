@@ -127,6 +127,17 @@
                         </span>
                     {% endif %}
                     
+                    {% if paste.is_encrypted %}
+                        <span class="text-muted paste-metadata-item">
+                            <i class="fas fa-lock me-1"></i> 
+                            {% if paste.password_protected %}
+                                Password protected
+                            {% else %}
+                                Encrypted
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                    
                     {% if paste.fork_count > 0 %}
                         <span class="text-muted paste-metadata-item">
                             <i class="fas fa-code-branch me-1"></i> Forks: {{ paste.fork_count }}

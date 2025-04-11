@@ -78,6 +78,36 @@
                         <small class="form-text text-muted d-block">This paste will be permanently deleted after it is viewed for the first time by someone other than you.</small>
                     </div>
                     
+                    {% if form.enable_encryption is defined %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <div class="form-check">
+                                {{ form.enable_encryption(class="form-check-input", id="enable-encryption-toggle") }}
+                                <label class="form-check-label fw-bold" for="enable-encryption-toggle">
+                                    <i class="fas fa-lock me-1"></i> Enable Encryption
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body encryption-options d-none">
+                            <div class="mb-3">
+                                <label for="encryption_type" class="form-label">Encryption Type</label>
+                                {{ form.encryption_type(class="form-select", id="encryption-type-selector") }}
+                                <small class="form-text text-muted">
+                                    Random key encryption uses a unique key for each paste. Password encryption allows you to set a custom password.
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3 password-field d-none">
+                                <label for="encryption_password" class="form-label">Password</label>
+                                {{ form.encryption_password(class="form-control", placeholder="Enter a strong password") }}
+                                <small class="form-text text-muted">
+                                    You'll need this password to decrypt and view the paste later.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     {% if current_user.is_authenticated %}
                     <div class="mb-3 form-check">
                         {{ form.post_as_guest(class="form-check-input") }}
@@ -169,7 +199,6 @@
 {% block scripts %}
 {{ super() }}
 <script>
-<script>
 document.addEventListener("DOMContentLoaded", function() {
   // Select elements
   const templateSelector = document.getElementById("template-selector");
@@ -177,6 +206,31 @@ document.addEventListener("DOMContentLoaded", function() {
   const syntaxSelector = document.getElementById("syntax-selector");
   const helpText = document.getElementById("templateHelp");
   
+  // Encryption options handling
+  const encryptionToggle = document.getElementById("enable-encryption-toggle");
+  const encryptionOptions = document.querySelector(".encryption-options");
+  const encryptionTypeSelector = document.getElementById("encryption-type-selector");
+  const passwordField = document.querySelector(".password-field");
+  
+  if (encryptionToggle) {
+    encryptionToggle.addEventListener("change", function() {
+      if (this.checked) {
+        encryptionOptions.classList.remove("d-none");
+      } else {
+        encryptionOptions.classList.add("d-none");
+      }
+    });
+  }
+  
+  if (encryptionTypeSelector) {
+    encryptionTypeSelector.addEventListener("change", function() {
+      if (this.value === "fernet-password") {
+        passwordField.classList.remove("d-none");
+      } else {
+        passwordField.classList.add("d-none");
+      }
+    });
+  }
   // Add event listener to template selector
   templateSelector.addEventListener("change", function() {
     const templateId = parseInt(this.value);
