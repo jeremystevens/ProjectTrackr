@@ -150,14 +150,37 @@ def copy_files(src_dir, dest_dir, ignore_patterns, verbose=False):
 def create_zip(src_dir, version):
     """Create a zip file of the release directory with the given version."""
     zip_name = f"release_{version}.zip"
-    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(src_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, os.path.relpath(file_path, src_dir))
     
-    print(f"Created zip archive: {zip_name}")
-    return zip_name
+    # Make this optional since it might be too large
+    try:
+        print(f"Creating zip archive (this might take a while for large projects)...")
+        total_files = sum(len(files) for _, _, files in os.walk(src_dir))
+        print(f"Archiving {total_files} files...")
+        
+        # Set a file limit to avoid memory issues
+        if total_files > 1000:
+            print(f"Warning: Large number of files ({total_files}). Zip creation may be slow.")
+            print("Consider manually zipping the release directory if this fails.")
+        
+        with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            file_count = 0
+            for root, dirs, files in os.walk(src_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_path, src_dir)
+                    zipf.write(file_path, rel_path)
+                    file_count += 1
+                    
+                    # Show progress periodically
+                    if file_count % 100 == 0:
+                        print(f"Archived {file_count}/{total_files} files...")
+        
+        print(f"Created zip archive: {zip_name}")
+        return zip_name
+    except Exception as e:
+        print(f"Warning: Could not create zip file: {str(e)}")
+        print(f"The release directory is still available at: {src_dir}")
+        return None
 
 def rename_requirements_file(release_dir):
     """Rename release_requirements.txt to requirements.txt in the release directory."""
@@ -171,8 +194,9 @@ def rename_requirements_file(release_dir):
 
 def main():
     """Main function."""
-    # Check for debug mode
+    # Check for debug mode and no-zip mode
     debug_mode = '--debug' in sys.argv
+    no_zip_mode = '--no-zip' in sys.argv
     
     # Get the version from command line or generate one
     version_args = [arg for arg in sys.argv[1:] if not arg.startswith('--')]
@@ -229,12 +253,20 @@ def main():
         print("This indicates a recursion problem in the ignore patterns.")
         return
     
-    # Create a release zip file
-    zip_path = create_zip(release_dir, version)
+    # Create a release zip file (unless --no-zip is specified)
+    if no_zip_mode:
+        print("Skipping zip file creation (--no-zip specified)")
+        zip_path = None
+    else:
+        zip_path = create_zip(release_dir, version)
     
     print("\nRelease preparation complete!")
     print(f"Release directory: {release_dir}")
-    print(f"Release zip: {zip_path}")
+    if zip_path:
+        print(f"Release zip: {zip_path}")
+    else:
+        print("Note: Zip file creation was skipped or failed")
+        print(f"You can manually zip the release directory if needed")
     print("\nYou can now deploy these files to your production environment.")
 
 if __name__ == "__main__":

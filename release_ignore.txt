@@ -31,6 +31,9 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.cache/
+**/.cache/
+.cache/**
 
 # Log files
 *.log
