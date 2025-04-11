@@ -62,10 +62,30 @@
                         </div>
                     </div>
                     
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label for="visibility" class="form-label">Visibility</label>
                         {{ form.visibility(class="form-select") }}
                     </div>
+                    
+                    {% if current_user.is_authenticated and current_user.is_premium and form.tags is defined %}
+                    <div class="mb-3">
+                        <label for="tags" class="form-label d-flex align-items-center">
+                            Tags <span class="badge bg-warning text-dark ms-2">Premium</span>
+                        </label>
+                        {{ form.tags(class="form-control", placeholder="Comma-separated tags (e.g., javascript, tutorial, code)") }}
+                        <small class="form-text text-muted">Add tags to help organize and find your pastes later</small>
+                    </div>
+                    {% elif form.tags is defined %}
+                    <div class="mb-3">
+                        <label for="tags" class="form-label d-flex align-items-center">
+                            Tags <span class="badge bg-secondary ms-2">Premium Feature</span>
+                        </label>
+                        {{ form.tags(class="form-control", placeholder="Comma-separated tags", disabled=True) }}
+                        <small class="form-text text-muted">
+                            <a href="{{ url_for('account.upgrade_subscription') }}">Upgrade to Premium</a> to use tagging features
+                        </small>
+                    </div>
+                    {% endif %}
                     
                     <div class="mb-3 form-check">
                         {{ form.comments_enabled(class="form-check-input") }}

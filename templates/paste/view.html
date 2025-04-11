@@ -34,6 +34,19 @@
         white-space: nowrap;
     }
     
+    /* Tag styling */
+    .badge.bg-secondary {
+        margin-right: 4px;
+        padding: 5px 8px;
+        font-size: 0.8em;
+        background-color: var(--bs-secondary);
+        transition: background-color 0.2s;
+    }
+    
+    .badge.bg-secondary:hover {
+        background-color: var(--bs-primary);
+    }
+    
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .paste-info .row > div {
@@ -135,6 +148,17 @@
                             {% else %}
                                 Encrypted
                             {% endif %}
+                        </span>
+                    {% endif %}
+                    
+                    {% if paste.tags.count() > 0 %}
+                        <span class="text-muted paste-metadata-item">
+                            <i class="fas fa-tags me-1"></i> Tags:
+                            {% for tag in paste.tags %}
+                                <a href="{{ url_for('search.search', query=tag.name, search_type='tag') }}" class="badge bg-secondary rounded-pill text-decoration-none">
+                                    {{ tag.name }}
+                                </a>
+                            {% endfor %}
                         </span>
                     {% endif %}
                     
