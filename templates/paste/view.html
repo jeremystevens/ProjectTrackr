@@ -137,111 +137,114 @@
                 <h4 class="mb-0">{{ paste.title }}</h4>
             </div>
             
-            <!-- Metadata row (moved from card-body to below title) -->
+            <!-- Combined row for metadata and action buttons -->
             <div class="paste-metadata-row mt-2">
-                <div class="d-flex flex-wrap">
-                    <span class="text-muted paste-metadata-item">
-                        <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | timesince }}
-                    </span>
-                    <span class="text-muted paste-metadata-item">
-                        <i class="fas fa-eye me-1"></i> Views: {{ paste.views }}
-                    </span>
-                    <span class="text-muted paste-metadata-item">
-                        <i class="fas fa-code me-1"></i> Syntax: {{ paste.syntax }}
-                    </span>
-                
-                    {% if paste.user_id %}
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <!-- Metadata on the left side -->
+                    <div class="d-flex flex-wrap flex-grow-1">
                         <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-user me-1"></i> Author: 
-                            <a href="{{ url_for('user.profile', username=paste.author.username) }}">
-                                {{ paste.author.username }}
-                            </a>
+                            <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | timesince }}
                         </span>
-                    {% endif %}
-                    
-                    <span class="text-muted paste-metadata-item">
-                        <i class="fas fa-eye-slash me-1"></i> {{ paste.visibility | capitalize }}
-                    </span>
-                    
-                    {% if paste.expires_at %}
                         <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-clock me-1"></i> Expires in:
-                            <span class="countdown expiration-countdown" data-expires-timestamp="{{ paste.expires_at.timestamp() }}">Loading...</span>
+                            <i class="fas fa-eye me-1"></i> Views: {{ paste.views }}
                         </span>
-                    {% else %}
                         <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-infinity me-1"></i> No expiration
+                            <i class="fas fa-code me-1"></i> Syntax: {{ paste.syntax }}
                         </span>
-                    {% endif %}
                     
-                    {% if paste.is_encrypted %}
-                        <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-lock me-1"></i> 
-                            {% if paste.password_protected %}
-                                Password protected
-                            {% else %}
-                                Encrypted
-                            {% endif %}
-                        </span>
-                    {% endif %}
-                    
-                    {% if paste.tags.count() > 0 %}
-                        <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-tags me-1"></i> Tags:
-                            {% for tag in paste.tags %}
-                                <a href="{{ url_for('search.search', query=tag.name, search_type='tag') }}" class="badge bg-secondary rounded-pill text-decoration-none">
-                                    {{ tag.name }}
+                        {% if paste.user_id %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-user me-1"></i> Author: 
+                                <a href="{{ url_for('user.profile', username=paste.author.username) }}">
+                                    {{ paste.author.username }}
                                 </a>
-                            {% endfor %}
-                        </span>
-                    {% endif %}
-                    
-                    {% if paste.fork_count > 0 %}
+                            </span>
+                        {% endif %}
+                        
                         <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-code-branch me-1"></i> Forks: {{ paste.fork_count }}
+                            <i class="fas fa-eye-slash me-1"></i> {{ paste.visibility | capitalize }}
                         </span>
-                    {% endif %}
-                    
-                    {% if paste.forked_from %}
-                        <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-code-branch me-1"></i> Forked from:
-                            <a href="{{ url_for('paste.view', short_id=paste.forked_from.short_id) }}">
-                                {{ paste.forked_from.title }}
-                            </a>
-                        </span>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Action buttons row - completely separate from title and metadata -->
-            <div class="paste-actions-row mt-3">
-                <div class="paste-actions d-flex flex-wrap">
-                    <!-- First group with report button for all users -->
-                    <div class="btn-group me-2 mb-2" role="group">
-                        <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
-                            <i class="fas fa-code me-1"></i> Raw
-                        </a>
-                        <a href="{{ url_for('paste.download', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-download me-1"></i> Download
-                        </a>
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-clipboard-target="#paste-content">
-                            <i class="fas fa-copy me-1"></i> Copy
-                        </button>
-                        <a href="{{ url_for('paste.print_view', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
-                            <i class="fas fa-print me-1"></i> Print
-                        </a>
-                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
-                            <i class="fas fa-code-branch me-1"></i> Fork
-                        </button>
-                        <!-- Report button moved here to be more prominent, available for everyone -->
-                        <a href="{{ url_for('paste.flag_paste', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-danger">
-                            <i class="fas fa-flag me-1"></i> Report
-                        </a>
+                        
+                        {% if paste.expires_at %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-clock me-1"></i> Expires in:
+                                <span class="countdown expiration-countdown" data-expires-timestamp="{{ paste.expires_at.timestamp() }}">Loading...</span>
+                            </span>
+                        {% else %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-infinity me-1"></i> No expiration
+                            </span>
+                        {% endif %}
+                        
+                        {% if paste.is_encrypted %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-lock me-1"></i> 
+                                {% if paste.password_protected %}
+                                    Password protected
+                                {% else %}
+                                    Encrypted
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                        
+                        {% if paste.tags.count() > 0 %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-tags me-1"></i> Tags:
+                                {% for tag in paste.tags %}
+                                    <a href="{{ url_for('search.search', query=tag.name, search_type='tag') }}" class="badge bg-secondary rounded-pill text-decoration-none">
+                                        {{ tag.name }}
+                                    </a>
+                                {% endfor %}
+                            </span>
+                        {% endif %}
+                        
+                        {% if paste.fork_count > 0 %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-code-branch me-1"></i> Forks: {{ paste.fork_count }}
+                            </span>
+                        {% endif %}
+                        
+                        {% if paste.forked_from %}
+                            <span class="text-muted paste-metadata-item">
+                                <i class="fas fa-code-branch me-1"></i> Forked from:
+                                <a href="{{ url_for('paste.view', short_id=paste.forked_from.short_id) }}">
+                                    {{ paste.forked_from.title }}
+                                </a>
+                            </span>
+                        {% endif %}
                     </div>
                     
-                    <!-- Additional owner actions -->
-                    {% if current_user.is_authenticated and current_user.id == paste.user_id %}
-                    <div class="btn-group mb-2" role="group">
+                    <!-- Action buttons on the right side -->
+                    <div class="paste-actions d-flex flex-nowrap ms-auto">
+                        <!-- First group with report button for all users -->
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="fas fa-code me-1"></i> Raw
+                            </a>
+                            <a href="{{ url_for('paste.download', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-download me-1"></i> Download
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-clipboard-target="#paste-content">
+                                <i class="fas fa-copy me-1"></i> Copy
+                            </button>
+                            <a href="{{ url_for('paste.print_view', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="fas fa-print me-1"></i> Print
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
+                                <i class="fas fa-code-branch me-1"></i> Fork
+                            </button>
+                            <!-- Report button moved here to be more prominent, available for everyone -->
+                            <a href="{{ url_for('paste.flag_paste', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-flag me-1"></i> Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Owner actions - moved below main buttons but still easily accessible -->
+                {% if current_user.is_authenticated and current_user.id == paste.user_id %}
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="btn-group" role="group">
                         <a href="{{ url_for('paste.edit', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-edit me-1"></i> Edit
                         </a>
@@ -258,8 +261,8 @@
                             </button>
                         </form>
                     </div>
-                    {% endif %}
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
