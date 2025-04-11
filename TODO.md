@@ -40,6 +40,7 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Private Comments functionality (Pro+)
 - [ ] Live Collaborative Pastes (Team)
 - [ ] Team seat sharing (Team)
+- [x] Tagging system as a Premium feature
 ## Low Priority
 - [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
@@ -87,3 +88,4 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [x] Implement account lockout protection after failed attempts
 - [x] Add password strength requirements and validation
 - [x] Implement a dark/light theme toggle with customized styling
+- [x] Implement tagging system as a Premium feature
