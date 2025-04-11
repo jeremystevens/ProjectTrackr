@@ -149,10 +149,7 @@
                     
                         {% if paste.user_id %}
                             <span class="text-muted paste-metadata-item">
-                                <i class="fas fa-user me-1"></i> Author: 
-                                <a href="{{ url_for('user.profile', username=paste.author.username) }}">
-                                    {{ paste.author.username }}
-                                </a>
+                                <i class="fas fa-user me-1"></i> Author: <a href="{{ url_for('user.profile', username=paste.author.username) }}">{{ paste.author.username }}</a>
                             </span>
                         {% endif %}
                         
