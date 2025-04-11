@@ -166,6 +166,19 @@ class PasteForm(FlaskForm):
     ])
     comments_enabled = BooleanField('Enable Comments', default=True)
     burn_after_read = BooleanField('Burn After Read (delete after first view)', default=False)
+    
+    # Encryption options
+    enable_encryption = BooleanField('Enable Encryption', default=False)
+    encryption_type = SelectField('Encryption Type', choices=[
+        ('fernet-random', 'Random Key (link-based)'),
+        ('fernet-password', 'Password Protected')
+    ], default='fernet-random')
+    encryption_password = PasswordField('Encryption Password', validators=[Optional()])
+    confirm_encryption_password = PasswordField('Confirm Password', validators=[
+        Optional(), 
+        EqualTo('encryption_password', message='Passwords must match.')
+    ])
+    
     post_as_guest = BooleanField('Paste as a guest', default=False)
     edit_description = StringField('Edit Description (for existing pastes)', validators=[Optional(), Length(max=255)])
     submit = SubmitField('Save Paste')

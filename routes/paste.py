@@ -114,6 +114,22 @@ def create():
         # Calculate paste size
         paste.calculate_size()
         
+        # Handle encryption if enabled
+        if hasattr(form, 'enable_encryption') and form.enable_encryption.data:
+            encryption_type = form.encryption_type.data
+            encryption_password = None
+            
+            # For password-protected encryption
+            if encryption_type == 'fernet-password' and form.encryption_password.data:
+                encryption_password = form.encryption_password.data
+                    
+            # Encrypt the paste content
+            if paste.encrypt(encryption_password):
+                current_app.logger.info(f"Paste encrypted with method: {encryption_type}")
+            else:
+                current_app.logger.error("Failed to encrypt paste")
+                flash('Failed to encrypt paste.', 'danger')
+        
         db.session.add(paste)
         db.session.commit()
         

@@ -593,10 +593,11 @@ class Paste(db.Model):
             return None
             
         # Decrypt the content
+        method = self.encryption_method or 'fernet-random'
         decrypted_content = decrypt_content(
             self.content,
             self.encryption_salt,
-            self.encryption_method,
+            method,
             password
         )
         
