@@ -215,32 +215,47 @@ document.addEventListener("DOMContentLoaded", function() {
   const encryptionToggle = document.getElementById("enable-encryption-toggle");
   const encryptionOptions = document.querySelector(".encryption-options");
   const encryptionTypeSelector = document.getElementById("encryption-type-selector");
-  const passwordField = document.querySelector(".password-field");
+  
+  console.log("Encryption toggle element:", encryptionToggle);
+  console.log("Encryption options element:", encryptionOptions);
+  console.log("Encryption type selector element:", encryptionTypeSelector);
   
   if (encryptionToggle) {
+    console.log("Adding change event listener to encryption toggle");
     encryptionToggle.addEventListener("change", function() {
+      console.log("Encryption toggle changed, checked:", this.checked);
       if (this.checked) {
         encryptionOptions.classList.remove("d-none");
+        console.log("Showing encryption options");
       } else {
         encryptionOptions.classList.add("d-none");
+        console.log("Hiding encryption options");
       }
     });
+  } else {
+    console.log("Encryption toggle element not found!");
   }
   
   if (encryptionTypeSelector) {
+    console.log("Adding change event listener to encryption type selector");
     encryptionTypeSelector.addEventListener("change", function() {
+      console.log("Encryption type changed to:", this.value);
       if (this.value === "fernet-password") {
         // Show all password fields
+        console.log("Showing password fields");
         document.querySelectorAll('.password-field').forEach(field => {
           field.classList.remove("d-none");
         });
       } else {
         // Hide all password fields
+        console.log("Hiding password fields");
         document.querySelectorAll('.password-field').forEach(field => {
           field.classList.add("d-none");
         });
       }
     });
+  } else {
+    console.log("Encryption type selector element not found!");
   }
   // Add event listener to template selector
   templateSelector.addEventListener("change", function() {
