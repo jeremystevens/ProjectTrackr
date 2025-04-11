@@ -51,7 +51,6 @@ footer {
   display: flex;
   flex-wrap: nowrap; /* Prevent buttons from wrapping to next line */
   gap: 0.5rem;
-  justify-content: flex-end; /* Align all buttons to the right */
   width: 100%;
   overflow-x: auto; /* Enable horizontal scrolling on small screens rather than wrapping */
 }
@@ -75,10 +74,25 @@ pre {
   padding: 1rem;
   overflow: auto;
   margin-bottom: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 pre.has-line-numbers {
   padding-left: 3.5rem;
+}
+
+/* Make code blocks fill container width */
+.paste-content {
+  width: 100%;
+  max-width: 100%;
+}
+
+.paste-content pre, 
+.paste-content code {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .line-numbers-wrapper {

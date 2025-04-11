@@ -219,8 +219,8 @@
                 <!-- Action buttons on their own row, with all buttons in a single line, right-aligned -->
                 <div class="paste-actions-row mt-2">
                     <div class="paste-actions">
-                        <!-- All action buttons in a single container, right-aligned -->
-                        <div class="d-flex flex-row flex-nowrap ms-auto">
+                        <!-- All action buttons in a single container, left-aligned -->
+                        <div class="d-flex flex-row flex-nowrap">
                             <!-- Regular action buttons for all users -->
                             <div class="btn-group" role="group">
                                 <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
@@ -313,7 +313,7 @@
             {% endif %}
         </div>
         
-        <div class="paste-content p-0">
+        <div class="paste-content p-0 w-100">
             {{ highlighted_code | safe }}
         </div>
     </div>
