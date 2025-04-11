@@ -76,6 +76,7 @@ pre.has-line-numbers {
   max-width: 100%;
   display: block;
   height: auto;
+  background-color: var(--hljs-bg);
 }
 
 .paste-content pre, 
@@ -93,6 +94,7 @@ pre.has-line-numbers {
   display: block;
   width: 100%;
   height: 100%;
+  background-color: var(--hljs-bg);
 }
 
 /* Style the code block to fill the space */
@@ -102,6 +104,7 @@ pre.has-line-numbers {
   padding: 1rem;
   border-radius: 0;
   min-height: 300px;
+  background-color: transparent !important;
 }
 
 /* Fix container to expand to its max width */
@@ -110,6 +113,7 @@ pre.has-line-numbers {
   margin: 0 !important;
   width: 100%;
   max-width: 100%;
+  background-color: var(--hljs-bg);
 }
 
 /* Fix for the paste view consistency */
