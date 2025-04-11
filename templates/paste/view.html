@@ -223,6 +223,26 @@
                     {% endif %}
                 </div>
             </div>
+            {% elif current_user.is_authenticated and (current_user.is_premium or current_user.has_free_ai_trials_available()) %}
+            <div class="paste-ai-summary">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-robot me-2 text-primary"></i>
+                        <span class="fw-semibold text-primary">AI Summary:</span>
+                        <span class="text-muted ms-2">Generate an AI-powered summary of this code.</span>
+                    </div>
+                    <button class="btn btn-sm btn-primary generate-summary-btn" 
+                            title="Generate AI summary" 
+                            data-paste-id="{{ paste.short_id }}"
+                            {% if current_user.is_premium %}data-premium="true"{% endif %}>
+                        {% if current_user.is_premium %}
+                            <i class="fas fa-magic me-1"></i> Generate Summary
+                        {% else %}
+                            <i class="fas fa-magic me-1"></i> Generate Summary ({{ current_user.get_remaining_free_trials() }} trials left)
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
             {% endif %}
         </div>
         
@@ -367,13 +387,130 @@
         });
     });
     
-    // Handle AI summary refresh button click (Premium feature)
-    document.querySelectorAll('.refresh-summary-btn').forEach(function(button) {
+    // Handle AI summary generation button click
+    document.querySelectorAll('.generate-summary-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             const pasteId = this.dataset.pasteId;
             const originalHTML = this.innerHTML;
-            const aiSummaryElement = this.closest('.paste-ai-summary').querySelector('.ai-summary-content');
-            const originalSummary = aiSummaryElement.querySelector('span.text-muted').textContent;
+            const aiSummaryContainer = this.closest('.paste-ai-summary');
+            
+            // Show loading state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            this.disabled = true;
+            
+            // Call the API endpoint to generate the summary
+            fetch(`/api/${pasteId}/generate-summary`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Failed to generate AI summary');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Success - replace the entire summary section with the new content
+                const newContent = `
+                <div class="d-flex align-items-center">
+                    <div class="ai-summary-content">
+                        <i class="fas fa-robot me-2 text-primary"></i>
+                        <span class="fw-semibold text-primary">AI Summary:</span>
+                        <span class="text-muted ms-2">${data.summary}</span>
+                    </div>
+                    ${button.closest('.paste-ai-summary').querySelector('button').hasAttribute('data-premium') ? 
+                        `<button class="btn btn-sm btn-outline-primary ms-auto refresh-summary-btn" 
+                                title="Regenerate summary" 
+                                data-paste-id="${pasteId}">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>` : ''}
+                </div>`;
+                
+                aiSummaryContainer.innerHTML = newContent;
+                
+                // Show success toast
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-check-circle me-2"></i>
+                            AI summary generated successfully!
+                            ${data.remaining_trials !== undefined && !data.is_premium ? 
+                              `<br><small>(${data.remaining_trials} free trials remaining)</small>` : ''}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Initialize and show the toast
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', function() {
+                    document.body.removeChild(toast);
+                });
+                
+                // Reattach event handlers for the new refresh button if it exists
+                if (aiSummaryContainer.querySelector('.refresh-summary-btn')) {
+                    attachRefreshButtonHandlers();
+                }
+            })
+            .catch(error => {
+                console.error('Error generating summary:', error);
+                
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                
+                // Show error toast
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            ${error.message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Initialize and show the toast
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', function() {
+                    document.body.removeChild(toast);
+                });
+            });
+        });
+    });
+    
+    // Function to attach refresh button handlers
+    function attachRefreshButtonHandlers() {
+        document.querySelectorAll('.refresh-summary-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const pasteId = this.dataset.pasteId;
+                const originalHTML = this.innerHTML;
+                const aiSummaryElement = this.closest('.paste-ai-summary').querySelector('.ai-summary-content');
+                const originalSummary = aiSummaryElement.querySelector('span.text-muted').textContent;
             
             // Show loading state
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
