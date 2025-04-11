@@ -49,8 +49,23 @@ footer {
 
 .paste-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Prevent buttons from wrapping to next line */
   gap: 0.5rem;
+  justify-content: flex-end; /* Align all buttons to the right */
+  width: 100%;
+  overflow-x: auto; /* Enable horizontal scrolling on small screens rather than wrapping */
+}
+
+/* Keep button groups on a single line */
+.paste-actions .d-flex {
+  flex-wrap: nowrap;
+  width: auto;
+}
+
+/* Add styling for delete button in form to match other buttons */
+.paste-actions form {
+  margin-bottom: 0;
+  display: inline-block;
 }
 
 /* Code highlight styles */
@@ -171,6 +186,17 @@ pre.has-line-numbers {
   
   .paste-actions {
     position: relative;
+  }
+  
+  /* Adjust button sizes on small screens to fit better */
+  .paste-actions .btn-sm {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Reduce margins between button groups */
+  .paste-actions .btn-group + .btn-group {
+    margin-left: 0.25rem !important;
   }
 }
 

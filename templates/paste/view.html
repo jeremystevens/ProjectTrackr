@@ -218,11 +218,11 @@
                 
                 <!-- Action buttons on their own row, with all buttons in a single line, right-aligned -->
                 <div class="paste-actions-row mt-2">
-                    <div class="paste-actions d-flex justify-content-end">
-                        <!-- Single button row aligned to the right side -->
-                        <div class="d-flex flex-row flex-nowrap">
-                            <!-- Standard action buttons -->
-                            <div class="btn-group me-0" role="group">
+                    <div class="paste-actions">
+                        <!-- All action buttons in a single container, right-aligned -->
+                        <div class="d-flex flex-row flex-nowrap ms-auto">
+                            <!-- Regular action buttons for all users -->
+                            <div class="btn-group" role="group">
                                 <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                                     <i class="fas fa-code me-1"></i> Raw
                                 </a>
@@ -238,13 +238,12 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
                                     <i class="fas fa-code-branch me-1"></i> Fork
                                 </button>
-                                <!-- Report button available for everyone -->
                                 <a href="{{ url_for('paste.flag_paste', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-danger">
                                     <i class="fas fa-flag me-1"></i> Report
                                 </a>
                             </div>
                             
-                            <!-- Owner-specific action buttons, directly adjacent to standard buttons -->
+                            <!-- Owner-specific action buttons -->
                             {% if current_user.is_authenticated and current_user.id == paste.user_id %}
                             <div class="btn-group ms-2" role="group">
                                 <a href="{{ url_for('paste.edit', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-primary">
@@ -253,8 +252,7 @@
                                 <a href="{{ url_for('paste.revisions', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-info">
                                     <i class="fas fa-history me-1"></i> Revisions
                                 </a>
-                                <form action="{{ url_for('paste.delete', short_id=paste.short_id) }}" method="POST" class="d-inline">
-                                    <!-- Use the form.hidden_tag() to include CSRF token -->
+                                <form action="{{ url_for('paste.delete', short_id=paste.short_id) }}" method="POST" style="display: inline-block;">
                                     {% if form %}
                                         {{ form.hidden_tag() }}
                                     {% endif %}
