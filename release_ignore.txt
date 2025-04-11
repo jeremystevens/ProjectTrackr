@@ -1,10 +1,13 @@
-# Replit specific files
+# Replit specific files and Git
 .replit
 replit.nix
 .breakpoints
 .upm/
 .config/
 .gitignore
+.git/
+.git
+**/.git/**
 .pythonlibs/
 .pythonlibs
 **/.pythonlibs/**
@@ -58,10 +61,11 @@ TODO.md
 CHANGELOG.md
 MAINTENANCE.md
 MAINTENANCE_AI.md
-add_*.py
-fix_*.py
-prune_*.py
-set_*.py
+# Don't exclude migration scripts
+# add_*.py
+# fix_*.py
+# prune_*.py
+# set_*.py
 setup_*.sh
 *.sh
 
