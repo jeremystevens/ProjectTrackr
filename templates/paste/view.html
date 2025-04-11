@@ -71,12 +71,16 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        margin-bottom: 0.5rem;
     }
     
     .paste-actions {
         gap: 0.5rem;
         justify-content: flex-start;
+        width: 100%;
+    }
+    
+    .card-header.paste-header {
+        border-bottom: none;
     }
     
     /* Responsive adjustments */
@@ -103,10 +107,12 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header paste-header">
+    <div class="card-header paste-header pb-0">
         <h4 class="mb-0 paste-title">{{ paste.title }}</h4>
-        
-        <div class="paste-actions d-flex flex-wrap mt-2">
+    </div>
+    
+    <div class="card-header pt-1">
+        <div class="paste-actions d-flex flex-wrap">
             <div class="btn-group" role="group">
                 <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                     <i class="fas fa-code me-1"></i> Raw
