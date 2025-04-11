@@ -1,0 +1,68 @@
+# AI Feature Implementation Guidelines
+
+This document contains important tips and best practices for the implementation of AI features in FlaskBin's premium subscription model.
+
+## Profitability Protection Strategies
+
+When implementing AI-powered features, follow these guidelines to protect service profitability:
+
+1. **Queue-Based Processing** ✅
+   - Implement async queue-based processing for heavy AI calls (refactoring, complex suggestions)
+   - Use Celery, Redis Queue, or similar task queue systems to manage load during peak usage
+   - Add rate limiting specific to AI endpoints beyond the general rate limits
+
+2. **Result Caching** ✅
+   - Cache identical AI requests to reduce redundant API calls
+   - Implement time-based cache invalidation (e.g., 24 hours for most results)
+   - For search queries, cache common keywords and code patterns
+
+3. **Subscription Management** ✅
+   - Offer annual plans at 10-15% discount to reduce churn and processing costs
+   - Add clear usage meters in the user interface to create awareness of consumption
+   - Implement tiered monthly rollover of unused credits (max 50% of monthly allocation)
+
+4. **Feature Tiering** ✅
+   - Lock advanced resource-intensive features (refactoring, complex search) to higher-tier plans
+   - Make API complexity proportional to tier level (basic suggestions in Starter, code restructuring in Pro)
+   - Team plan should focus on collaborative AI features, not just higher limits
+
+5. **Conversion Optimization** ✅
+   - For free users, show limited previews of AI features with clear upgrade CTAs
+   - Blur or truncate full AI results for free tier (e.g., show first 25% of recommendations)
+   - Offer limited-time trials of advanced features to encourage upgrades
+
+## Implementation Guidelines
+
+When building the AI functionality:
+
+### Model Usage
+- Use the most efficient OpenAI model for each task (code-related features may use Codex-based models)
+- Set appropriate token limits for each feature to control costs
+- Implement prompt engineering best practices to maximize response quality while minimizing token usage
+
+### Request Batching
+- Where possible, batch multiple small requests into single API calls
+- Build client-side queuing for rapid consecutive AI requests
+- Align batch timing with user experience expectations (immediate for simple tasks, background for complex tasks)
+
+### Monitoring
+- Log all AI API calls with associated metrics (tokens used, time taken, success rate)
+- Set up alerting for unusual usage patterns that could indicate abuse
+- Create admin dashboard with cost monitoring for AI feature usage
+
+## Stripe Integration Guidelines
+
+For subscription management:
+
+- Implement metered billing for AI usage beyond tier limits
+- Use Stripe webhooks to handle subscription lifecycle events
+- Store usage records for auditing and reporting
+
+## Example Usage Limits
+
+| Plan | AI Calls/Month | AI Search Queries/Month | Max Tokens/Request | Additional Cost |
+|------|----------------|-------------------------|-------------------|----------------|
+| Free | 0 | 0 | N/A | N/A |
+| Starter AI | 50 | 100 | 1,000 | $0.10 per call |
+| Pro AI | 150 | 300 | 2,000 | $0.08 per call |
+| Dev Team | 500 | 1,000 | 4,000 | $0.05 per call |
