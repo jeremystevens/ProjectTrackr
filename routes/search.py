@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, flash
 from sqlalchemy import or_, and_
 from datetime import datetime
-from models import Paste, User
+from models import Paste, User, Tag
+from flask_login import current_user
 
 search_bp = Blueprint('search', __name__, url_prefix='/search')
 
@@ -39,6 +40,22 @@ def search():
             return render_template('search/results.html', pastes=None, query=query, 
                                   search_type=search_type, total=0)
         pastes_query = base_query.filter(Paste.user_id.in_(user_ids))
+    elif search_type == 'tag':
+        # Check if user is premium for tag search
+        if not current_user.is_authenticated or not current_user.is_premium:
+            flash("Tag search is a Premium feature. Please upgrade your account to use it.", "warning")
+            return render_template('search/results.html', pastes=None, query=query, 
+                                  search_type=search_type, total=0, premium_required=True)
+        
+        # Find tags matching the query
+        tag = Tag.query.filter(Tag.name.ilike(f'%{query}%')).first()
+        if not tag:
+            # If no matching tag found, return empty results
+            return render_template('search/results.html', pastes=None, query=query, 
+                                  search_type=search_type, total=0)
+        
+        # Find pastes with this tag through the many-to-many relationship
+        pastes_query = base_query.filter(Paste.tags.any(Tag.id == tag.id))
     
     # Get total count for pagination
     total = pastes_query.count()

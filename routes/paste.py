@@ -713,6 +713,9 @@ def edit(short_id):
         # Set post_as_guest to true if this paste was posted as a guest by the current user
         if hasattr(form, 'post_as_guest') and paste.user_id is None:
             form.post_as_guest.data = True
+        # Pre-fill tags if they exist
+        if hasattr(form, 'tags') and paste.tags.count() > 0:
+            form.tags.data = ', '.join(paste.get_tag_names())
         # We don't pre-fill expiration as it's relative
         
     if form.validate_on_submit():
@@ -773,6 +776,19 @@ def edit(short_id):
         
         # Recalculate paste size
         paste.calculate_size()
+        
+        # Handle tags if premium user
+        if current_user.is_authenticated and current_user.is_premium and hasattr(form, 'tags'):
+            # First clear existing tags
+            paste.clear_tags()
+            
+            # Then add new tags if any
+            if form.tags.data:
+                tag_names = [tag.strip() for tag in form.tags.data.split(',') if tag.strip()]
+                if tag_names:
+                    paste.add_tags(tag_names)
+                    import logging
+                    logging.debug(f"Updated tags for paste: {tag_names}")
         
         db.session.commit()
         flash('Paste updated successfully!', 'success')
