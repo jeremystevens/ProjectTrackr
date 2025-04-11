@@ -49,10 +49,13 @@ def highlight_code(code, syntax='text'):
     highlighted = highlight(code, lexer, formatter)
     css = HtmlFormatter(style='monokai').get_style_defs('.highlight')
     
-    # Add additional styles for better readability
-    css += "\n.highlight { background-color: #272822; border-radius: 4px; padding: 10px; }"
-    css += "\n.highlight pre { background-color: #272822; color: #f8f8f2; }"
+    # Add additional styles for better readability and full width
+    css += "\n.highlight { background-color: #272822; border-radius: 4px; padding: 10px; width: 100%; }"
+    css += "\n.highlight pre { background-color: #272822; color: #f8f8f2; width: 100%; }"
     css += "\n.highlight .linenos { color: #8f908a; }"
+    css += "\n.highlighttable { width: 100%; display: table; table-layout: fixed; }"
+    css += "\n.highlighttable td { padding: 0; }"
+    css += "\n.highlighttable td.code { width: 100%; }"
     
     return highlighted, css
 
