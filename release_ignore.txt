@@ -1,0 +1,78 @@
+# Replit specific files
+.replit
+replit.nix
+.breakpoints
+.upm/
+.config/
+.gitignore
+
+# Environment files
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Log files
+*.log
+log/
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Test files
+tests/
+test_*.py
+*_test.py
+pytest.ini
+
+# Development files
+*.test.*
+*.dev.*
+TODO.md
+CHANGELOG.md
+MAINTENANCE.md
+MAINTENANCE_AI.md
+add_*.py
+fix_*.py
+prune_*.py
+set_*.py
+setup_*.sh
+*.sh
+
+# Assets not needed for deployment
+attached_assets/
+cookies.txt
+generated-icon.png
+
+# Documentation
+README.md
+
+# Release directory itself (should be excluded from copying into itself)
+/release/
+release_ignore.txt
+export_release.py
+
+# Other non-production files
+dependencies_for_local_testing.txt
+dependencies.py
+uv.lock
