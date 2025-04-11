@@ -1,18 +1,31 @@
 # FlaskBin TODO List
 This document tracks future enhancements and features planned for the FlaskBin application.
+## High Priority
+- [ ] Implement premium subscription functionality with Stripe integration
+- [ ] Create OpenAI integration for AI-powered features (tags, fixes, refactoring)
 ## Medium Priority
 - [ ] [Undecided] Add support for image/file uploads within pastes (content moderation concerns)
 - [ ] Fix light mode styling issues (temporarily disabled theme toggle)
+- [ ] Implement custom syntax themes for Pro and Team subscribers
+- [ ] Build per-paste analytics for subscribers (views, source info)
+## Premium Features
+- [ ] AI-Generated Tags for pastes (Starter+)
+- [ ] AI Fix Suggestions for code pastes (Starter+)
+- [ ] AI Code Refactoring (Pro+)
+- [ ] Advanced AI Search (Pro+)
+- [ ] Per-Paste Analytics (Starter+)
+- [ ] Paste Access Insights (Pro+)
+- [ ] Scheduled Paste Publishing (Pro+)
+- [ ] Private Comments functionality (Pro+)
+- [ ] Live Collaborative Pastes (Team)
+- [ ] Team seat sharing (Team)
 ## Low Priority
 - [ ] Add email verification for new user registrations (pending SendGrid integration)
 - [ ] Add API endpoints for programmatic paste creation and access
 - [ ] Create a browser extension for quick pasting
 - [ ] Support collaborative real-time editing
 - [ ] Create a desktop application using Electron
-- [ ] Add support for custom paste syntax themes
-
 - [ ] Add internationalization (i18n) support
-- [ ] Add OpenAI integration for smart features
 ## Technical Debt
 - [ ] Improve test coverage with unit and integration tests
 - [ ] Optimize database queries for better performance

@@ -91,6 +91,14 @@
                                     </a>
                                 </li>
                                 <li>
+                                    <a class="dropdown-item" href="{{ url_for('account.account_page') }}">
+                                        <i class="fas fa-id-card me-2"></i>Account
+                                        {% if current_user.subscription_tier != 'free' %}
+                                        <span class="badge bg-primary float-end">{{ current_user.get_tier_display_name() }}</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="dropdown-item" href="{{ url_for('user.edit_profile') }}">
                                         <i class="fas fa-cog me-2"></i>Settings
                                     </a>
