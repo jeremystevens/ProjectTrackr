@@ -24,4 +24,5 @@ dependencies = [
     "flask-limiter>=3.12",
     "trafilatura>=2.0.0",
     "sentry-sdk[flask]>=2.25.1",
+    "cryptography>=44.0.2",
 ]

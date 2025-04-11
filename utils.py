@@ -2,7 +2,12 @@ import random
 import string
 import bleach
 import uuid
+import os
+import base64
 from datetime import datetime
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from flask import request, session, abort, current_app, g
 from flask_login import current_user
 from functools import wraps
@@ -116,6 +121,143 @@ def get_viewer_id():
     from models import PasteView
     return PasteView.get_or_create_viewer_id(session, get_client_ip())
     
+def encrypt_content(content, password=None):
+    """
+    Encrypt content using Fernet symmetric encryption
+    
+    Args:
+        content (str): The content to encrypt
+        password (str, optional): If provided, derives a key from the password
+                                  If not, generates a random key
+                                  
+    Returns:
+        tuple: (encrypted_content, salt, method)
+               - encrypted_content: Base64 encoded encrypted bytes
+               - salt: Base64 encoded salt (if password was used) or None
+               - method: Either 'fernet-random' or 'fernet-password'
+    """
+    try:
+        # Convert content to bytes if it's a string
+        if isinstance(content, str):
+            content_bytes = content.encode('utf-8')
+        else:
+            content_bytes = content
+            
+        if password:
+            # Password-based encryption
+            # Generate a random salt
+            salt = os.urandom(16)
+            
+            # Derive a key from the password and salt
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+            )
+            key = base64.urlsafe_b64encode(kdf.derive(password.encode('utf-8')))
+            
+            # Create a Fernet cipher with the derived key
+            cipher = Fernet(key)
+            
+            # Encrypt the content
+            encrypted_content = cipher.encrypt(content_bytes)
+            
+            return (
+                base64.urlsafe_b64encode(encrypted_content).decode('utf-8'),
+                base64.urlsafe_b64encode(salt).decode('utf-8'),
+                'fernet-password'
+            )
+        else:
+            # Random key-based encryption
+            # Generate a random key
+            key = Fernet.generate_key()
+            
+            # Create a Fernet cipher with the random key
+            cipher = Fernet(key)
+            
+            # Encrypt the content
+            encrypted_content = cipher.encrypt(content_bytes)
+            
+            # Combine the key and encrypted content
+            # This is necessary because we need the key to decrypt later
+            combined = key + b"." + encrypted_content
+            
+            return (
+                base64.urlsafe_b64encode(combined).decode('utf-8'),
+                None,
+                'fernet-random'
+            )
+    except Exception as e:
+        current_app.logger.error(f"Encryption error: {str(e)}")
+        return None, None, None
+        
+def decrypt_content(encrypted_content, salt=None, method='fernet-random', password=None):
+    """
+    Decrypt content that was encrypted using encrypt_content
+    
+    Args:
+        encrypted_content (str): Base64 encoded encrypted content
+        salt (str, optional): Base64 encoded salt (for password-based encryption)
+        method (str): Either 'fernet-random' or 'fernet-password'
+        password (str, optional): The password to use for decryption (for password-based)
+        
+    Returns:
+        str: The decrypted content or None if decryption fails
+    """
+    try:
+        # Decode the base64 encoded encrypted content
+        encrypted_bytes = base64.urlsafe_b64decode(encrypted_content.encode('utf-8'))
+        
+        if method == 'fernet-password':
+            if not password or not salt:
+                current_app.logger.error("Password and salt required for password-based decryption")
+                return None
+                
+            # Decode the salt
+            salt_bytes = base64.urlsafe_b64decode(salt.encode('utf-8'))
+            
+            # Derive the key from the password and salt
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt_bytes,
+                iterations=100000,
+            )
+            key = base64.urlsafe_b64encode(kdf.derive(password.encode('utf-8')))
+            
+            # Create a Fernet cipher with the derived key
+            cipher = Fernet(key)
+            
+            # Decrypt the content
+            decrypted_bytes = cipher.decrypt(encrypted_bytes)
+            
+        elif method == 'fernet-random':
+            # Split the combined key and encrypted content
+            parts = encrypted_bytes.split(b".", 1)
+            if len(parts) != 2:
+                current_app.logger.error("Invalid format for random key encryption")
+                return None
+                
+            key, actual_encrypted = parts
+            
+            # Create a Fernet cipher with the extracted key
+            cipher = Fernet(key)
+            
+            # Decrypt the content
+            decrypted_bytes = cipher.decrypt(actual_encrypted)
+            
+        else:
+            current_app.logger.error(f"Unsupported encryption method: {method}")
+            return None
+            
+        # Convert bytes back to string
+        return decrypted_bytes.decode('utf-8')
+        
+    except Exception as e:
+        current_app.logger.error(f"Decryption error: {str(e)}")
+        return None
+
 def check_shadowban(func):
     """
     Decorator to check if the current user is shadowbanned.

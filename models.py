@@ -7,6 +7,7 @@ from app import db, app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
+from utils import encrypt_content, decrypt_content
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -261,6 +262,14 @@ class Paste(db.Model):
     size = db.Column(db.Integer, default=0)
     comments_enabled = db.Column(db.Boolean, default=True)
     burn_after_read = db.Column(db.Boolean, default=False)
+    
+    # Encryption fields
+    is_encrypted = db.Column(db.Boolean, default=False)
+    encryption_method = db.Column(db.String(50), nullable=True)
+    password_protected = db.Column(db.Boolean, default=False)
+    password_hash = db.Column(db.String(256), nullable=True)
+    encryption_salt = db.Column(db.String(128), nullable=True)
+    
     # Add collection relationship
     collection_id = db.Column(db.Integer, db.ForeignKey('paste_collections.id'), nullable=True)
     
@@ -513,6 +522,102 @@ class Paste(db.Model):
         
         return fork
         
+    def set_password(self, password):
+        """Hash and store a password for password-protected pastes"""
+        if not password:
+            self.password_protected = False
+            self.password_hash = None
+            return
+            
+        self.password_protected = True
+        self.password_hash = generate_password_hash(password)
+        
+    def check_password(self, password):
+        """Verify the password for password-protected pastes"""
+        if not self.password_protected or not self.password_hash:
+            return True  # No password needed
+            
+        return check_password_hash(self.password_hash, password)
+        
+    def encrypt(self, password=None):
+        """
+        Encrypt the paste content
+        
+        Args:
+            password (str, optional): Password to use for encryption. 
+                                      If None, uses random key encryption.
+        
+        Returns:
+            bool: Whether encryption was successful
+        """
+        if self.is_encrypted:
+            # Already encrypted
+            return True
+            
+        # Encrypt the content
+        encrypted_content, salt, method = encrypt_content(self.content, password)
+        
+        if encrypted_content is None:
+            # Encryption failed
+            return False
+            
+        # Store the encrypted content and metadata
+        self.content = encrypted_content
+        self.encryption_salt = salt
+        self.encryption_method = method
+        self.is_encrypted = True
+        
+        # If a password was provided, also set it
+        if password:
+            self.set_password(password)
+            
+        return True
+        
+    def decrypt(self, password=None):
+        """
+        Decrypt the paste content
+        
+        Args:
+            password (str, optional): Password to use for decryption,
+                                      if the paste is password-protected.
+        
+        Returns:
+            str or None: The decrypted content or None if decryption failed
+        """
+        if not self.is_encrypted:
+            # Not encrypted, return as is
+            return self.content
+            
+        # Check password if needed
+        if self.password_protected and not self.check_password(password):
+            return None
+            
+        # Decrypt the content
+        decrypted_content = decrypt_content(
+            self.content,
+            self.encryption_salt,
+            self.encryption_method,
+            password
+        )
+        
+        return decrypted_content
+        
+    def get_content(self, password=None):
+        """
+        Get the content, decrypting it if necessary
+        
+        Args:
+            password (str, optional): Password to use for decryption,
+                                      if the paste is password-protected.
+        
+        Returns:
+            str or None: The content or None if decryption failed
+        """
+        if self.is_encrypted:
+            return self.decrypt(password)
+        else:
+            return self.content
+    
     def __repr__(self):
         return f'<Paste {self.id}: {self.title}>'
 
