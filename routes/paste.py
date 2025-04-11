@@ -115,6 +115,7 @@ def create():
         paste.calculate_size()
         
         # Handle encryption if enabled
+        encryption_key = None
         if hasattr(form, 'enable_encryption') and form.enable_encryption.data:
             encryption_type = form.encryption_type.data
             encryption_password = None
@@ -138,6 +139,12 @@ def create():
                 current_app.logger.info(f"Paste encrypted successfully with method: {encryption_type}")
                 # Log extra confirmation
                 logging.debug(f"Encryption successful. Is encrypted: {paste.is_encrypted}, Method: {paste.encryption_method}")
+                
+                # If using random key, save the key for the redirect
+                if encryption_type == 'fernet-random':
+                    # Extract the encryption key from the salt
+                    encryption_key = paste.encryption_salt
+                    logging.debug(f"Generated encryption key: {encryption_key}")
             else:
                 current_app.logger.error("Failed to encrypt paste")
                 flash('Failed to encrypt paste.', 'danger')
@@ -146,7 +153,16 @@ def create():
         db.session.commit()
         
         flash('Paste created successfully!', 'success')
-        return redirect(url_for('paste.view', short_id=paste.short_id))
+        
+        # Redirect to the appropriate URL based on encryption type
+        if paste.is_encrypted and paste.encryption_method == 'fernet-random' and encryption_key:
+            # For random key encryption, include the key in the URL
+            from urllib.parse import quote_plus
+            key_part = f"?key={quote_plus(encryption_key)}"
+            return redirect(url_for('paste.view', short_id=paste.short_id) + key_part)
+        else:
+            # For password-protected or non-encrypted pastes, just use the standard URL
+            return redirect(url_for('paste.view', short_id=paste.short_id))
     
     # If form validation fails
     for field, errors in form.errors.items():
@@ -184,6 +200,10 @@ def view(short_id):
     password_form = None
     decryption_error = None
     is_encrypted = paste.is_encrypted
+    
+    # Added debug logging
+    import logging
+    logging.debug(f"Handling paste: {paste.short_id}, Encrypted: {is_encrypted}, Method: {paste.encryption_method}")
     
     if is_encrypted:
         # Create a password form for encrypted pastes
@@ -230,10 +250,44 @@ def view(short_id):
         
         # For random-key encrypted pastes that aren't password protected
         elif not paste.password_protected:
-            # Try to decrypt with default settings
-            decrypted_content = paste.get_content()
-            if decrypted_content:
-                content = decrypted_content
+            # Get key from URL for random key encryption
+            key = request.args.get('key')
+            logging.debug(f"Random key from URL: {key}")
+            
+            # For random key encryption, key is required in the URL
+            if paste.encryption_method == 'fernet-random':
+                if not key:
+                    # No key provided, show error and redirect to home
+                    logging.error(f"No encryption key provided for random-key encrypted paste: {paste.short_id}")
+                    flash('This paste requires an encryption key that was not provided in the URL.', 'danger')
+                    return redirect(url_for('paste.index'))
+                
+                # Use the key from the URL
+                # We need to pass the key as the encryption_salt for decryption
+                paste.encryption_salt = key
+                logging.debug(f"Using key from URL: {key}")
+                
+                # Try to decrypt with the key from URL
+                decrypted_content = paste.get_content()
+                if decrypted_content:
+                    content = decrypted_content
+                    # Store in session for future reference
+                    session_decrypted = session.get('decrypted_pastes', {})
+                    session_decrypted[paste.short_id] = True
+                    session['decrypted_pastes'] = session_decrypted
+                else:
+                    logging.error(f"Failed to decrypt random key paste: {paste.short_id}")
+                    flash('Failed to decrypt paste. The encryption key may be invalid.', 'danger')
+                    return redirect(url_for('paste.index'))
+            else:
+                # Try to decrypt with default settings (for non-random key methods)
+                decrypted_content = paste.get_content()
+                if decrypted_content:
+                    content = decrypted_content
+                    # Store in session for future reference
+                    session_decrypted = session.get('decrypted_pastes', {})
+                    session_decrypted[paste.short_id] = True
+                    session['decrypted_pastes'] = session_decrypted
             
     # Syntax highlighting (now using potentially decrypted content)
     highlighted_code, css = highlight_code(content, paste.syntax)
@@ -319,16 +373,45 @@ def raw(short_id):
     
     # Handle encrypted content
     content = paste.content
+    
+    # Add debug logging
+    import logging
+    logging.debug(f"RAW: Handling encrypted paste: {paste.short_id}, Encrypted: {paste.is_encrypted}, Method: {paste.encryption_method}")
+    
     if paste.is_encrypted:
         # If password protected and not already decrypted in this session, redirect to the standard view
         if paste.password_protected and not session.get('decrypted_pastes', {}).get(paste.short_id):
             flash('This paste is password protected. Please enter the password to view.', 'warning')
             return redirect(url_for('paste.view', short_id=paste.short_id))
+        
+        # For random key encryption, check if we need to get the key from URL
+        if paste.encryption_method == 'fernet-random' and not session.get('decrypted_pastes', {}).get(paste.short_id):
+            # Get key from URL for random key encryption
+            key = request.args.get('key')
+            logging.debug(f"RAW: Random key from URL: {key}")
             
-        # If we've already decrypted this paste or it's not password protected
+            if not key:
+                # No key provided, redirect to the standard view which will handle the error
+                flash('This paste requires an encryption key that was not provided in the URL.', 'danger')
+                return redirect(url_for('paste.view', short_id=paste.short_id))
+            
+            # Use the key from the URL
+            paste.encryption_salt = key
+            logging.debug(f"RAW: Using key from URL for paste {short_id}")
+        
+        # Try to decrypt with the key or from session
         decrypted_content = paste.get_content()
         if decrypted_content:
             content = decrypted_content
+            # Store in session for future reference if not already stored
+            if not session.get('decrypted_pastes', {}).get(paste.short_id):
+                session_decrypted = session.get('decrypted_pastes', {})
+                session_decrypted[paste.short_id] = True
+                session['decrypted_pastes'] = session_decrypted
+        else:
+            logging.error(f"RAW: Failed to decrypt paste {short_id}")
+            flash('Failed to decrypt paste. The encryption key may be invalid.', 'danger')
+            return redirect(url_for('paste.view', short_id=paste.short_id))
     
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
