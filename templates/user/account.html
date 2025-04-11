@@ -175,8 +175,30 @@
                             </div>
                         </div>
                     {% else %}
+                        <!-- Free AI Trials for Free Users -->
+                        {% if features.free_ai_trials.remaining > 0 %}
+                        <div class="alert alert-info mt-3">
+                            <h5 class="mb-2"><i class="fas fa-gift me-2"></i>Free AI Feature Trials</h5>
+                            <p class="mb-2">Try our AI features before subscribing! You have <strong>{{ features.free_ai_trials.remaining }} trial use{{ 's' if features.free_ai_trials.remaining != 1 else '' }}</strong> remaining.</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: {{ features.free_ai_trials.percentage }}%"></div>
+                            </div>
+                            <div class="usage-label mt-1">
+                                <span>{{ features.free_ai_trials.remaining }} remaining</span>
+                                <span>{{ features.free_ai_trials.total }} total</span>
+                            </div>
+                            <p class="mt-2 mb-0 small">Free trials let you test our AI code summarization, smart tagging, and more.</p>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mt-3">
+                            <h5 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Free AI Trials Used</h5>
+                            <p class="mb-2">You've used all your free AI feature trials. Upgrade to a premium plan to continue using AI features.</p>
+                            <p class="mt-2 mb-0 small">Premium plans include AI-powered code summarization, smart tagging, refactoring, and more.</p>
+                        </div>
+                        {% endif %}
+                        
                         <div class="alert alert-light mt-3">
-                            <i class="fas fa-lightbulb me-2"></i> Upgrade to a premium plan to unlock AI features and analytics.
+                            <i class="fas fa-lightbulb me-2"></i> Upgrade to a premium plan to unlock unlimited AI features and analytics.
                         </div>
                     {% endif %}
                 </div>
@@ -209,7 +231,8 @@
                                             <li><i class="fas fa-check"></i> Create & store pastes</li>
                                             <li><i class="fas fa-check"></i> Public/unlisted/private visibility</li>
                                             <li><i class="fas fa-check"></i> Basic syntax highlighting</li>
-                                            <li class="feature-unavailable"><i class="fas fa-times"></i> AI features</li>
+                                            <li><i class="fas fa-check"></i> <strong>3 free AI feature trials</strong></li>
+                                            <li class="feature-unavailable"><i class="fas fa-times"></i> Unlimited AI features</li>
                                             <li class="feature-unavailable"><i class="fas fa-times"></i> Analytics</li>
                                         </ul>
                                     </div>
