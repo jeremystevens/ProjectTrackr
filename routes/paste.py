@@ -119,13 +119,25 @@ def create():
             encryption_type = form.encryption_type.data
             encryption_password = None
             
+            # Debug information
+            import logging
+            logging.debug(f"Encryption enabled with type: {encryption_type}")
+            
             # For password-protected encryption
             if encryption_type == 'fernet-password' and form.encryption_password.data:
                 encryption_password = form.encryption_password.data
+                logging.debug("Using password-based encryption")
+            else:
+                logging.debug("Using random key encryption")
+                    
+            # Store the encryption type on the paste
+            paste.encryption_method = encryption_type
                     
             # Encrypt the paste content
             if paste.encrypt(encryption_password):
-                current_app.logger.info(f"Paste encrypted with method: {encryption_type}")
+                current_app.logger.info(f"Paste encrypted successfully with method: {encryption_type}")
+                # Log extra confirmation
+                logging.debug(f"Encryption successful. Is encrypted: {paste.is_encrypted}, Method: {paste.encryption_method}")
             else:
                 current_app.logger.error("Failed to encrypt paste")
                 flash('Failed to encrypt paste.', 'danger')
