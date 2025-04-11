@@ -39,30 +39,18 @@ footer {
   color: var(--bs-secondary-color);
 }
 
-.paste-actions-row {
+.paste-controls-row {
   margin-top: 0.5rem;
   width: 100%;
-  display: block;
+  display: flex;
   padding-top: 0.5rem;
   border-top: 1px solid var(--bs-border-color);
-}
-
-.paste-actions {
-  display: flex;
-  flex-wrap: nowrap; /* Prevent buttons from wrapping to next line */
-  gap: 0.5rem;
-  width: 100%;
-  overflow-x: auto; /* Enable horizontal scrolling on small screens rather than wrapping */
-}
-
-/* Keep button groups on a single line */
-.paste-actions .d-flex {
   flex-wrap: nowrap;
-  width: auto;
+  overflow-x: auto;
 }
 
 /* Add styling for delete button in form to match other buttons */
-.paste-actions form {
+.paste-controls-row form {
   margin-bottom: 0;
   display: inline-block;
 }
@@ -82,17 +70,37 @@ pre.has-line-numbers {
   padding-left: 3.5rem;
 }
 
-/* Make code blocks fill container width */
+/* Make code blocks fill container width and height */
 .paste-content {
   width: 100%;
   max-width: 100%;
+  display: block;
 }
 
 .paste-content pre, 
-.paste-content code {
+.paste-content code,
+.paste-content div.highlight {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  margin: 0;
+}
+
+/* Fix for code container to expand properly */
+.paste-content .highlight {
+  display: block;
+  width: 100%;
+}
+
+/* Fix container to expand to its max width */
+.card-body .paste-content {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Fix for the paste view consistency */
+.card-body.p-0 {
+  overflow: hidden;
 }
 
 .line-numbers-wrapper {
@@ -198,25 +206,21 @@ pre.has-line-numbers {
     justify-content: center;
   }
   
-  .paste-actions {
-    position: relative;
-  }
-  
   /* Adjust button sizes on small screens to fit better */
-  .paste-actions .btn-sm {
+  .paste-controls-row .btn-sm {
     padding: 0.25rem 0.4rem;
     font-size: 0.75rem;
   }
   
   /* Reduce margins between button groups */
-  .paste-actions .btn-group + .btn-group {
+  .paste-controls-row .btn-group + .btn-group {
     margin-left: 0.25rem !important;
   }
 }
 
 /* Print specific styles */
 @media print {
-  .paste-actions, .navbar, .sidebar, footer {
+  .paste-controls-row, .navbar, .sidebar, footer {
     display: none !important;
   }
   
