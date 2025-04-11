@@ -19,6 +19,7 @@ def profile(username):
     
     page = request.args.get('page', 1, type=int)
     collections = None
+    encryption_keys = {}
     
     # If viewing own profile, show all pastes and collections, otherwise show only public and unlisted
     if current_user.is_authenticated and current_user.id == user.id:
@@ -45,6 +46,11 @@ def profile(username):
         for collection, paste_count in collections_query:
             collection.paste_count = paste_count
             collections.append(collection)
+            
+        # Store encryption keys for random-key encrypted pastes
+        for paste in pastes.items:
+            if paste.is_encrypted and paste.encryption_method == 'fernet-random' and paste.encryption_salt:
+                encryption_keys[paste.short_id] = paste.encryption_salt
     else:
         pastes = Paste.query.filter(
             Paste.user_id == user.id,
@@ -52,7 +58,8 @@ def profile(username):
             or_(Paste.expires_at.is_(None), Paste.expires_at > datetime.utcnow())
         ).order_by(Paste.created_at.desc()).paginate(page=page, per_page=10)
     
-    return render_template('user/profile.html', user=user, pastes=pastes, collections=collections)
+    return render_template('user/profile.html', user=user, pastes=pastes, 
+                           collections=collections, encryption_keys=encryption_keys)
 
 @user_bp.route('/dashboard')
 @login_required

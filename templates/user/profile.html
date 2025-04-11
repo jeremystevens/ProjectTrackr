@@ -148,9 +148,18 @@
                                 {% for paste in pastes.items %}
                                     <tr>
                                         <td>
-                                            <a href="{{ url_for('paste.view', short_id=paste.short_id) }}">
-                                                {{ paste.title }}
-                                            </a>
+                                            {% if paste.is_encrypted and paste.encryption_method == 'fernet-random' and encryption_keys and paste.short_id in encryption_keys %}
+                                                <a href="{{ url_for('paste.view', short_id=paste.short_id) }}?key={{ encryption_keys[paste.short_id] }}">
+                                                    {{ paste.title }} <i class="fas fa-lock text-muted" title="Encrypted paste"></i>
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ url_for('paste.view', short_id=paste.short_id) }}">
+                                                    {{ paste.title }}
+                                                    {% if paste.is_encrypted %}
+                                                        <i class="fas fa-lock text-muted" title="Encrypted paste"></i>
+                                                    {% endif %}
+                                                </a>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">{{ paste.syntax }}</span>

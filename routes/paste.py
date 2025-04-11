@@ -155,14 +155,31 @@ def create():
         flash('Paste created successfully!', 'success')
         
         # Redirect to the appropriate URL based on encryption type
-        if paste.is_encrypted and paste.encryption_method == 'fernet-random' and encryption_key:
+        if paste.is_encrypted and paste.encryption_method == 'fernet-random':
             # For random key encryption, include the key in the URL
             from urllib.parse import quote_plus
-            key_part = f"?key={quote_plus(encryption_key)}"
-            return redirect(url_for('paste.view', short_id=paste.short_id) + key_part)
-        else:
-            # For password-protected or non-encrypted pastes, just use the standard URL
-            return redirect(url_for('paste.view', short_id=paste.short_id))
+            
+            # Debug what's happening with encryption_key
+            import logging
+            logging.debug(f"Redirecting after paste creation. Is encrypted: {paste.is_encrypted}")
+            logging.debug(f"Encryption method: {paste.encryption_method}")
+            logging.debug(f"Encryption key exists? {encryption_key is not None}")
+            logging.debug(f"Encryption salt in paste: {paste.encryption_salt}")
+            
+            # Use the salt directly from the paste if encryption_key is None
+            if encryption_key is None:
+                encryption_key = paste.encryption_salt
+                logging.debug(f"Using encryption salt from paste: {encryption_key}")
+                
+            if encryption_key:
+                key_part = f"?key={quote_plus(encryption_key)}"
+                logging.debug(f"Redirecting to: {url_for('paste.view', short_id=paste.short_id) + key_part}")
+                return redirect(url_for('paste.view', short_id=paste.short_id) + key_part)
+            else:
+                logging.error(f"No encryption key available for random-key encrypted paste: {paste.short_id}")
+                
+        # For password-protected or non-encrypted pastes, just use the standard URL
+        return redirect(url_for('paste.view', short_id=paste.short_id))
     
     # If form validation fails
     for field, errors in form.errors.items():
