@@ -29,18 +29,28 @@ footer {
   margin-bottom: 1rem;
 }
 
+.paste-title {
+  width: 100%;
+  padding-bottom: 0.5rem;
+}
+
 .paste-metadata {
   font-size: 0.9rem;
   color: var(--bs-secondary-color);
 }
 
+.paste-actions-row {
+  margin-top: 0.5rem;
+  width: 100%;
+  display: block;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
 .paste-actions {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: var(--bs-body-bg);
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--bs-border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 /* Code highlight styles */
