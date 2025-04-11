@@ -212,7 +212,12 @@ def view(short_id):
     
     # Handle burn after read pastes
     is_burn_after_read = paste.burn_after_read
-    is_paste_owner = current_user.is_authenticated and current_user.id == paste.user_id
+    
+    # Determine if the current user is the paste owner
+    # This check is important for showing/hiding certain UI elements
+    is_paste_owner = False
+    if current_user.is_authenticated:
+        is_paste_owner = current_user.id == paste.user_id
     
     # Get or create a unique viewer ID for tracking view counts
     viewer_ip = request.remote_addr
