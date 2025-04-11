@@ -191,6 +191,15 @@ def rename_requirements_file(release_dir):
         shutil.copy2(src, dst)
         os.remove(src)
         print("Renamed release_requirements.txt to requirements.txt in release directory")
+    else:
+        # If release_requirements.txt doesn't exist in the release directory,
+        # copy it from the main directory
+        main_src = 'release_requirements.txt'
+        if os.path.exists(main_src):
+            shutil.copy2(main_src, dst)
+            print("Copied release_requirements.txt from main directory to requirements.txt in release directory")
+        else:
+            print("Warning: Could not find release_requirements.txt")
 
 def main():
     """Main function."""
