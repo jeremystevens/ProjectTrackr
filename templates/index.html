@@ -81,44 +81,35 @@
                     {% if form.enable_encryption is defined %}
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-lock me-2"></i> Encryption Options</h5>
+                            <h5 class="mb-0"><i class="fas fa-lock me-2"></i> Password Protection</h5>
                         </div>
                         <div class="card-body">
                             <!-- Enable encryption checkbox -->
                             <div class="form-check mb-4">
                                 {{ form.enable_encryption(class="form-check-input") }}
                                 <label class="form-check-label fw-bold" for="enable_encryption">
-                                    Enable Encryption for this Paste
+                                    Password Protect this Paste
                                 </label>
                                 <div class="text-muted small mt-1">
-                                    When enabled, the content of your paste will be encrypted before being stored.
+                                    When enabled, viewers will need to enter a password to see the content.
                                 </div>
                             </div>
                             
                             <hr class="mb-3">
                             
-                            <!-- Encryption type selection -->
-                            <div class="mb-4">
-                                <label for="encryption_type" class="form-label fw-bold">Encryption Type</label>
-                                {{ form.encryption_type(class="form-select") }}
-                                <div class="text-muted small mt-1">
-                                    <ul class="mb-0 ps-3">
-                                        <li><strong>Random Key:</strong> A unique key is generated and included in the paste URL. Anyone with the URL can view the paste.</li>
-                                        <li><strong>Password Protected:</strong> You set a password that will be required to view the paste.</li>
-                                    </ul>
-                                </div>
-                            </div>
+                            <!-- Hidden field for encryption type -->
+                            {{ form.encryption_type() }}
                             
-                            <!-- Password fields (always visible) -->
-                            <div class="mb-3 border-start border-warning border-3 ps-3 py-1">
-                                <label for="encryption_password" class="form-label fw-bold">Encryption Password</label>
+                            <!-- Password fields -->
+                            <div class="mb-3">
+                                <label for="encryption_password" class="form-label fw-bold">Password</label>
                                 {{ form.encryption_password(class="form-control", placeholder="Enter a strong password") }}
                                 <div class="text-muted small mt-1">
-                                    Only required if "Password Protected" is selected above.
+                                    Choose a strong password that's easy for you to remember.
                                 </div>
                             </div>
                             
-                            <div class="mb-2 border-start border-warning border-3 ps-3 py-1">
+                            <div class="mb-2">
                                 <label for="confirm_encryption_password" class="form-label fw-bold">Confirm Password</label>
                                 {{ form.confirm_encryption_password(class="form-control", placeholder="Confirm your password") }}
                             </div>
@@ -224,42 +215,21 @@ document.addEventListener("DOMContentLoaded", function() {
   const syntaxSelector = document.getElementById("syntax-selector");
   const helpText = document.getElementById("templateHelp");
   
-  // Encryption options handling using jQuery for better compatibility
-  console.log("Setting up encryption handlers");
+  // Password protection toggle handling using jQuery
+  console.log("Setting up password protection handlers");
   
   $(document).ready(function() {
-    console.log("Document ready, setting up encryption toggle");
-    
-    // Show initial state
-    console.log("Enable encryption checkbox:", $("#enable-encryption-toggle").length);
-    console.log("Encryption options div:", $(".encryption-options").length);
-    
-    // Use a more direct selector with jQuery
-    $("#enable-encryption-toggle").on("change", function() {
-      console.log("Checkbox changed! Value:", $(this).prop("checked"));
+    // Toggle password fields visibility based on checkbox
+    $("#enable_encryption").on("change", function() {
       if ($(this).prop("checked")) {
-        $(".encryption-options").removeClass("d-none");
-        console.log("Showed encryption options");
+        $("#encryption_password, #confirm_encryption_password").prop("required", true);
       } else {
-        $(".encryption-options").addClass("d-none");
-        console.log("Hid encryption options");
+        $("#encryption_password, #confirm_encryption_password").prop("required", false);
       }
     });
     
-    $("#encryption-type-selector").on("change", function() {
-      console.log("Encryption type changed to:", $(this).val());
-      if ($(this).val() === "fernet-password") {
-        $(".password-field").removeClass("d-none");
-        console.log("Showed password fields");
-      } else {
-        $(".password-field").addClass("d-none");
-        console.log("Hid password fields");
-      }
-    });
-    
-    // Manually trigger the change event once to initialize the proper visibility
-    $("#enable-encryption-toggle").trigger("change");
-    $("#encryption-type-selector").trigger("change");
+    // Initial check
+    $("#enable_encryption").trigger("change");
   });
   // Add event listener to template selector
   templateSelector.addEventListener("change", function() {

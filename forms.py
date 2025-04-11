@@ -168,12 +168,10 @@ class PasteForm(FlaskForm):
     burn_after_read = BooleanField('Burn After Read (delete after first view)', default=False)
     
     # Encryption options
-    enable_encryption = BooleanField('Enable Encryption', default=False)
-    encryption_type = SelectField('Encryption Type', choices=[
-        ('fernet-random', 'Random Key (link-based)'),
-        ('fernet-password', 'Password Protected')
-    ], default='fernet-random')
-    encryption_password = PasswordField('Encryption Password', validators=[Optional()])
+    enable_encryption = BooleanField('Enable Password Protection', default=False)
+    # Keep this hidden field for backend compatibility
+    encryption_type = HiddenField('Encryption Type', default='fernet-password')
+    encryption_password = PasswordField('Password', validators=[Optional()])
     confirm_encryption_password = PasswordField('Confirm Password', validators=[
         Optional(), 
         EqualTo('encryption_password', message='Passwords must match.')
