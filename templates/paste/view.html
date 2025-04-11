@@ -65,10 +65,26 @@
         font-size: 0.8rem;
     }
     
+    /* Paste actions styling */
+    .paste-actions {
+        gap: 0.5rem;
+    }
+    
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .paste-info .row > div {
             margin-bottom: 8px;
+        }
+        
+        .card-header.paste-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .paste-actions {
+            margin-top: 10px;
+            width: 100%;
+            justify-content: flex-start;
         }
         
         .paste-ai-summary {
@@ -83,7 +99,7 @@
     <div class="card-header paste-header d-flex align-items-center justify-content-between">
         <h4 class="mb-0">{{ paste.title }}</h4>
         
-        <div class="paste-actions">
+        <div class="paste-actions d-flex flex-wrap">
             <div class="btn-group" role="group">
                 <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                     <i class="fas fa-code me-1"></i> Raw
