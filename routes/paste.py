@@ -143,7 +143,7 @@ def create():
     
     return redirect(url_for('paste.index'))
 
-@paste_bp.route('/<short_id>')
+@paste_bp.route('/<short_id>', methods=['GET', 'POST'])
 def view(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
@@ -167,8 +167,64 @@ def view(short_id):
     # Update view count only for unique viewers
     is_new_view = paste.update_view_count(viewer_id)
     
-    # Syntax highlighting
-    highlighted_code, css = highlight_code(paste.content, paste.syntax)
+    # Handle encrypted content
+    content = paste.content
+    password_form = None
+    decryption_error = None
+    is_encrypted = paste.is_encrypted
+    
+    if is_encrypted:
+        # Create a password form for encrypted pastes
+        from forms import PastePasswordForm
+        password_form = PastePasswordForm()
+        
+        # Check if this is a password submission
+        if request.method == 'POST' and password_form.validate_on_submit():
+            password = password_form.password.data
+            decrypted_content = paste.decrypt(password)
+            
+            if decrypted_content:
+                # Successfully decrypted
+                content = decrypted_content
+                # Store in session that this user has the correct password for this paste
+                session_decrypted = session.get('decrypted_pastes', {})
+                session_decrypted[paste.short_id] = True
+                session['decrypted_pastes'] = session_decrypted
+                flash('Paste decrypted successfully!', 'success')
+            else:
+                # Failed to decrypt
+                decryption_error = "Invalid password. Please try again."
+                flash('Failed to decrypt paste. Invalid password.', 'danger')
+                # Show password form again
+                return render_template('paste/password.html', paste=paste, form=password_form)
+                
+        # Check if we've already decrypted this paste in this session
+        elif session.get('decrypted_pastes', {}).get(paste.short_id):
+            # Paste was already decrypted in this session, decrypt again
+            decrypted_content = paste.get_content()
+            if decrypted_content:
+                content = decrypted_content
+            else:
+                # This shouldn't normally happen, but just in case
+                if 'decrypted_pastes' in session and paste.short_id in session['decrypted_pastes']:
+                    session['decrypted_pastes'].pop(paste.short_id, None)
+                decryption_error = "Session error. Please re-enter the password."
+                # Show password form again
+                return render_template('paste/password.html', paste=paste, form=password_form)
+                
+        # If password protected but no password provided, show password form
+        elif paste.password_protected and request.method == 'GET':
+            return render_template('paste/password.html', paste=paste, form=password_form)
+        
+        # For random-key encrypted pastes that aren't password protected
+        elif not paste.password_protected:
+            # Try to decrypt with default settings
+            decrypted_content = paste.get_content()
+            if decrypted_content:
+                content = decrypted_content
+            
+    # Syntax highlighting (now using potentially decrypted content)
+    highlighted_code, css = highlight_code(content, paste.syntax)
     
     # Initialize comment form if comments are enabled and user is logged in
     comment_form = None
@@ -249,6 +305,19 @@ def raw(short_id):
     # Update view count only for unique viewers
     is_new_view = paste.update_view_count(viewer_id)
     
+    # Handle encrypted content
+    content = paste.content
+    if paste.is_encrypted:
+        # If password protected and not already decrypted in this session, redirect to the standard view
+        if paste.password_protected and not session.get('decrypted_pastes', {}).get(paste.short_id):
+            flash('This paste is password protected. Please enter the password to view.', 'warning')
+            return redirect(url_for('paste.view', short_id=paste.short_id))
+            
+        # If we've already decrypted this paste or it's not password protected
+        decrypted_content = paste.get_content()
+        if decrypted_content:
+            content = decrypted_content
+    
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
     
@@ -279,7 +348,7 @@ def raw(short_id):
             return response
     
     # Return plain text
-    return Response(paste.content, mimetype='text/plain')
+    return Response(content, mimetype='text/plain')
 
 @paste_bp.route('/download/<short_id>')
 def download(short_id):
@@ -305,9 +374,22 @@ def download(short_id):
     # Update view count only for unique viewers
     is_new_view = paste.update_view_count(viewer_id)
     
+    # Handle encrypted content
+    content = paste.content
+    if paste.is_encrypted:
+        # If password protected and not already decrypted in this session, redirect to the standard view
+        if paste.password_protected and not session.get('decrypted_pastes', {}).get(paste.short_id):
+            flash('This paste is password protected. Please enter the password to view.', 'warning')
+            return redirect(url_for('paste.view', short_id=paste.short_id))
+            
+        # If we've already decrypted this paste or it's not password protected
+        decrypted_content = paste.get_content()
+        if decrypted_content:
+            content = decrypted_content
+    
     # Create download response
     filename = f"{paste.title.replace(' ', '_')}.txt"
-    response = Response(paste.content, mimetype='text/plain')
+    response = Response(content, mimetype='text/plain')
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
@@ -365,8 +447,21 @@ def embed(short_id):
     # Update view count only for unique viewers
     is_new_view = paste.update_view_count(viewer_id)
         
+    # Handle encrypted content
+    content = paste.content
+    if paste.is_encrypted:
+        # If password protected and not already decrypted in this session, redirect to the standard view
+        if paste.password_protected and not session.get('decrypted_pastes', {}).get(paste.short_id):
+            flash('This paste is password protected. Please enter the password to view.', 'warning')
+            return redirect(url_for('paste.view', short_id=paste.short_id))
+            
+        # If we've already decrypted this paste or it's not password protected
+        decrypted_content = paste.get_content()
+        if decrypted_content:
+            content = decrypted_content
+    
     # Syntax highlighting for embedding
-    highlighted_code, css = highlight_code(paste.content, paste.syntax)
+    highlighted_code, css = highlight_code(content, paste.syntax)
     
     # If this is a burn after read paste and this is a new view (not the owner viewing it),
     # mark it for deletion after the response is sent
@@ -551,8 +646,21 @@ def print_view(short_id):
     if paste.visibility == 'private' and (not current_user.is_authenticated or current_user.id != paste.user_id):
         abort(403)
     
+    # Handle encrypted content
+    content = paste.content
+    if paste.is_encrypted:
+        # If password protected and not already decrypted in this session, redirect to the standard view
+        if paste.password_protected and not session.get('decrypted_pastes', {}).get(paste.short_id):
+            flash('This paste is password protected. Please enter the password to view.', 'warning')
+            return redirect(url_for('paste.view', short_id=paste.short_id))
+            
+        # If we've already decrypted this paste or it's not password protected
+        decrypted_content = paste.get_content()
+        if decrypted_content:
+            content = decrypted_content
+    
     # Syntax highlighting
-    highlighted_code, css = highlight_code(paste.content, paste.syntax)
+    highlighted_code, css = highlight_code(content, paste.syntax)
     
     return render_template('paste/print.html', paste=paste, 
                           highlighted_code=highlighted_code, css=css)

@@ -337,6 +337,12 @@ class CollectionForm(FlaskForm):
                             description="If enabled, other users can view this collection")
     submit = SubmitField('Save Collection')
     
+class PastePasswordForm(FlaskForm):
+    """Form for entering password to decrypt password-protected pastes"""
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Decrypt')
+
+
 class FlagContentForm(FlaskForm):
     """Form for flagging inappropriate content (pastes or comments)"""
     reason = SelectField('Reason', choices=[
