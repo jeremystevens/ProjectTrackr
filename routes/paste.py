@@ -114,6 +114,15 @@ def create():
         # Calculate paste size
         paste.calculate_size()
         
+        # Handle tags if premium user
+        if current_user.is_authenticated and current_user.is_premium and form.tags.data:
+            # Split by comma and process tags
+            tag_names = [tag.strip() for tag in form.tags.data.split(',') if tag.strip()]
+            if tag_names:
+                paste.add_tags(tag_names)
+                import logging
+                logging.debug(f"Added tags to paste: {tag_names}")
+        
         # Handle encryption if enabled
         encryption_key = None
         if hasattr(form, 'enable_encryption') and form.enable_encryption.data:

@@ -409,6 +409,37 @@ class PasteCollection(db.Model):
         return Paste.query.filter_by(collection_id=self.id).count()
 
 
+class Tag(db.Model):
+    """
+    Model for paste tags, allowing organization and searching of pastes by topic.
+    """
+    __tablename__ = 'tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_ai_generated = db.Column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f'<Tag {self.name}>'
+    
+    @classmethod
+    def get_or_create(cls, tag_name):
+        """Get an existing tag or create a new one if it doesn't exist"""
+        tag = cls.query.filter(func.lower(cls.name) == func.lower(tag_name)).first()
+        if not tag:
+            tag = cls(name=tag_name)
+            db.session.add(tag)
+        return tag
+
+
+# Association table for paste tags (many-to-many)
+paste_tags = db.Table('paste_tags',
+    db.Column('paste_id', db.Integer, db.ForeignKey('pastes.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True)
+)
+
+
 class Paste(db.Model):
     __tablename__ = 'pastes'
 
@@ -455,6 +486,11 @@ class Paste(db.Model):
     comments = db.relationship('Comment', backref='paste', lazy='dynamic', 
                                cascade='all, delete-orphan', 
                                primaryjoin="and_(Paste.id==Comment.paste_id, Comment.parent_id==None)")
+                               
+    # Relationship for tags
+    tags = db.relationship('Tag', secondary=paste_tags, 
+                          backref=db.backref('pastes', lazy='dynamic'),
+                          lazy='dynamic')
 
     def is_expired(self):
         if self.expires_at is None:
@@ -781,6 +817,46 @@ class Paste(db.Model):
             return self.decrypt(password)
         else:
             return self.content
+    
+    def add_tags(self, tag_names):
+        """
+        Add tags to the paste
+        
+        Args:
+            tag_names: List of tag names to add
+        """
+        if not tag_names:
+            return
+            
+        for tag_name in tag_names:
+            tag_name = tag_name.strip()
+            if tag_name:
+                tag = Tag.get_or_create(tag_name)
+                if tag not in self.tags.all():
+                    self.tags.append(tag)
+        
+        db.session.commit()
+    
+    def remove_tag(self, tag_name):
+        """Remove a tag from the paste"""
+        tag = Tag.query.filter(func.lower(Tag.name) == func.lower(tag_name)).first()
+        if tag and tag in self.tags.all():
+            self.tags.remove(tag)
+            db.session.commit()
+            
+    def clear_tags(self):
+        """Remove all tags from the paste"""
+        for tag in self.tags.all():
+            self.tags.remove(tag)
+        db.session.commit()
+    
+    def get_tag_names(self):
+        """Get a list of tag names for this paste"""
+        return [tag.name for tag in self.tags.all()]
+        
+    def get_tags_with_counts(self):
+        """Get a list of tags with their paste counts"""
+        return [{'name': tag.name, 'count': tag.pastes.count()} for tag in self.tags.all()]
     
     def __repr__(self):
         return f'<Paste {self.id}: {self.title}>'

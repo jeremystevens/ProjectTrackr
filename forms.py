@@ -80,6 +80,8 @@ class PasteForm(FlaskForm):
     template = SelectField('Use Template', validators=[Optional()], coerce=int)
     collection_id = SelectField('Add to Collection', validators=[Optional()], coerce=int)
     content = TextAreaField('Content', validators=[DataRequired()])
+    tags = StringField('Tags (comma separated, Premium feature)', validators=[Optional(), Length(max=255)], 
+                      description="Enter tags separated by commas (e.g., python, code, tutorial)")
     syntax = SelectField('Syntax Highlighting', choices=[
         # Common and plain text formats
         ('text', 'Plain Text'),
@@ -253,7 +255,8 @@ class SearchForm(FlaskForm):
         ('content', 'Content'),
         ('title', 'Title'),
         ('syntax', 'Syntax'),
-        ('author', 'Author')
+        ('author', 'Author'),
+        ('tag', 'Tag (Premium)')
     ])
     submit = SubmitField('Search')
 
