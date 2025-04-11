@@ -96,9 +96,10 @@
     .paste-actions {
         display: flex;
         gap: 0.5rem;
-        flex-wrap: wrap;
-        justify-content: flex-end; /* Changed from flex-start to flex-end to align to the right */
+        flex-wrap: nowrap; /* Changed from wrap to nowrap to prevent button wrapping */
+        justify-content: flex-end; /* Right-align all action buttons */
         width: 100%;
+        overflow-x: auto; /* Allow horizontal scrolling on small screens rather than wrapping */
     }
     
     .card-header.paste-header {
@@ -217,11 +218,11 @@
                 
                 <!-- Action buttons on their own row, with all buttons in a single line, right-aligned -->
                 <div class="paste-actions-row mt-2">
-                    <div class="paste-actions">
-                        <!-- A single container for all action buttons, allowing them to be right-aligned together -->
-                        <div class="d-inline-flex flex-nowrap">
-                            <!-- Standard action buttons available to all users -->
-                            <div class="btn-group" role="group">
+                    <div class="paste-actions d-flex justify-content-end">
+                        <!-- Single button row aligned to the right side -->
+                        <div class="d-flex flex-row flex-nowrap">
+                            <!-- Standard action buttons -->
+                            <div class="btn-group me-0" role="group">
                                 <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                                     <i class="fas fa-code me-1"></i> Raw
                                 </a>
@@ -243,7 +244,7 @@
                                 </a>
                             </div>
                             
-                            <!-- Owner-specific action buttons, only shown to the paste owner -->
+                            <!-- Owner-specific action buttons, directly adjacent to standard buttons -->
                             {% if current_user.is_authenticated and current_user.id == paste.user_id %}
                             <div class="btn-group ms-2" role="group">
                                 <a href="{{ url_for('paste.edit', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-primary">
