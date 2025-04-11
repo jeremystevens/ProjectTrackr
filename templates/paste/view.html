@@ -65,7 +65,14 @@
         font-size: 0.8rem;
     }
     
-    /* Paste actions styling */
+    /* Paste title and actions styling */
+    .paste-title {
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
     .paste-actions {
         gap: 0.5rem;
     }
@@ -81,8 +88,14 @@
             align-items: flex-start;
         }
         
+        .paste-title {
+            max-width: 100%;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
         .paste-actions {
-            margin-top: 10px;
+            margin-top: 5px;
             width: 100%;
             justify-content: flex-start;
         }
@@ -96,8 +109,8 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header paste-header d-flex align-items-center justify-content-between">
-        <h4 class="mb-0">{{ paste.title }}</h4>
+    <div class="card-header paste-header d-flex align-items-center justify-content-between flex-wrap">
+        <h4 class="mb-0 paste-title">{{ paste.title }}</h4>
         
         <div class="paste-actions d-flex flex-wrap">
             <div class="btn-group" role="group">
