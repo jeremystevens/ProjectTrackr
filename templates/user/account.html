@@ -1,0 +1,233 @@
+{% extends "layout.html" %}
+
+{% block title %}Your Account - FlaskBin{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .subscription-card {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    .tier-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+    .tier-price {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+    }
+    .feature-list li {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    .feature-list li i {
+        margin-right: 0.5rem;
+        color: var(--success-color);
+    }
+    .usage-container {
+        margin: 1rem 0;
+    }
+    .progress {
+        height: 0.75rem;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        background-color: var(--border-color);
+        margin-bottom: 0.5rem;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: var(--primary-color);
+    }
+    .usage-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+    .btn-upgrade {
+        background-color: var(--primary-color);
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+    .btn-upgrade:hover {
+        background-color: var(--primary-dark);
+        text-decoration: none;
+        color: #fff;
+    }
+    .subscription-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .account-section {
+        margin-bottom: 2rem;
+    }
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Your Account</h1>
+            <p class="text-muted">Manage your account details and subscription</p>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <!-- Current Subscription -->
+            <div class="account-section">
+                <h2 class="section-title">Current Subscription</h2>
+                <div class="subscription-card">
+                    <div class="subscription-info">
+                        <div>
+                            <div class="tier-name">{{ tier_name }}</div>
+                            <div class="tier-price">
+                                {% if user.subscription_tier == 'free' %}
+                                    Free
+                                {% elif user.subscription_tier == 'starter' %}
+                                    $5/month
+                                {% elif user.subscription_tier == 'pro' %}
+                                    $10/month
+                                {% elif user.subscription_tier == 'team' %}
+                                    $25/month
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if user.subscription_tier != 'team' %}
+                            <a href="{{ url_for('account.upgrade_subscription') }}" class="btn-upgrade">Upgrade Plan</a>
+                        {% endif %}
+                    </div>
+
+                    {% if subscription_active and user.subscription_tier != 'free' %}
+                        <div class="alert alert-info">
+                            Your subscription is active. {{ days_remaining }} days remaining.
+                        </div>
+                    {% endif %}
+
+                    <!-- Feature Usage (only visible for paid tiers) -->
+                    {% if user.subscription_tier != 'free' %}
+                        <h3 class="mt-3 mb-2">AI Usage</h3>
+                        
+                        <!-- AI Calls Usage -->
+                        <div class="usage-container">
+                            <h4 class="mb-1" style="font-size: 1rem;">AI Code Assistance</h4>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: {{ features.ai_calls.percentage }}%"></div>
+                            </div>
+                            <div class="usage-label">
+                                <span>{{ features.ai_calls.remaining }} remaining</span>
+                                <span>{{ features.ai_calls.total }} total</span>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Search Usage -->
+                        <div class="usage-container">
+                            <h4 class="mb-1" style="font-size: 1rem;">AI Search Queries</h4>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: {{ features.ai_search.percentage }}%"></div>
+                            </div>
+                            <div class="usage-label">
+                                <span>{{ features.ai_search.remaining }} remaining</span>
+                                <span>{{ features.ai_search.total }} total</span>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Feature List -->
+                    <h3 class="mt-4 mb-2">Plan Features</h3>
+                    <ul class="feature-list">
+                        {% if user.subscription_tier != 'free' %}
+                            <li><i class="fas fa-check"></i> AI-Generated Tags</li>
+                            <li><i class="fas fa-check"></i> 
+                                {% if user.subscription_tier == 'starter' %}
+                                    AI Fix Suggestions (lite)
+                                {% else %}
+                                    AI Fix Suggestions
+                                {% endif %}
+                            </li>
+                            <li><i class="fas fa-check"></i> Per-Paste Analytics</li>
+                            
+                            {% if user.subscription_tier != 'starter' %}
+                                <li><i class="fas fa-check"></i> Full AI Code Refactoring</li>
+                                <li><i class="fas fa-check"></i> Custom Syntax Themes</li>
+                                <li><i class="fas fa-check"></i> Paste Access Insight</li>
+                                <li><i class="fas fa-check"></i> Scheduled Paste Publishing</li>
+                                <li><i class="fas fa-check"></i> Private Comments</li>
+                            {% endif %}
+                            
+                            {% if user.subscription_tier == 'team' %}
+                                <li><i class="fas fa-check"></i> Live Collaborative Pastes</li>
+                                <li><i class="fas fa-check"></i> Team Seats ({{ features.team_seats }})</li>
+                                <li><i class="fas fa-check"></i> Full Analytics Suite</li>
+                            {% endif %}
+                        {% else %}
+                            <li><i class="fas fa-check"></i> Create & Store Pastes</li>
+                            <li><i class="fas fa-check"></i> Public, Unlisted, and Private Visibility</li>
+                            <li><i class="fas fa-check"></i> Self-Destruct Option</li>
+                            <li><i class="fas fa-check"></i> Basic Syntax Highlighting</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="account-section">
+                <h2 class="section-title">Account Information</h2>
+                <div class="subscription-card">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Email:</strong> {{ user.email }}</p>
+                            <p><strong>Account Created:</strong> {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> {{ user.get_account_status() }}</p>
+                            <p><strong>Total Pastes:</strong> {{ user.total_pastes }}</p>
+                            <p><strong>Total Views:</strong> {{ user.total_views }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Development Only: Quick Tier Switcher -->
+            <div class="subscription-card">
+                <h3 class="mb-3">Development Tools</h3>
+                <p class="text-danger">These links simulate subscription changes for development only.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('account.simulate_upgrade', tier='free') }}" class="btn btn-outline-secondary btn-sm mb-2">Switch to Free Tier</a>
+                    <a href="{{ url_for('account.simulate_upgrade', tier='starter') }}" class="btn btn-outline-primary btn-sm mb-2">Switch to Starter AI ($5)</a>
+                    <a href="{{ url_for('account.simulate_upgrade', tier='pro') }}" class="btn btn-outline-info btn-sm mb-2">Switch to Pro AI ($10)</a>
+                    <a href="{{ url_for('account.simulate_upgrade', tier='team') }}" class="btn btn-outline-success btn-sm">Switch to Dev Team ($25)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

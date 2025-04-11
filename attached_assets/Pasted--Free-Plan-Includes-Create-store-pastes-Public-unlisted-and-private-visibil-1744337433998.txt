@@ -1,0 +1,53 @@
+🆓 Free Plan
+-------------
+Includes:
+- Create & store pastes
+- Public, unlisted, and private visibility
+- Self-destruct option
+- Basic syntax highlighting
+- Access and manage your own pastes
+
+⚙️ Starter AI – $5/month
+------------------------
+Includes all Free features, plus:
+- AI-Generated Tags
+- AI Fix Suggestions (lite)
+- AI Search (limited queries)
+- Per-Paste Analytics (views + basic source info)
+- Follower Count / Trending Pastes (read-only)
+
+🚀 Pro AI – $10/month
+---------------------
+Includes everything in Starter, plus:
+- Full AI Code Refactoring
+- Advanced AI Search (more queries + smarter results)
+- Scheduled Paste Publishing
+- Custom Syntax Themes (Monokai, Dracula, etc.)
+- Paste Access Insight (location, device info – no IP address)
+- Private Comments on pastes
+
+👥 Dev Team – $25/month
+------------------------
+Includes everything in Pro AI, plus:
+- Live Collaborative Pastes (real-time editing)
+- Team seat sharing (up to 5 users)
+- Full analytics suite (geolocation + referral breakdown)
+- Edit/view/manage all team pastes
+- API/Webhook Access (future upgrade)
+
+📊 Feature-to-Tier Comparison
+------------------------------
+| Feature                            | Free | Starter AI | Pro AI | Dev Team |
+|------------------------------------|------|------------|--------|----------|
+| AI-Generated Tags                  | –    | ✅          | ✅      | ✅        |
+| AI Fix Suggestions                 | –    | ✅ (lite)   | ✅      | ✅        |
+| AI Code Refactoring                | –    | –          | ✅      | ✅        |
+| AI Search                          | –    | ✅ (limited)| ✅      | ✅        |
+| Per-Paste Analytics                | –    | ✅          | ✅      | ✅        |
+| Paste Access Insight (no IP)      | –    | –          | ✅      | ✅        |
+| Follower Count / Trending Access  | –    | ✅ (read-only)| ✅   | ✅        |
+| Custom Syntax Themes               | –    | –          | ✅      | ✅        |
+| Scheduled Paste Publishing         | –    | –          | ✅      | ✅        |
+| Private Comments                   | –    | –          | ✅      | ✅        |
+| Live Collaborative Pastes         | –    | –          | –      | ✅        |
+| Team Seats & Shared Access         | –    | –          | –      | ✅        |

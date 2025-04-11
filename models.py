@@ -26,9 +26,18 @@ class User(UserMixin, db.Model):
     security_question = db.Column(db.String(255), nullable=True)
     security_answer_hash = db.Column(db.String(256), nullable=True)
     
-    # User roles
+    # User roles and subscription
     is_admin = db.Column(db.Boolean, default=False)
     is_premium = db.Column(db.Boolean, default=False)
+    
+    # Subscription details
+    subscription_tier = db.Column(db.String(20), default='free')  # free, starter, pro, team
+    subscription_start_date = db.Column(db.DateTime, nullable=True)
+    subscription_end_date = db.Column(db.DateTime, nullable=True)
+    
+    # AI feature usage counters
+    ai_calls_remaining = db.Column(db.Integer, default=0)
+    ai_search_queries_remaining = db.Column(db.Integer, default=0)
     
     # Account security fields
     failed_login_attempts = db.Column(db.Integer, default=0)
@@ -193,10 +202,117 @@ class User(UserMixin, db.Model):
             return f"Locked for {self.get_lockout_remaining_time()} more minutes"
         elif self.is_admin:
             return "Administrator"
-        elif self.is_premium:
-            return "Premium User"
+        elif self.subscription_tier != 'free':
+            return f"{self.get_tier_display_name()} Subscriber"
         else:
             return "Active"
+            
+    def get_tier_display_name(self):
+        """Get a user-friendly subscription tier name"""
+        tier_names = {
+            'free': 'Free',
+            'starter': 'Starter AI',
+            'pro': 'Pro AI',
+            'team': 'Dev Team'
+        }
+        return tier_names.get(self.subscription_tier, 'Free')
+        
+    def is_subscription_active(self):
+        """Check if user has an active subscription"""
+        if self.subscription_tier == 'free':
+            return False
+        
+        if not self.subscription_end_date:
+            return False
+            
+        return self.subscription_end_date > datetime.utcnow()
+        
+    def get_subscription_days_remaining(self):
+        """Get the number of days remaining in the subscription"""
+        if not self.is_subscription_active():
+            return 0
+            
+        remaining = self.subscription_end_date - datetime.utcnow()
+        return max(0, remaining.days)
+        
+    def get_tier_limits(self):
+        """Get the usage limits for the current subscription tier"""
+        limits = {
+            'free': {
+                'ai_calls': 0,
+                'ai_search_queries': 0,
+                'live_collaboration': False,
+                'team_seats': 0,
+                'custom_themes': False,
+                'analytics': False,
+                'scheduled_publishing': False,
+                'private_comments': False
+            },
+            'starter': {
+                'ai_calls': 50,
+                'ai_search_queries': 100,
+                'live_collaboration': False,
+                'team_seats': 0,
+                'custom_themes': False,
+                'analytics': True,
+                'scheduled_publishing': False,
+                'private_comments': False
+            },
+            'pro': {
+                'ai_calls': 150,
+                'ai_search_queries': 300,
+                'live_collaboration': False,
+                'team_seats': 0,
+                'custom_themes': True,
+                'analytics': True,
+                'scheduled_publishing': True,
+                'private_comments': True
+            },
+            'team': {
+                'ai_calls': 500,
+                'ai_search_queries': 1000,
+                'live_collaboration': True,
+                'team_seats': 5,
+                'custom_themes': True,
+                'analytics': True,
+                'scheduled_publishing': True,
+                'private_comments': True
+            }
+        }
+        return limits.get(self.subscription_tier, limits['free'])
+        
+    def can_use_ai_feature(self):
+        """Check if the user can use AI features based on their subscription"""
+        return self.ai_calls_remaining > 0 and self.is_subscription_active()
+        
+    def can_use_ai_search(self):
+        """Check if the user can use AI search based on their subscription"""
+        return self.ai_search_queries_remaining > 0 and self.is_subscription_active()
+        
+    def use_ai_call(self):
+        """Decrement AI call counter and return True if successful"""
+        if not self.can_use_ai_feature():
+            return False
+            
+        self.ai_calls_remaining -= 1
+        db.session.commit()
+        return True
+        
+    def use_ai_search(self):
+        """Decrement AI search counter and return True if successful"""
+        if not self.can_use_ai_search():
+            return False
+            
+        self.ai_search_queries_remaining -= 1
+        db.session.commit()
+        return True
+        
+    def reset_monthly_usage(self):
+        """Reset AI feature usage counters based on subscription tier"""
+        limits = self.get_tier_limits()
+        self.ai_calls_remaining = limits['ai_calls']
+        self.ai_search_queries_remaining = limits['ai_search_queries']
+        db.session.commit()
         
     def __repr__(self):
         return f'<User {self.username}>'
