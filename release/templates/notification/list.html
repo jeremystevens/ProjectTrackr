@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+
+{% block title %}Notifications - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                {% if unread_only %}
+                Unread Notifications <span class="badge bg-danger">{{ unread_count }}</span>
+                {% else %}
+                Notifications
+                {% if unread_count > 0 %}
+                <span class="badge bg-danger">{{ unread_count }} unread</span>
+                {% endif %}
+                {% endif %}
+            </h1>
+            <div>
+                {% if not unread_only %}
+                <a href="{{ url_for('notification.unread_notifications') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-filter me-1"></i> Show Unread Only
+                </a>
+                {% else %}
+                <a href="{{ url_for('notification.list_notifications') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-list me-1"></i> Show All
+                </a>
+                {% endif %}
+                
+                {% if unread_count > 0 %}
+                <a href="{{ url_for('notification.mark_all_as_read') }}" class="btn btn-outline-success">
+                    <i class="fas fa-check-double me-1"></i> Mark All Read
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if notifications %}
+            <div class="card">
+                <div class="list-group list-group-flush notification-list">
+                    {% for notification in notifications %}
+                        <div class="list-group-item notification-item {% if not notification.read %}unread{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="notification-content">
+                                    <!-- Notification icon based on type -->
+                                    {% if notification.type == 'comment' %}
+                                        <i class="fas fa-comment text-primary me-2"></i>
+                                    {% elif notification.type == 'fork' %}
+                                        <i class="fas fa-code-branch text-success me-2"></i>
+                                    {% elif notification.type == 'mention' %}
+                                        <i class="fas fa-at text-info me-2"></i>
+                                    {% elif notification.type == 'system' %}
+                                        <i class="fas fa-bell text-warning me-2"></i>
+                                    {% else %}
+                                        <i class="fas fa-bell me-2"></i>
+                                    {% endif %}
+                                    
+                                    <!-- Notification message -->
+                                    {% if notification.sender %}
+                                        <strong>{{ notification.sender.username }}</strong>
+                                    {% endif %}
+                                    {{ notification.message }}
+                                    
+                                    <!-- Timestamp -->
+                                    <small class="text-muted ms-2">
+                                        <em>{{ notification.created_at|timesince }}</em>
+                                    </small>
+                                </div>
+                                
+                                <div class="notification-actions">
+                                    {% if not notification.read %}
+                                        <a href="{{ url_for('notification.mark_as_read', notification_id=notification.id) }}" 
+                                           class="btn btn-sm btn-outline-success me-1" title="Mark as read">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if notification.paste_id %}
+                                        <a href="{{ url_for('paste.view', paste_id=notification.paste_id) }}" 
+                                           class="btn btn-sm btn-outline-primary me-1" title="View paste">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <a href="{{ url_for('notification.delete_notification', notification_id=notification.id) }}" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       onclick="return confirm('Are you sure you want to delete this notification?');" 
+                                       title="Delete notification">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-bell-slash fa-4x mb-3 text-muted"></i>
+                    <h3 class="text-muted">No notifications</h3>
+                    {% if unread_only %}
+                        <p>You don't have any unread notifications.</p>
+                        <a href="{{ url_for('notification.list_notifications') }}" class="btn btn-primary mt-2">
+                            View All Notifications
+                        </a>
+                    {% else %}
+                        <p>You don't have any notifications yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .notification-list .notification-item {
+        padding: 0.75rem 1rem;
+        border-left: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .notification-list .notification-item.unread {
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+        border-left-color: var(--bs-primary);
+    }
+    
+    .notification-list .notification-item:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-actions {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}

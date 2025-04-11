@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}CSRF Error - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center py-5">
+        <div class="error-container">
+            <h1 class="display-1 fw-bold text-danger">
+                <i class="fas fa-shield-alt"></i>
+            </h1>
+            <h2 class="mb-4">Security Protection Triggered</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p class="lead">A Cross-Site Request Forgery (CSRF) error has occurred.</p>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span>This protection helps keep your account secure.</span>
+                    </div>
+                    <div class="my-4">
+                        <h5>Why did this happen?</h5>
+                        <ul class="text-start list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="fas fa-clock me-2"></i>
+                                Your session might have expired
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                You may have resubmitted an old form
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-cookie-bite me-2"></i>
+                                Your browser cookies might be disabled
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{{ url_for('paste.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Return to Home
+                        </a>
+                        <a href="javascript:window.location.reload()" class="btn btn-warning">
+                            <i class="fas fa-redo me-2"></i>Refresh Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

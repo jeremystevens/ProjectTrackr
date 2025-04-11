@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}400 - Bad Request - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center py-5">
+        <div class="error-container">
+            <h1 class="display-1 fw-bold text-danger">400</h1>
+            <h2 class="mb-4">Bad Request</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p class="lead">The request could not be understood or was missing required parameters.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span>This might have happened because:</span>
+                    </div>
+                    <ul class="text-start list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-list me-2"></i>
+                            A form was submitted with missing or invalid fields
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-link me-2"></i>
+                            A broken or malformed URL was accessed
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-cookie me-2"></i>
+                            Your browser cookies might be disabled or corrupted
+                        </li>
+                    </ul>
+                    
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{{ url_for('paste.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Return to Home
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Go Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            {% if error_details %}
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Error Details</h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 text-start">{{ error_details }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

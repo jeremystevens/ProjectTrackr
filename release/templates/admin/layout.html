@@ -1,0 +1,61 @@
+{% extends 'layout.html' %}
+
+{% block title %}Admin - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Admin sidebar -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark">
+                    <h5 class="card-title mb-0 text-white">Admin Panel</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer me-2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('admin.flagged_pastes') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'admin.flagged_pastes' %}active{% endif %}">
+                        <i class="bi bi-flag me-2"></i> Flagged Pastes 
+                        {% if pending_flagged_pastes %}
+                        <span class="badge bg-danger rounded-pill ms-1">{{ pending_flagged_pastes }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('admin.flagged_comments') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'admin.flagged_comments' %}active{% endif %}">
+                        <i class="bi bi-chat-square-text me-2"></i> Flagged Comments
+                        {% if pending_flagged_comments %}
+                        <span class="badge bg-danger rounded-pill ms-1">{{ pending_flagged_comments }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('admin.users') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                        <i class="bi bi-people me-2"></i> User Management
+                    </a>
+                    <a href="{{ url_for('admin.settings') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'admin.settings' %}active{% endif %}">
+                        <i class="bi bi-gear me-2"></i> Site Settings
+                    </a>
+                    <a href="{{ url_for('admin.audit_log') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'admin.audit_log' %}active{% endif %}">
+                        <i class="bi bi-journal-check me-2"></i> Audit Log
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Main content area -->
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

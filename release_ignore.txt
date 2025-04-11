@@ -5,6 +5,9 @@ replit.nix
 .upm/
 .config/
 .gitignore
+.pythonlibs/
+.pythonlibs
+**/.pythonlibs/**
 
 # Environment files
 .env
@@ -68,9 +71,14 @@ generated-icon.png
 README.md
 
 # Release directory itself (should be excluded from copying into itself)
+# Using multiple patterns to ensure it's caught in all path formats
+/release
 /release/
+release/
+release
 release_ignore.txt
 export_release.py
+release_*.zip
 
 # Other non-production files
 dependencies_for_local_testing.txt

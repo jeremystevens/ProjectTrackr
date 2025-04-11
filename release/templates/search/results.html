@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+
+{% block title %}Search Results - FlaskBin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h4 class="mb-0">
+            <i class="fas fa-search me-2"></i>Search Results
+            {% if query %}
+                for "{{ query }}"
+            {% endif %}
+        </h4>
+        
+        <form class="d-flex" method="get" action="{{ url_for('search.search') }}">
+            <div class="input-group">
+                <input type="text" class="form-control" name="query" value="{{ query }}" placeholder="Search pastes..." required>
+                <select class="form-select" name="search_type">
+                    <option value="content" {% if search_type == 'content' %}selected{% endif %}>Content</option>
+                    <option value="title" {% if search_type == 'title' %}selected{% endif %}>Title</option>
+                    <option value="syntax" {% if search_type == 'syntax' %}selected{% endif %}>Syntax</option>
+                    <option value="author" {% if search_type == 'author' %}selected{% endif %}>Author</option>
+                    <option value="tag" {% if search_type == 'tag' %}selected{% endif %}>Tag ⭐</option>
+                </select>
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="card-body">
+        {% if pastes and pastes.items %}
+            <p class="text-muted">Found {{ total }} result{% if total != 1 %}s{% endif %}</p>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Syntax</th>
+                            <th>Created</th>
+                            <th>Views</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paste in pastes.items %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('paste.view', short_id=paste.short_id) }}">{{ paste.title }}</a>
+                                </td>
+                                <td>
+                                    {% if paste.user_id %}
+                                        <a href="{{ url_for('user.profile', username=paste.author.username) }}">
+                                            <img src="{{ paste.author.get_avatar_url(24) }}" class="rounded-circle me-1" width="20" height="20">
+                                            {{ paste.author.username }}
+                                        </a>
+                                    {% else %}
+                                        Guest
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ paste.syntax }}</span>
+                                </td>
+                                <td>
+                                    <span title="{{ paste.created_at.strftime('%b %d, %Y %H:%M') }}">
+                                        {{ paste.created_at | timesince }}
+                                    </span>
+                                </td>
+                                <td>{{ paste.views }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if pastes.pages > 1 %}
+                <nav aria-label="Search results pagination">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if pastes.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('search.search', query=query, search_type=search_type, page=pastes.prev_num) }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in pastes.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == pastes.page %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('search.search', query=query, search_type=search_type, page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">&hellip;</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pastes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('search.search', query=query, search_type=search_type, page=pastes.next_num) }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                {% if premium_required %}
+                    <div class="mb-4">
+                        <i class="fas fa-star fa-3x text-warning"></i>
+                    </div>
+                    <h4 class="mb-3">Premium Feature</h4>
+                    <p class="text-muted">Tag search is a Premium feature. Please upgrade your account to use it.</p>
+                    <a href="{{ url_for('account.upgrade_subscription') }}" class="btn btn-warning">
+                        <i class="fas fa-crown me-1"></i> Upgrade Now
+                    </a>
+                {% elif query %}
+                    <div class="mb-4">
+                        <i class="fas fa-search fa-3x text-muted"></i>
+                    </div>
+                    <h4 class="mb-3">No results found for "{{ query }}"</h4>
+                    <p class="text-muted">Try different keywords or search options</p>
+                {% else %}
+                    <div class="mb-4">
+                        <i class="fas fa-keyboard fa-3x text-muted"></i>
+                    </div>
+                    <h4 class="mb-3">Enter a search query</h4>
+                    <p class="text-muted">Search for pastes by content, title, syntax or author</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
