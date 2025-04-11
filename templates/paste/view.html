@@ -78,16 +78,12 @@
                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
                     <i class="fas fa-code-branch me-1"></i> Fork
                 </button>
-            </div>
-            
-            <!-- Show Report button for everyone except the paste owner -->
-            {% if not is_paste_owner %}
-            <div class="btn-group ms-2" role="group">
+                {% if not is_paste_owner %}
                 <a href="{{ url_for('paste.flag_paste', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-danger">
                     <i class="fas fa-flag me-1"></i> Report
                 </a>
+                {% endif %}
             </div>
-            {% endif %}
             
             {% if current_user.is_authenticated and current_user.id == paste.user_id %}
                 <div class="btn-group ms-2" role="group">
