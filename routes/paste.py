@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response, session, after_this_request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, Response, session, after_this_request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
@@ -1102,3 +1102,157 @@ def flag_paste(short_id):
         paste=paste,
         form=form
     )
+
+
+# AI Summary Feature API Routes
+
+@paste_bp.route('/api/<short_id>/generate-summary', methods=['POST'])
+@login_required
+def generate_summary(short_id):
+    """
+    Generate an AI summary for a paste using OpenAI.
+    This is a premium feature or uses free trials for non-premium users.
+    """
+    # Find the paste
+    paste = Paste.query.filter_by(short_id=short_id).first_or_404()
+    
+    # Check if the user is allowed to access this paste
+    if paste.visibility == 'private' and paste.user_id != current_user.id:
+        return jsonify({'error': 'You do not have permission to access this paste'}), 403
+    
+    # Check if the user is premium or has free trials available
+    if not current_user.is_premium:
+        if not current_user.has_free_ai_trials_available():
+            return jsonify({
+                'error': 'This is a premium feature. You have used all your free trials.',
+                'remaining_trials': 0,
+                'is_premium': False
+            }), 403
+        
+        # User has trials available, use one
+        current_user.use_free_ai_trial()
+        remaining_trials = current_user.get_remaining_free_trials()
+    else:
+        # Premium user - check if they have AI calls remaining
+        if current_user.ai_calls_remaining <= 0:
+            return jsonify({
+                'error': 'You have reached your monthly limit of AI calls.',
+                'is_premium': True
+            }), 403
+        
+        # Decrement AI calls remaining counter
+        current_user.ai_calls_remaining -= 1
+        db.session.commit()
+        remaining_trials = None
+    
+    # Handle encrypted pastes
+    content = paste.content
+    if paste.is_encrypted:
+        # For encrypted pastes, we need the decrypted content
+        # This requires password or session access, which is complex in an API context
+        # For now, we'll just return an error for encrypted pastes
+        return jsonify({
+            'error': 'AI summary is not available for encrypted pastes.',
+            'is_premium': current_user.is_premium,
+            'remaining_trials': remaining_trials
+        }), 400
+    
+    try:
+        # Generate the AI summary
+        summary = generate_ai_summary(content, language=paste.syntax)
+        
+        if not summary:
+            return jsonify({
+                'error': 'Failed to generate AI summary. Please try again later.',
+                'is_premium': current_user.is_premium,
+                'remaining_trials': remaining_trials
+            }), 500
+        
+        # Save the summary to the paste
+        paste.ai_summary = summary
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'summary': summary,
+            'is_premium': current_user.is_premium,
+            'remaining_trials': remaining_trials
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Error generating AI summary: {str(e)}")
+        return jsonify({
+            'error': 'An error occurred while generating the summary.',
+            'is_premium': current_user.is_premium,
+            'remaining_trials': remaining_trials
+        }), 500
+
+
+@paste_bp.route('/api/<short_id>/refresh-summary', methods=['POST'])
+@login_required
+def refresh_summary(short_id):
+    """
+    Regenerate an AI summary for a paste. Only available to premium users who own the paste.
+    """
+    # Find the paste
+    paste = Paste.query.filter_by(short_id=short_id).first_or_404()
+    
+    # Check if the user is the owner
+    if paste.user_id != current_user.id:
+        return jsonify({'error': 'Only the paste owner can refresh the summary'}), 403
+    
+    # Check if the user is premium
+    if not current_user.is_premium:
+        return jsonify({
+            'error': 'This is a premium feature. Please upgrade to refresh summaries.',
+            'is_premium': False
+        }), 403
+    
+    # Premium user - check if they have AI calls remaining
+    if current_user.ai_calls_remaining <= 0:
+        return jsonify({
+            'error': 'You have reached your monthly limit of AI calls.',
+            'is_premium': True
+        }), 403
+    
+    # Decrement AI calls remaining counter
+    current_user.ai_calls_remaining -= 1
+    db.session.commit()
+    
+    # Handle encrypted pastes
+    content = paste.content
+    if paste.is_encrypted:
+        # For encrypted pastes, we need the decrypted content
+        # This requires password or session access, which is complex in an API context
+        # For now, we'll just return an error for encrypted pastes
+        return jsonify({
+            'error': 'AI summary is not available for encrypted pastes.',
+            'is_premium': True
+        }), 400
+    
+    try:
+        # Generate the AI summary
+        summary = generate_ai_summary(content, language=paste.syntax)
+        
+        if not summary:
+            return jsonify({
+                'error': 'Failed to generate AI summary. Please try again later.',
+                'is_premium': True
+            }), 500
+        
+        # Save the summary to the paste
+        paste.ai_summary = summary
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'summary': summary,
+            'is_premium': True
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Error refreshing AI summary: {str(e)}")
+        return jsonify({
+            'error': 'An error occurred while refreshing the summary.',
+            'is_premium': True
+        }), 500
