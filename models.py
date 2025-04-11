@@ -457,6 +457,9 @@ class Paste(db.Model):
     comments_enabled = db.Column(db.Boolean, default=True)
     burn_after_read = db.Column(db.Boolean, default=False)
     
+    # AI features
+    ai_summary = db.Column(db.Text, nullable=True)
+    
     # Encryption fields
     is_encrypted = db.Column(db.Boolean, default=False)
     encryption_method = db.Column(db.String(50), nullable=True)
