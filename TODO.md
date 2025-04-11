@@ -2,12 +2,29 @@
 This document tracks future enhancements and features planned for the FlaskBin application.
 ## High Priority
 - [ ] Implement premium subscription functionality with Stripe integration
+  - [ ] Complete Stripe checkout flow for plan purchases
+  - [ ] Implement webhooks for payment events
+  - [ ] Add billing history view
+  - [ ] Setup automated monthly/yearly billing
 - [ ] Create OpenAI integration for AI-powered features (tags, fixes, refactoring)
+  - [ ] Implement API key management
+  - [ ] Add queue-based processing for heavy operations
+  - [ ] Create result caching system to minimize API costs
+
+## Subscription Management
+- [ ] Show user's current plan details from database or Stripe
+- [ ] Implement plan upgrade/downgrade workflows
+- [ ] Create admin interface to manage user subscription tiers
+- [ ] Build monthly usage counters and automated resets
+- [ ] Implement restriction of premium features based on plan tier
+- [ ] Add usage alerts when approaching limits
+
 ## Medium Priority
 - [ ] [Undecided] Add support for image/file uploads within pastes (content moderation concerns)
 - [ ] Fix light mode styling issues (temporarily disabled theme toggle)
 - [ ] Implement custom syntax themes for Pro and Team subscribers
 - [ ] Build per-paste analytics for subscribers (views, source info)
+
 ## Premium Features
 - [ ] AI-Generated Tags for pastes (Starter+)
 - [ ] AI Fix Suggestions for code pastes (Starter+)

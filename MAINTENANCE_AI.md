@@ -2,6 +2,33 @@
 
 This document contains important tips and best practices for the implementation of AI features in FlaskBin's premium subscription model.
 
+## Subscription Implementation Roadmap
+
+The following functionality needs to be implemented to complete the subscription system:
+
+1. **Stripe Integration** ✅
+   - Implement checkout flow for new subscriptions
+   - Create webhook handlers for payment events (success, failure, cancellation)
+   - Implement billing portal redirects for subscription management
+   - Add Stripe API key secure storage and retrieval
+
+2. **Plan Management** ✅
+   - Show users their current plan details from database/Stripe
+   - Implement clear upgrade/downgrade workflows
+   - Create admin interface to manually promote/demote users
+   - Implement seat sharing for Team tier
+
+3. **Feature Restrictions** ✅
+   - Gate premium features based on current subscription tier
+   - Implement usage tracking for API call limits
+   - Add monthly counters and automated resets
+   - Create usage alert system when approaching limits
+
+4. **Analytics** ✅
+   - Implement tracking of AI feature usage for business insights
+   - Create admin dashboard for monitoring service costs
+   - Build reporting system for subscription revenue
+
 ## Profitability Protection Strategies
 
 When implementing AI-powered features, follow these guidelines to protect service profitability:
