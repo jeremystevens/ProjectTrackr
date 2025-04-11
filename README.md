@@ -12,6 +12,13 @@ A modern, feature-rich pastebin application built with Flask.
 - Paste Sharing: Share links and social media integration
 - Search Functionality: Find pastes by content, title, syntax, or author
 - Responsive Design: Works on desktop and mobile devices
+- AI-Powered Features: Code summarization with free trials for new users
+- Premium Features: Enhanced functionality for subscribers
+- Content Moderation: Reporting system accessible to all users
+- Collections: Organize pastes into folders
+- Comments: Discussion threads on pastes with nested replies
+- Tagging: Categorize pastes with searchable tags
+- Dark/Light Theme: Toggle between dark and light modes
 
 ## Technologies
 

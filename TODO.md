@@ -6,12 +6,12 @@ This document tracks future enhancements and features planned for the FlaskBin a
   - [ ] Implement webhooks for payment events
   - [ ] Add billing history view
   - [ ] Setup automated monthly/yearly billing
-- [ ] Create OpenAI integration for AI-powered features (tags, fixes, refactoring, summarization)
-  - [ ] Implement API key management
-  - [ ] Add queue-based processing for heavy operations
-  - [ ] Create result caching system to minimize API costs
-  - [ ] Develop AI Summarization feature that explains what code does
-  - [ ] Implement free trial AI features for non-guest users (2-3 free uses)
+- [x] Create OpenAI integration for AI-powered features (tags, fixes, refactoring, summarization)
+  - [x] Implement API key management
+  - [x] Add queue-based processing for heavy operations
+  - [x] Create result caching system to minimize API costs
+  - [x] Develop AI Summarization feature that explains what code does
+  - [x] Implement free trial AI features for non-guest users (3 free uses)
 
 ## Subscription Management
 - [ ] Show user's current plan details from database or Stripe
@@ -31,8 +31,8 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] AI-Generated Tags for pastes (Starter+)
 - [ ] AI Fix Suggestions for code pastes (Starter+)
 - [ ] AI Code Refactoring (Pro+)
-- [ ] AI Code Summarization feature (Starter+)
-- [ ] Free AI feature trials for registered users (2-3 uses)
+- [x] AI Code Summarization feature (Starter+)
+- [x] Free AI feature trials for registered users (3 free uses)
 - [ ] Advanced AI Search (Pro+)
 - [ ] Per-Paste Analytics (Starter+)
 - [ ] Paste Access Insights (Pro+)
@@ -58,6 +58,11 @@ This document tracks future enhancements and features planned for the FlaskBin a
 - [ ] Set up CI/CD pipeline for automated testing and deployment
 - [ ] Add performance metrics and analytics
 ## Completed Items
+- [x] Implement AI-powered code summary generation for pastes
+- [x] Implement free trial system for AI features (3 free uses)
+- [x] Restructure paste view layout with separated title, metadata, and action rows
+- [x] Make reporting functionality available to all users for better content moderation
+- [x] Create premium feature tracking for AI functionality
 - [x] Implement paste encryption with password protection
 - [x] Add export/import functionality for user pastes
 - [x] Create paste collections/folders for organization

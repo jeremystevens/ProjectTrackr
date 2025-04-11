@@ -3,6 +3,14 @@
 All notable changes to the FlaskBin project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+- Added AI-powered code summary generation for pastes
+- Implemented premium feature tracking for AI functionality
+- Added free trial system for AI features (3 free uses)
+- Redesigned paste view with improved layout and organization
+- Added separated metadata section between title and action buttons
+- Moved paste action buttons to a dedicated row to prevent layout breaking with long titles
+- Made content reporting functionality available to all users (not just registered users)
+- Made Report button more prominent with action buttons for better content moderation
 - Added user notification system for comments and forks
 - Added dark/light theme toggle with automatic mode detection
 - Added paste templates for common layouts and code snippets
