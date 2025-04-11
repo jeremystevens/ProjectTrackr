@@ -186,9 +186,15 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="btn btn-outline-secondary" title="View">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
+                                                {% if paste.is_encrypted and paste.encryption_method == 'fernet-random' and encryption_keys and paste.short_id in encryption_keys %}
+                                                    <a href="{{ url_for('paste.view', short_id=paste.short_id) }}?key={{ encryption_keys[paste.short_id] }}" class="btn btn-outline-secondary" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="btn btn-outline-secondary" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                {% endif %}
                                                 
                                                 {% if current_user.is_authenticated and current_user.id == user.id %}
                                                     <a href="{{ url_for('paste.edit', short_id=paste.short_id) }}" class="btn btn-outline-primary" title="Edit">

@@ -67,9 +67,17 @@ def view(collection_id):
         Paste.created_at.desc()
     ).paginate(page=page, per_page=10)
     
+    # If current user is the owner, prepare encryption keys for encrypted pastes
+    encryption_keys = {}
+    if collection.user_id == current_user.id:
+        for paste in pastes.items:
+            if paste.is_encrypted and paste.encryption_method == 'fernet-random' and paste.encryption_salt:
+                encryption_keys[paste.short_id] = paste.encryption_salt
+    
     return render_template('collection/view.html', 
                           collection=collection, 
-                          pastes=pastes)
+                          pastes=pastes,
+                          encryption_keys=encryption_keys)
 
 @collection_bp.route('/<int:collection_id>/edit', methods=['GET', 'POST'])
 @login_required

@@ -59,7 +59,7 @@
             {% if pastes.items %}
                 <div class="list-group mb-4">
                     {% for paste in pastes.items %}
-                        <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="list-group-item list-group-item-action">
+                        <a href="{{ url_for('paste.view', short_id=paste.short_id) }}{% if paste.is_encrypted and paste.encryption_method == 'fernet-random' and encryption_keys and paste.short_id in encryption_keys %}?key={{ encryption_keys[paste.short_id] }}{% endif %}" class="list-group-item list-group-item-action">
                             <div class="d-flex w-100 justify-content-between">
                                 <h5 class="mb-1">
                                     {% if paste.title %}{{ paste.title }}{% else %}<span class="text-muted">Untitled</span>{% endif %}
