@@ -47,10 +47,32 @@
         background-color: var(--bs-primary);
     }
     
+    /* AI Summary Styling */
+    .paste-ai-summary {
+        padding: 10px 12px;
+        background-color: rgba(0, 123, 255, 0.05);
+        border-top: 1px dashed rgba(80, 80, 80, 0.2);
+        border-bottom: 1px dashed rgba(80, 80, 80, 0.2);
+        font-size: 0.9rem;
+    }
+    
+    .paste-ai-summary .ai-summary-content {
+        flex: 1;
+    }
+    
+    .refresh-summary-btn {
+        padding: 2px 8px;
+        font-size: 0.8rem;
+    }
+    
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .paste-info .row > div {
             margin-bottom: 8px;
+        }
+        
+        .paste-ai-summary {
+            padding: 8px;
         }
     }
 </style>
@@ -183,6 +205,25 @@
                     {% endif %}
                 </div>
             </div>
+            
+            {% if paste.ai_summary %}
+            <div class="paste-ai-summary">
+                <div class="d-flex align-items-center">
+                    <div class="ai-summary-content">
+                        <i class="fas fa-robot me-2 text-primary"></i>
+                        <span class="fw-semibold text-primary">AI Summary:</span>
+                        <span class="text-muted ms-2">{{ paste.ai_summary }}</span>
+                    </div>
+                    {% if is_paste_owner and current_user.is_premium %}
+                    <button class="btn btn-sm btn-outline-primary ms-auto refresh-summary-btn" 
+                            title="Regenerate summary" 
+                            data-paste-id="{{ paste.short_id }}">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
         </div>
         
         <div class="paste-content p-0">
@@ -323,6 +364,58 @@
             if (!confirm(this.dataset.confirm)) {
                 e.preventDefault();
             }
+        });
+    });
+    
+    // Handle AI summary refresh button click (Premium feature)
+    document.querySelectorAll('.refresh-summary-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const pasteId = this.dataset.pasteId;
+            const originalHTML = this.innerHTML;
+            const aiSummaryElement = this.closest('.paste-ai-summary').querySelector('.ai-summary-content');
+            const originalSummary = aiSummaryElement.querySelector('span.text-muted').textContent;
+            
+            // Show loading state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            this.disabled = true;
+            
+            // In the future, this will make an AJAX call to regenerate the summary
+            // For now, we'll just simulate it with a timeout
+            setTimeout(function() {
+                // This is a placeholder - in the real implementation, this would be an AJAX call
+                // to a backend endpoint like /api/paste/{pasteId}/regenerate-summary that would
+                // use OpenAI or similar to analyze the code and generate a new summary
+                
+                // For demonstration, reset to original state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                
+                // Show a toast or some feedback that this is a premium feature
+                // This is where we'd update the summary with the new AI-generated text
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-primary border-0 position-fixed bottom-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-crown me-2"></i> AI Summary regeneration is a premium feature that will be available soon!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Initialize and show the toast
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', function() {
+                    document.body.removeChild(toast);
+                });
+            }, 1000);
         });
     });
 </script>
