@@ -149,7 +149,7 @@
                     
                         {% if paste.user_id %}
                             <span class="text-muted paste-metadata-item">
-                                <i class="fas fa-user me-1"></i> Author: <a href="{{ url_for('user.profile', username=paste.author.username) }}">{{ paste.author.username }}</a>
+                                <i class="fas fa-user me-1"></i> Author:&nbsp;<a href="{{ url_for('user.profile', username=paste.author.username) }}">{{ paste.author.username }}</a>
                             </span>
                         {% endif %}
                         
@@ -159,7 +159,7 @@
                         
                         {% if paste.expires_at %}
                             <span class="text-muted paste-metadata-item">
-                                <i class="fas fa-clock me-1"></i> Expires in:
+                                <i class="fas fa-clock me-1"></i> Expires in:&nbsp;
                                 <span class="countdown expiration-countdown" data-expires-timestamp="{{ paste.expires_at.timestamp() }}">Loading...</span>
                             </span>
                         {% else %}
