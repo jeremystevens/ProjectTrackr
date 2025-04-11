@@ -138,10 +138,10 @@
                     <!-- Metadata section -->
                     <div class="d-flex flex-wrap w-100">
                         <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-calendar-alt me-1"></i> Created:&nbsp;{{ paste.created_at | timesince }}
+                            <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | timesince }}
                         </span>
                         <span class="text-muted paste-metadata-item">
-                            <i class="fas fa-eye me-1"></i> Views:&nbsp;{{ paste.views }}
+                            <i class="fas fa-eye me-1"></i> Views: {{ paste.views }}
                         </span>
                         <span class="text-muted paste-metadata-item">
                             <i class="fas fa-code me-1"></i> Syntax: {{ paste.syntax }}
@@ -159,7 +159,7 @@
                         
                         {% if paste.expires_at %}
                             <span class="text-muted paste-metadata-item">
-                                <i class="fas fa-clock me-1"></i> Expires in:&nbsp;
+                                <i class="fas fa-clock me-1"></i> Expires in:
                                 <span class="countdown expiration-countdown" data-expires-timestamp="{{ paste.expires_at.timestamp() }}">Loading...</span>
                             </span>
                         {% else %}
@@ -181,7 +181,7 @@
                         
                         {% if paste.tags.count() > 0 %}
                             <span class="text-muted paste-metadata-item">
-                                <i class="fas fa-tags me-1"></i> Tags:&nbsp;
+                                <i class="fas fa-tags me-1"></i> Tags:
                                 {% for tag in paste.tags %}
                                     <a href="{{ url_for('search.search', query=tag.name, search_type='tag') }}" class="badge bg-secondary rounded-pill text-decoration-none">
                                         {{ tag.name }}
