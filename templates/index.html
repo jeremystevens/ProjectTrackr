@@ -80,88 +80,50 @@
                     
                     {% if form.enable_encryption is defined %}
                     <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="enable-encryption-toggle-direct" name="enable_encryption">
-                                <label class="form-check-label fw-bold" for="enable-encryption-toggle-direct">
-                                    <i class="fas fa-lock me-1"></i> Enable Encryption
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-lock me-2"></i> Encryption Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Enable encryption checkbox -->
+                            <div class="form-check mb-4">
+                                {{ form.enable_encryption(class="form-check-input") }}
+                                <label class="form-check-label fw-bold" for="enable_encryption">
+                                    Enable Encryption for this Paste
                                 </label>
-                                <!-- Keep the original checkbox but hide it -->
-                                <div style="display: none;">
-                                    {{ form.enable_encryption(id="enable-encryption-toggle") }}
+                                <div class="text-muted small mt-1">
+                                    When enabled, the content of your paste will be encrypted before being stored.
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Encryption options initially hidden -->
-                        <div class="card-body" id="encryption-options-container" style="display: none;">
-                            <div class="mb-3">
-                                <label for="encryption_type" class="form-label">Encryption Type</label>
-                                {{ form.encryption_type(class="form-select", id="encryption-type-selector") }}
-                                <small class="form-text text-muted">
-                                    Random key encryption uses a unique key for each paste. Password encryption allows you to set a custom password.
-                                </small>
+                            
+                            <hr class="mb-3">
+                            
+                            <!-- Encryption type selection -->
+                            <div class="mb-4">
+                                <label for="encryption_type" class="form-label fw-bold">Encryption Type</label>
+                                {{ form.encryption_type(class="form-select") }}
+                                <div class="text-muted small mt-1">
+                                    <ul class="mb-0 ps-3">
+                                        <li><strong>Random Key:</strong> A unique key is generated and included in the paste URL. Anyone with the URL can view the paste.</li>
+                                        <li><strong>Password Protected:</strong> You set a password that will be required to view the paste.</li>
+                                    </ul>
+                                </div>
                             </div>
                             
-                            <!-- Password fields initially hidden -->
-                            <div class="mb-3" id="password-field-1" style="display: none;">
-                                <label for="encryption_password" class="form-label">Password</label>
+                            <!-- Password fields (always visible) -->
+                            <div class="mb-3 border-start border-warning border-3 ps-3 py-1">
+                                <label for="encryption_password" class="form-label fw-bold">Encryption Password</label>
                                 {{ form.encryption_password(class="form-control", placeholder="Enter a strong password") }}
-                                <small class="form-text text-muted">
-                                    You'll need this password to decrypt and view the paste later.
-                                </small>
+                                <div class="text-muted small mt-1">
+                                    Only required if "Password Protected" is selected above.
+                                </div>
                             </div>
                             
-                            <div class="mb-3" id="password-field-2" style="display: none;">
-                                <label for="confirm_encryption_password" class="form-label">Confirm Password</label>
+                            <div class="mb-2 border-start border-warning border-3 ps-3 py-1">
+                                <label for="confirm_encryption_password" class="form-label fw-bold">Confirm Password</label>
                                 {{ form.confirm_encryption_password(class="form-control", placeholder="Confirm your password") }}
                             </div>
                         </div>
                     </div>
-                    
-                    <script>
-                    // Direct JavaScript (not using jQuery)
-                    document.addEventListener('DOMContentLoaded', function() {
-                        // Get elements
-                        const directToggle = document.getElementById('enable-encryption-toggle-direct');
-                        const originalToggle = document.getElementById('enable-encryption-toggle');
-                        const optionsContainer = document.getElementById('encryption-options-container');
-                        const typeSelector = document.getElementById('encryption-type-selector');
-                        const passwordField1 = document.getElementById('password-field-1');
-                        const passwordField2 = document.getElementById('password-field-2');
-                        
-                        // Sync the visible checkbox with the hidden form field
-                        directToggle.addEventListener('change', function() {
-                            // Update the original form field
-                            originalToggle.checked = this.checked;
-                            
-                            // Show/hide options
-                            optionsContainer.style.display = this.checked ? 'block' : 'none';
-                            
-                            console.log("Checkbox changed to:", this.checked);
-                        });
-                        
-                        // Handle encryption type change
-                        typeSelector.addEventListener('change', function() {
-                            const showPasswordFields = this.value === 'fernet-password';
-                            passwordField1.style.display = showPasswordFields ? 'block' : 'none';
-                            passwordField2.style.display = showPasswordFields ? 'block' : 'none';
-                            
-                            console.log("Type changed to:", this.value, "showing password fields:", showPasswordFields);
-                        });
-                        
-                        // Initialize based on current values
-                        if (originalToggle.checked) {
-                            directToggle.checked = true;
-                            optionsContainer.style.display = 'block';
-                        }
-                        
-                        if (typeSelector.value === 'fernet-password') {
-                            passwordField1.style.display = 'block';
-                            passwordField2.style.display = 'block';
-                        }
-                    });
-                    </script>
                     {% endif %}
                     
                     {% if current_user.is_authenticated %}
