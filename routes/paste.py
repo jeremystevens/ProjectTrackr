@@ -5,7 +5,7 @@ from datetime import datetime
 from app import db, app, limiter
 from models import Paste, User, PasteView, Comment, PasteRevision, Notification, PasteCollection, FlaggedPaste, FlaggedComment
 from forms import PasteForm, CommentForm, FlagContentForm
-from utils import generate_short_id, highlight_code, sanitize_html, check_shadowban
+from utils import generate_short_id, highlight_code, sanitize_html, check_shadowban, generate_ai_summary
 
 paste_bp = Blueprint('paste', __name__)
 

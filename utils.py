@@ -4,6 +4,7 @@ import bleach
 import uuid
 import os
 import base64
+import logging
 from datetime import datetime
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -15,6 +16,9 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_all_lexers, guess_lexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
+
+# Import OpenAI for AI summary generation
+import openai
 
 def generate_short_id(length=8):
     """Generate a random alphanumeric ID of specified length"""
@@ -257,6 +261,73 @@ def decrypt_content(encrypted_content, salt=None, method='fernet-random', passwo
     except Exception as e:
         current_app.logger.error(f"Decryption error: {str(e)}")
         return None
+
+def generate_ai_summary(code, language=None, max_tokens=150):
+    """
+    Generate an AI summary of code using OpenAI's GPT models
+    
+    Args:
+        code (str): The source code to summarize
+        language (str, optional): The programming language of the code
+        max_tokens (int): Maximum tokens for the response
+        
+    Returns:
+        str or None: AI-generated summary or None if generation fails
+    """
+    try:
+        # Set up OpenAI API key from environment
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            current_app.logger.error("Missing OpenAI API key in environment")
+            return None
+            
+        openai.api_key = api_key
+        
+        # Truncate code if it's too long to avoid excessive token usage
+        max_code_chars = 8000  # Approximate limit to avoid hitting token limits
+        truncated = False
+        
+        if len(code) > max_code_chars:
+            code = code[:max_code_chars] + "...[truncated]"
+            truncated = True
+        
+        # Language-specific prompt template
+        language_text = f"in {language}" if language else ""
+        prompt_addition = " The code has been truncated." if truncated else ""
+        
+        messages = [
+            {"role": "system", "content": "You are an expert programmer who provides concise, accurate summaries of code."},
+            {"role": "user", "content": f"Please analyze this code {language_text} and provide a brief, clear summary explaining what it does. Focus on the main functionality, key components, and overall purpose. Be objective and technical but easy to understand.{prompt_addition}\n\nCode:\n```\n{code}\n```"}
+        ]
+        
+        # Start timing for performance monitoring
+        start_time = datetime.now()
+        
+        # Make the API call to OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Use appropriate model based on your needs
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=0.5,  # Lower temperature for more focused responses
+            n=1,
+            stop=None
+        )
+        
+        # End timing
+        duration = (datetime.now() - start_time).total_seconds()
+        
+        # Extract the summary from the response
+        summary = response.choices[0].message.content.strip()
+        
+        # Log metrics for monitoring
+        current_app.logger.info(f"AI summary generated in {duration:.2f}s, input: {len(code)} chars, output: {len(summary)} chars")
+        
+        return summary
+    
+    except Exception as e:
+        current_app.logger.error(f"Error generating AI summary: {str(e)}")
+        return None
+
 
 def check_shadowban(func):
     """
