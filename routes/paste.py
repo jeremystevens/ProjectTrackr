@@ -1054,28 +1054,31 @@ def fork(short_id):
 
 
 @paste_bp.route('/flag/<string:short_id>', methods=['GET', 'POST'])
-@login_required
 def flag_paste(short_id):
     """Route for flagging a paste as inappropriate content"""
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
-    # Check if the user already flagged this paste
-    existing_flag = FlaggedPaste.query.filter_by(
-        paste_id=paste.id, 
-        reporter_id=current_user.id,
-        status='pending'
-    ).first()
+    # Track if user is authenticated
+    is_authenticated = current_user.is_authenticated
     
-    if existing_flag:
-        flash('You have already flagged this paste. A moderator will review it soon.', 'info')
-        return redirect(url_for('paste.view', short_id=short_id))
+    # For logged-in users, check if they already flagged this paste
+    if is_authenticated:
+        existing_flag = FlaggedPaste.query.filter_by(
+            paste_id=paste.id, 
+            reporter_id=current_user.id,
+            status='pending'
+        ).first()
+        
+        if existing_flag:
+            flash('You have already flagged this paste. A moderator will review it soon.', 'info')
+            return redirect(url_for('paste.view', short_id=short_id))
     
     form = FlagContentForm()
     
     if form.validate_on_submit():
         flag = FlaggedPaste(
             paste_id=paste.id,
-            reporter_id=current_user.id,
+            reporter_id=current_user.id if is_authenticated else None,
             reason=form.reason.data,
             details=form.details.data
         )

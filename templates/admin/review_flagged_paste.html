@@ -33,7 +33,7 @@
                             {{ flag.reporter.username }}
                         </a>
                     {% else %}
-                        System
+                        <span class="text-muted">Anonymous User</span>
                     {% endif %}
                 </p>
                 <p><strong>Reported:</strong> {{ flag.created_at|timesince }}</p>
