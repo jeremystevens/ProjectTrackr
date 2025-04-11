@@ -97,7 +97,7 @@
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
-        justify-content: flex-start;
+        justify-content: flex-end; /* Changed from flex-start to flex-end to align to the right */
         width: 100%;
     }
     
@@ -137,11 +137,11 @@
                 <h4 class="mb-0">{{ paste.title }}</h4>
             </div>
             
-            <!-- Combined row for metadata and action buttons -->
+            <!-- Metadata row -->
             <div class="paste-metadata-row mt-2">
-                <div class="d-flex flex-wrap justify-content-between align-items-center">
-                    <!-- Metadata on the left side -->
-                    <div class="d-flex flex-wrap flex-grow-1">
+                <div class="d-flex flex-wrap">
+                    <!-- Metadata section -->
+                    <div class="d-flex flex-wrap w-100">
                         <span class="text-muted paste-metadata-item">
                             <i class="fas fa-calendar-alt me-1"></i> Created: {{ paste.created_at | timesince }}
                         </span>
@@ -213,9 +213,11 @@
                             </span>
                         {% endif %}
                     </div>
-                    
-                    <!-- Action buttons on the right side -->
-                    <div class="paste-actions d-flex flex-nowrap ms-auto">
+                </div>
+                
+                <!-- Action buttons on their own row, aligned to the right -->
+                <div class="paste-actions-row mt-2">
+                    <div class="paste-actions">
                         <!-- First group with report button for all users -->
                         <div class="btn-group" role="group">
                             <a href="{{ url_for('paste.raw', short_id=paste.short_id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
