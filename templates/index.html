@@ -82,13 +82,19 @@
                     <div class="card mb-3">
                         <div class="card-header bg-light">
                             <div class="form-check">
-                                {{ form.enable_encryption(class="form-check-input", id="enable-encryption-toggle") }}
-                                <label class="form-check-label fw-bold" for="enable-encryption-toggle">
+                                <input type="checkbox" class="form-check-input" id="enable-encryption-toggle-direct" name="enable_encryption">
+                                <label class="form-check-label fw-bold" for="enable-encryption-toggle-direct">
                                     <i class="fas fa-lock me-1"></i> Enable Encryption
                                 </label>
+                                <!-- Keep the original checkbox but hide it -->
+                                <div style="display: none;">
+                                    {{ form.enable_encryption(id="enable-encryption-toggle") }}
+                                </div>
                             </div>
                         </div>
-                        <div class="card-body encryption-options d-none">
+                        
+                        <!-- Encryption options initially hidden -->
+                        <div class="card-body" id="encryption-options-container" style="display: none;">
                             <div class="mb-3">
                                 <label for="encryption_type" class="form-label">Encryption Type</label>
                                 {{ form.encryption_type(class="form-select", id="encryption-type-selector") }}
@@ -97,7 +103,8 @@
                                 </small>
                             </div>
                             
-                            <div class="mb-3 password-field d-none">
+                            <!-- Password fields initially hidden -->
+                            <div class="mb-3" id="password-field-1" style="display: none;">
                                 <label for="encryption_password" class="form-label">Password</label>
                                 {{ form.encryption_password(class="form-control", placeholder="Enter a strong password") }}
                                 <small class="form-text text-muted">
@@ -105,12 +112,56 @@
                                 </small>
                             </div>
                             
-                            <div class="mb-3 password-field d-none">
+                            <div class="mb-3" id="password-field-2" style="display: none;">
                                 <label for="confirm_encryption_password" class="form-label">Confirm Password</label>
                                 {{ form.confirm_encryption_password(class="form-control", placeholder="Confirm your password") }}
                             </div>
                         </div>
                     </div>
+                    
+                    <script>
+                    // Direct JavaScript (not using jQuery)
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Get elements
+                        const directToggle = document.getElementById('enable-encryption-toggle-direct');
+                        const originalToggle = document.getElementById('enable-encryption-toggle');
+                        const optionsContainer = document.getElementById('encryption-options-container');
+                        const typeSelector = document.getElementById('encryption-type-selector');
+                        const passwordField1 = document.getElementById('password-field-1');
+                        const passwordField2 = document.getElementById('password-field-2');
+                        
+                        // Sync the visible checkbox with the hidden form field
+                        directToggle.addEventListener('change', function() {
+                            // Update the original form field
+                            originalToggle.checked = this.checked;
+                            
+                            // Show/hide options
+                            optionsContainer.style.display = this.checked ? 'block' : 'none';
+                            
+                            console.log("Checkbox changed to:", this.checked);
+                        });
+                        
+                        // Handle encryption type change
+                        typeSelector.addEventListener('change', function() {
+                            const showPasswordFields = this.value === 'fernet-password';
+                            passwordField1.style.display = showPasswordFields ? 'block' : 'none';
+                            passwordField2.style.display = showPasswordFields ? 'block' : 'none';
+                            
+                            console.log("Type changed to:", this.value, "showing password fields:", showPasswordFields);
+                        });
+                        
+                        // Initialize based on current values
+                        if (originalToggle.checked) {
+                            directToggle.checked = true;
+                            optionsContainer.style.display = 'block';
+                        }
+                        
+                        if (typeSelector.value === 'fernet-password') {
+                            passwordField1.style.display = 'block';
+                            passwordField2.style.display = 'block';
+                        }
+                    });
+                    </script>
                     {% endif %}
                     
                     {% if current_user.is_authenticated %}
@@ -211,52 +262,43 @@ document.addEventListener("DOMContentLoaded", function() {
   const syntaxSelector = document.getElementById("syntax-selector");
   const helpText = document.getElementById("templateHelp");
   
-  // Encryption options handling
-  const encryptionToggle = document.getElementById("enable-encryption-toggle");
-  const encryptionOptions = document.querySelector(".encryption-options");
-  const encryptionTypeSelector = document.getElementById("encryption-type-selector");
+  // Encryption options handling using jQuery for better compatibility
+  console.log("Setting up encryption handlers");
   
-  console.log("Encryption toggle element:", encryptionToggle);
-  console.log("Encryption options element:", encryptionOptions);
-  console.log("Encryption type selector element:", encryptionTypeSelector);
-  
-  if (encryptionToggle) {
-    console.log("Adding change event listener to encryption toggle");
-    encryptionToggle.addEventListener("change", function() {
-      console.log("Encryption toggle changed, checked:", this.checked);
-      if (this.checked) {
-        encryptionOptions.classList.remove("d-none");
-        console.log("Showing encryption options");
+  $(document).ready(function() {
+    console.log("Document ready, setting up encryption toggle");
+    
+    // Show initial state
+    console.log("Enable encryption checkbox:", $("#enable-encryption-toggle").length);
+    console.log("Encryption options div:", $(".encryption-options").length);
+    
+    // Use a more direct selector with jQuery
+    $("#enable-encryption-toggle").on("change", function() {
+      console.log("Checkbox changed! Value:", $(this).prop("checked"));
+      if ($(this).prop("checked")) {
+        $(".encryption-options").removeClass("d-none");
+        console.log("Showed encryption options");
       } else {
-        encryptionOptions.classList.add("d-none");
-        console.log("Hiding encryption options");
+        $(".encryption-options").addClass("d-none");
+        console.log("Hid encryption options");
       }
     });
-  } else {
-    console.log("Encryption toggle element not found!");
-  }
-  
-  if (encryptionTypeSelector) {
-    console.log("Adding change event listener to encryption type selector");
-    encryptionTypeSelector.addEventListener("change", function() {
-      console.log("Encryption type changed to:", this.value);
-      if (this.value === "fernet-password") {
-        // Show all password fields
-        console.log("Showing password fields");
-        document.querySelectorAll('.password-field').forEach(field => {
-          field.classList.remove("d-none");
-        });
+    
+    $("#encryption-type-selector").on("change", function() {
+      console.log("Encryption type changed to:", $(this).val());
+      if ($(this).val() === "fernet-password") {
+        $(".password-field").removeClass("d-none");
+        console.log("Showed password fields");
       } else {
-        // Hide all password fields
-        console.log("Hiding password fields");
-        document.querySelectorAll('.password-field').forEach(field => {
-          field.classList.add("d-none");
-        });
+        $(".password-field").addClass("d-none");
+        console.log("Hid password fields");
       }
     });
-  } else {
-    console.log("Encryption type selector element not found!");
-  }
+    
+    // Manually trigger the change event once to initialize the proper visibility
+    $("#enable-encryption-toggle").trigger("change");
+    $("#encryption-type-selector").trigger("change");
+  });
   // Add event listener to template selector
   templateSelector.addEventListener("change", function() {
     const templateId = parseInt(this.value);
