@@ -28,10 +28,10 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
 # Database configuration
 DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "localhost"),
-    "user": os.environ.get("DB_USER", "root"),
+    "host": os.environ.get("DB_HOST", "185.212.71.204"),
+    "user": os.environ.get("DB_USER", "u213077714_flaskbin"),
     "password": os.environ.get("DB_PASSWORD", ""),
-    "db": os.environ.get("DB_NAME", "flaskbin"),
+    "db": os.environ.get("DB_NAME", "u213077714_flaskbin"),
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,
 }
