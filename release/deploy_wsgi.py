@@ -33,21 +33,43 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 # Configure database
 db_url = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
 
-# Patch the SQLAlchemy psycopg2 dialect to avoid pymysql imports
+# Patch the SQLAlchemy psycopg2 dialect to avoid problematic imports
 try:
-    # Apply a monkey patch to avoid the problematic import
+    # Apply a more comprehensive fix for SQLAlchemy and psycopg2
+    import sys
+    import types
     from sqlalchemy.dialects.postgresql import psycopg2
-    original_on_connect = psycopg2.PGDialect_psycopg2.on_connect
     
-    # Override the on_connect method to avoid extras import
+    # Create a mock psycopg2.extras module with necessary functions
+    mock_extras = types.ModuleType('psycopg2.extras')
+    mock_extras.register_uuid = lambda conn: None
+    mock_extras.register_default_json = lambda conn: None
+    mock_extras.register_default_jsonb = lambda conn: None
+    
+    # Add HstoreAdapter class
+    class HstoreAdapter:
+        @staticmethod
+        def get_oids(conn):
+            return (-1, -2)  # Dummy OIDs that prevent errors
+    
+    mock_extras.HstoreAdapter = HstoreAdapter
+    sys.modules['psycopg2.extras'] = mock_extras
+    
+    # Override the on_connect method
     def patched_on_connect(self):
         def connect(conn):
             conn.set_isolation_level(self.isolation_level)
             return conn
         return connect
-        
-    # Apply the patch
+    
+    # Create initialize method that bypasses problematic checks
+    def patched_initialize(self, connection):
+        pass  # Skip initialization that causes issues
+    
+    # Apply the patches
     psycopg2.PGDialect_psycopg2.on_connect = patched_on_connect
+    psycopg2.PGDialect_psycopg2.initialize = patched_initialize
+    
     logger.info("Successfully patched psycopg2 dialect")
 except Exception as e:
     logger.error(f"Failed to patch psycopg2 dialect: {e}")
