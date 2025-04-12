@@ -32,6 +32,20 @@ DB_CONFIG = {
     'cursorclass': pymysql.cursors.DictCursor
 }
 
+# Database table names for reference
+TABLES = {
+    'pastes': 'pastes',
+    'users': 'users',
+    'comments': 'comments',
+    'paste_revisions': 'paste_revisions',
+    'paste_collections': 'paste_collections',
+    'tags': 'tags',
+    'paste_tags': 'paste_tags',
+    'notifications': 'notifications',
+    'flagged_pastes': 'flagged_pastes',
+    'flagged_comments': 'flagged_comments'
+}
+
 def get_db_connection():
     """Get a database connection."""
     return pymysql.connect(**DB_CONFIG)
@@ -243,12 +257,25 @@ def view_paste(short_id):
                                          'user': None
                                      })
             
+            # Get comments if comments are enabled
+            comments = []
+            if paste.get('comments_enabled', False):
+                sql = """
+                SELECT c.*, u.username
+                FROM comments c
+                LEFT JOIN users u ON c.user_id = u.id
+                WHERE c.paste_id = %s
+                ORDER BY c.created_at ASC
+                """
+                cursor.execute(sql, (paste['id'],))
+                comments = cursor.fetchall()
+            
             # Increment view count
             cursor.execute("UPDATE pastes SET views = views + 1 WHERE id = %s", (paste['id'],))
             conn.commit()
         conn.close()
         
-        return render_template('view.html', paste=paste)
+        return render_template('view.html', paste=paste, comments=comments)
     except Exception as e:
         logger.error(f"Error viewing paste: {e}")
         flash('An error occurred while retrieving the paste.', 'danger')
@@ -309,6 +336,141 @@ def raw_paste(short_id):
         logger.error(f"Error viewing raw paste: {e}")
         flash('An error occurred while retrieving the paste.', 'danger')
         return redirect(url_for('index'))
+
+
+
+@app.route('/<short_id>/comment', methods=['POST'])
+def add_comment(short_id):
+    """Add a comment to a paste."""
+    if not is_authenticated():
+        flash('You must be logged in to comment.', 'danger')
+        return redirect(url_for('view_paste', short_id=short_id))
+    
+    comment_text = request.form.get('comment', '').strip()
+    if not comment_text:
+        flash('Comment cannot be empty.', 'danger')
+        return redirect(url_for('view_paste', short_id=short_id))
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            # Get paste id
+            cursor.execute("SELECT id, comments_enabled FROM pastes WHERE short_id = %s", (short_id,))
+            paste = cursor.fetchone()
+            
+            if not paste:
+                conn.close()
+                abort(404)
+            
+            if not paste.get('comments_enabled', False):
+                conn.close()
+                flash('Comments are not enabled for this paste.', 'danger')
+                return redirect(url_for('view_paste', short_id=short_id))
+            
+            # Add comment
+            sql = """
+            INSERT INTO comments (paste_id, user_id, content, created_at)
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
+                paste['id'], session['user_id'], comment_text, datetime.utcnow()
+            ))
+        conn.commit()
+        conn.close()
+        
+        flash('Comment added successfully!', 'success')
+    except Exception as e:
+        logger.error(f"Error adding comment: {e}")
+        flash('An error occurred while adding your comment.', 'danger')
+    
+    return redirect(url_for('view_paste', short_id=short_id))
+
+@app.route('/<short_id>/report', methods=['POST'])
+def report_paste(short_id):
+    """Report a paste for inappropriate content."""
+    reason = request.form.get('reason', '').strip()
+    if not reason:
+        flash('Please provide a reason for reporting.', 'danger')
+        return redirect(url_for('view_paste', short_id=short_id))
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            # Get paste id
+            cursor.execute("SELECT id FROM pastes WHERE short_id = %s", (short_id,))
+            paste = cursor.fetchone()
+            
+            if not paste:
+                conn.close()
+                abort(404)
+            
+            # Add report
+            user_id = session.get('user_id')
+            sql = """
+            INSERT INTO flagged_pastes (paste_id, reporter_id, reason, created_at)
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
+                paste['id'], user_id, reason, datetime.utcnow()
+            ))
+        conn.commit()
+        conn.close()
+        
+        flash('Paste reported. Thank you for helping keep our platform safe.', 'success')
+    except Exception as e:
+        logger.error(f"Error reporting paste: {e}")
+        flash('An error occurred while reporting the paste.', 'danger')
+    
+    return redirect(url_for('view_paste', short_id=short_id))
+
+@app.route('/<short_id>/fork', methods=['POST'])
+def fork_paste(short_id):
+    """Fork a paste."""
+    if not is_authenticated():
+        flash('You must be logged in to fork pastes.', 'danger')
+        return redirect(url_for('view_paste', short_id=short_id))
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            # Get original paste
+            cursor.execute("SELECT * FROM pastes WHERE short_id = %s", (short_id,))
+            original_paste = cursor.fetchone()
+            
+            if not original_paste:
+                conn.close()
+                abort(404)
+            
+            # Create new paste as a fork
+            new_short_id = generate_short_id()
+            user_id = session['user_id']
+            
+            sql = """
+            INSERT INTO pastes (
+                short_id, title, content, language, created_at, is_public, 
+                user_id, forked_from, fork_of
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
+                new_short_id, 
+                f"Fork of {original_paste['title']}", 
+                original_paste['content'],
+                original_paste['language'],
+                datetime.utcnow(),
+                original_paste['is_public'],
+                user_id,
+                original_paste['id'],
+                original_paste['short_id']
+            ))
+        conn.commit()
+        conn.close()
+        
+        flash('Paste forked successfully!', 'success')
+        return redirect(url_for('view_paste', short_id=new_short_id))
+    except Exception as e:
+        logger.error(f"Error forking paste: {e}")
+        flash('An error occurred while forking the paste.', 'danger')
+        return redirect(url_for('view_paste', short_id=short_id))
 
 @app.route('/download/<short_id>')
 def download_paste(short_id):

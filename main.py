@@ -1,28 +1,18 @@
 """
-Main application entry point for FlaskBin
-
-This file serves as the entry point for the application when running locally.
-It imports the Flask application instance from app.py and runs it.
+Main entry point for the FlaskBin application.
+This file delegates to the MySQL-compatible version to avoid SQLAlchemy dialect conflicts.
 """
 import os
-import pymysql
-# Setup PyMySQL as the dialect used
-import sqlalchemy.dialects.mysql
-sqlalchemy.dialects.mysql.dialect = sqlalchemy.dialects.mysql.pymysql.dialect
-sqlalchemy.dialects.mysql.base.dialect = sqlalchemy.dialects.mysql.pymysql.dialect
-# Patch sqlalchemy dialect's imports to prevent PostgreSQL dependency loading
-import types
-import sqlalchemy.dialects.postgresql
-sqlalchemy.dialects.postgresql.psycopg2 = types.ModuleType('psycopg2_stub')
-sqlalchemy.dialects.postgresql.psycopg2.dialect = type('dialect', (), {})
-sqlalchemy.dialects.postgresql.psycopg2.dialect.dbapi = pymysql
-sqlalchemy.dialects.postgresql.psycopg2.dialect.on_connect = lambda: None
-sqlalchemy.dialects.postgresql.psycopg2._psycopg2_extras = types.ModuleType('_psycopg2_extras_stub')
+import sys
 
-from app import create_app
+# Add the mysql_version directory to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mysql_version'))
 
-app = create_app()
+# Import the app from the MySQL version
+from simple_app import app
+
+# This variable is required for Gunicorn to find the application
+application = app
 
 if __name__ == "__main__":
-    # Run the app with debug=True for local development
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
