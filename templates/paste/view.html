@@ -332,7 +332,7 @@
         <h5 class="modal-title" id="forkModalLabel">Fork Paste</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/paste/{{ paste.short_id }}/fork" method="POST">
+      <form action="/{{ paste.short_id }}/fork" method="POST">
         {% if form %}
             {{ form.hidden_tag() }}
         {% endif %}
@@ -448,7 +448,7 @@
             this.disabled = true;
             
             // Call the API endpoint to generate the summary
-            fetch(`/api/${pasteId}/generate-summary`, {
+            fetch(`/paste/api/${pasteId}/generate-summary`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -566,7 +566,7 @@
             this.disabled = true;
             
             // Call the API endpoint to refresh the summary
-            fetch(`/api/${pasteId}/refresh-summary`, {
+            fetch(`/paste/api/${pasteId}/refresh-summary`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
