@@ -213,7 +213,7 @@ def init_db(app):
     # Configure the database 
     db_url = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
     
-    # Apply more aggressive monkey patch to fix SQLAlchemy psycopg2 dialect issue with pymysql
+    # Apply more aggressive monkey patch to fix SQLAlchemy psycopg2 dialect issues
     try:
         # First try to fix by direct monkey patching of SQLAlchemy's psycopg2 module
         import sys
