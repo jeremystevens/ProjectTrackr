@@ -16,14 +16,28 @@ from db import db
 # This is needed for the SQLAlchemy mapper conflicts in production
 _MODELS_REGISTERED = False
 
+# This will help us detect when a model is being defined multiple times
+_DEFINED_MODELS = set()
+
+def register_model(model_cls):
+    """Register an individual model with our tracking system"""
+    model_name = model_cls.__name__
+    
+    # Check if the model has already been defined
+    if model_name in _DEFINED_MODELS:
+        # Already defined, just return the class without redefining it
+        return True
+    
+    # Add to tracking set
+    _DEFINED_MODELS.add(model_name)
+    return False
+
 def register_models():
-    """Register all models with SQLAlchemy. This should only be called once."""
+    """Mark all models as registered to prevent duplicate registration"""
     global _MODELS_REGISTERED
-    if _MODELS_REGISTERED:
-        return
     _MODELS_REGISTERED = True
 
-# Only register models once
+# Track if models are being registered during initial import
 register_models()
 
 class User(UserMixin, db.Model):
