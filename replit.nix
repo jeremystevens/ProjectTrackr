@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.unzip
     pkgs.rustc
     pkgs.pkg-config
     pkgs.libxcrypt
