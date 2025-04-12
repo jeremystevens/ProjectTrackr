@@ -43,13 +43,13 @@ def add_admin_tables():
         result = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='is_admin';"))
         if result.rowcount == 0:
             print("Adding is_admin column to users table...")
-            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin TINYINT(1) DEFAULT FALSE;"))
         
         # Check if is_premium column exists in users table
         result = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='is_premium';"))
         if result.rowcount == 0:
             print("Adding is_premium column to users table...")
-            conn.execute(text("ALTER TABLE users ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_premium TINYINT(1) DEFAULT FALSE;"))
 
         # Create flagged_pastes table if it doesn't exist
         print("Creating flagged_pastes table...")

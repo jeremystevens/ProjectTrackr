@@ -3,7 +3,14 @@ services:
     name: flaskbin
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT minimal_wsgi:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:app
     envVars:
+      - key: DATABASE_URL
+        value: "mysql+pymysql://u213077714_flaskbin:hOJ27K?5@185.212.71.204:3306/u213077714_flaskbin"
+      - key: SESSION_SECRET
+        generateValue: true
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.10.0
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free

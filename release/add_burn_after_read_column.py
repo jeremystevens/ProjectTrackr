@@ -21,7 +21,7 @@ def add_burn_after_read_column():
             if 'burn_after_read' not in columns:
                 # Add the column using SQLAlchemy Core
                 from sqlalchemy import text
-                sql = text("ALTER TABLE pastes ADD COLUMN burn_after_read BOOLEAN DEFAULT FALSE")
+                sql = text("ALTER TABLE pastes ADD COLUMN burn_after_read TINYINT(1) DEFAULT FALSE")
                 db.session.execute(sql)
                 db.session.commit()
                 print("Successfully added burn_after_read column to pastes table")

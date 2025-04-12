@@ -30,7 +30,7 @@ def add_user_ban_columns():
             if 'is_banned' not in columns:
                 # Add is_banned column
                 db.session.execute(sa.text(
-                    "ALTER TABLE users ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT FALSE"
+                    "ALTER TABLE users ADD COLUMN is_banned TINYINT(1) NOT NULL DEFAULT FALSE"
                 ))
                 print("Added 'is_banned' column")
             else:
@@ -39,7 +39,7 @@ def add_user_ban_columns():
             if 'is_shadowbanned' not in columns:
                 # Add is_shadowbanned column
                 db.session.execute(sa.text(
-                    "ALTER TABLE users ADD COLUMN is_shadowbanned BOOLEAN NOT NULL DEFAULT FALSE"
+                    "ALTER TABLE users ADD COLUMN is_shadowbanned TINYINT(1) NOT NULL DEFAULT FALSE"
                 ))
                 print("Added 'is_shadowbanned' column")
             else:
