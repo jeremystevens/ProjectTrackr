@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.info("Starting deployment WSGI app")
 
 # Import Flask and extensions
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from sqlalchemy.exc import SQLAlchemyError
@@ -74,11 +74,10 @@ with app.app_context():
     def load_user(user_id):
         return db.session.get(User, int(user_id))
     
-    # Register Blueprints with explicit URL prefixes
+    # Register Blueprints
     logger.info("Registering blueprints")
-    
-    # Import blueprints
     from routes.auth import auth_bp
+    from routes.paste import paste_bp
     from routes.user import user_bp
     from routes.search import search_bp
     from routes.comment import comment_bp
@@ -87,44 +86,15 @@ with app.app_context():
     from routes.admin import admin_bp
     from routes.account import account_bp
     
-    # Import paste blueprint separately and fix its routes
-    logger.info("Setting up paste routes")
-    # Fix paste routes by creating a new blueprint or fixing imports
-    import routes.paste
-    # Ensure limiter is accessible to the paste module
-    routes.paste.limiter = limiter
-    # Make db accessible to the paste module
-    routes.paste.db = db
-    # Get the blueprint
-    paste_bp = routes.paste.paste_bp
-    
-    # Register all blueprints
-    logger.info("Registering auth blueprint")
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    logger.info("Registering paste blueprint")
-    app.register_blueprint(paste_bp, url_prefix='')  # Root routes for paste
-    
-    logger.info("Registering user blueprint")
-    app.register_blueprint(user_bp, url_prefix='/user')
-    
-    logger.info("Registering search blueprint")
-    app.register_blueprint(search_bp, url_prefix='/search')
-    
-    logger.info("Registering comment blueprint")
-    app.register_blueprint(comment_bp, url_prefix='/comment')
-    
-    logger.info("Registering notification blueprint")
-    app.register_blueprint(notification_bp, url_prefix='/notifications')
-    
-    logger.info("Registering collection blueprint")
-    app.register_blueprint(collection_bp, url_prefix='/collection')
-    
-    logger.info("Registering admin blueprint")
-    app.register_blueprint(admin_bp, url_prefix='/admin')
-    
-    logger.info("Registering account blueprint")
-    app.register_blueprint(account_bp, url_prefix='/account')
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(paste_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(comment_bp)
+    app.register_blueprint(notification_bp)
+    app.register_blueprint(collection_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(account_bp)
 
 # Apply error handlers outside the app context
 @app.errorhandler(404)
@@ -196,11 +166,6 @@ def utility_processor():
         'now': datetime.utcnow(),
         'is_ten_minute_expiration': is_ten_minute_expiration
     }
-
-# Add a root route to ensure basic functionality works
-@app.route('/')
-def index():
-    return redirect(url_for('paste.index'))
 
 # Report successful setup
 logger.info("Render deployment WSGI app initialization complete")
