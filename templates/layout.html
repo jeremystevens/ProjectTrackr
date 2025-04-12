@@ -40,8 +40,8 @@
                            href="/">New Paste</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'paste.archive' %}active{% endif %}" 
-                           href="{{ url_for('paste.archive') }}">Archive</a>
+                        <a class="nav-link {% if request.path == '/archive' %}active{% endif %}" 
+                           href="/archive">Archive</a>
                     </li>
                 </ul>
                 
@@ -52,7 +52,7 @@
                         <i id="theme-icon" class="fas fa-moon"></i>
                     </button>
                 </div>
-                <form class="d-flex me-auto" action="{{ url_for('search.search') }}" method="get">
+                <form class="d-flex me-auto" action="/search/" method="get">
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Search pastes..." 
                                name="query" required>
