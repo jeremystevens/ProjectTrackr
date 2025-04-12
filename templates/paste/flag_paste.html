@@ -20,7 +20,7 @@
                         Abuse of this feature may result in account restrictions.
                     </div>
                     
-                    <form method="POST" action="/paste/flag/{{ paste.short_id }}">
+                    <form method="POST" action="/flag/{{ paste.short_id }}">
                         {{ form.csrf_token }}
                         
                         <div class="mb-3">
