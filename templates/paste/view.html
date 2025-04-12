@@ -198,7 +198,7 @@
                         
                         {% if paste.forked_from %}
                             <span class="text-muted paste-metadata-item">
-                                <i class="fas fa-code-branch me-1"></i> Forked from: <a href="/paste/{{ paste.forked_from.short_id }}">&nbsp;{{ paste.forked_from.title }}</a>
+                                <i class="fas fa-code-branch me-1"></i> Forked from: <a href="/{{ paste.forked_from.short_id }}">&nbsp;{{ paste.forked_from.title }}</a>
                             </span>
                         {% endif %}
                     </div>
@@ -207,16 +207,16 @@
                 <!-- Action buttons on their own row, with all buttons in a single line, right-aligned -->
                 <div class="paste-controls-row mt-2">
                     <div class="btn-group">
-                        <a href="/paste/{{ paste.short_id }}/raw" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <a href="/raw/{{ paste.short_id }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                             <i class="fas fa-code me-1"></i> Raw
                         </a>
-                        <a href="/paste/{{ paste.short_id }}/download" class="btn btn-sm btn-outline-secondary">
+                        <a href="/download/{{ paste.short_id }}" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-download me-1"></i> Download
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-clipboard-target="#paste-content">
                             <i class="fas fa-copy me-1"></i> Copy
                         </button>
-                        <a href="/paste/{{ paste.short_id }}/print" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <a href="/print/{{ paste.short_id }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                             <i class="fas fa-print me-1"></i> Print
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
@@ -303,19 +303,19 @@
     <div class="card-footer">
         <div class="share-buttons d-flex gap-2 flex-wrap">
             <span class="text-muted me-2 pt-1"><i class="fas fa-share-alt"></i> Share:</span>
-            <a href="https://twitter.com/intent/tweet?text={{ paste.title | urlencode }}&url={{ request.host_url }}paste/{{ paste.short_id }}" 
+            <a href="https://twitter.com/intent/tweet?text={{ paste.title | urlencode }}&url={{ request.host_url }}{{ paste.short_id }}" 
                target="_blank" class="btn btn-sm btn-outline-primary">
                 <i class="fab fa-twitter me-1"></i> Twitter
             </a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.host_url }}paste/{{ paste.short_id }}" 
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.host_url }}{{ paste.short_id }}" 
                target="_blank" class="btn btn-sm btn-outline-primary">
                 <i class="fab fa-facebook me-1"></i> Facebook
             </a>
             <button class="btn btn-sm btn-outline-secondary btn-copy" 
-                    data-clipboard-text="{{ request.host_url }}paste/{{ paste.short_id }}">
+                    data-clipboard-text="{{ request.host_url }}{{ paste.short_id }}">
                 <i class="fas fa-link me-1"></i> Copy Link
             </button>
-            <a href="/paste/{{ paste.short_id }}/embed" 
+            <a href="/embed/{{ paste.short_id }}" 
                target="_blank" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-code me-1"></i> Embed
             </a>
