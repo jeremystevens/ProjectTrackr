@@ -1,0 +1,136 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Review Flagged Comment - Admin{% endblock %}
+
+{% block admin_content %}
+<h2><i class="bi bi-flag me-2"></i>Review Flagged Comment</h2>
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Flag Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Flag ID:</strong> {{ flag.id }}</p>
+                <p>
+                    <strong>Reason:</strong> 
+                    <span class="badge 
+                        {{ 'bg-danger' if flag.reason in ['illegal', 'harmful'] else 
+                           'bg-warning text-dark' if flag.reason in ['spam', 'inappropriate'] else 
+                           'bg-secondary' }}">
+                        {{ flag.reason }}
+                    </span>
+                </p>
+                {% if flag.details %}
+                <p><strong>Details:</strong> {{ flag.details }}</p>
+                {% endif %}
+                <p>
+                    <strong>Reporter:</strong> 
+                    {% if flag.reporter %}
+                        <a href="{{ url_for('admin.user_detail', user_id=flag.reporter.id) }}">
+                            {{ flag.reporter.username }}
+                        </a>
+                    {% else %}
+                        System
+                    {% endif %}
+                </p>
+                <p><strong>Reported:</strong> {{ flag.created_at|timesince }}</p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Comment Author Information</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    <strong>Author:</strong> 
+                    <a href="{{ url_for('admin.user_detail', user_id=flag.comment.user_id) }}">
+                        {{ flag.comment.user.username }}
+                    </a>
+                </p>
+                <p><strong>Joined:</strong> {{ flag.comment.user.created_at|timesince }}</p>
+                <p><strong>Total Comments:</strong> {{ flag.comment.user.comments.count() }}</p>
+                <p><strong>Total Pastes:</strong> {{ flag.comment.user.pastes.count() }}</p>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.user_detail', user_id=flag.comment.user_id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-badge me-1"></i> View User Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Comment Content</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Posted:</strong> {{ flag.comment.created_at|timesince }}</p>
+                <p><strong>Last Updated:</strong> {{ flag.comment.updated_at|timesince }}</p>
+                
+                <div class="border rounded p-3 mt-3 mb-3">
+                    {{ flag.comment.content }}
+                </div>
+                
+                <p>
+                    <strong>On Paste:</strong> 
+                    <a href="{{ url_for('paste.view', short_id=flag.comment.paste.short_id) }}" target="_blank">
+                        {{ flag.comment.paste.title }}
+                    </a>
+                </p>
+                
+                {% if flag.comment.parent %}
+                <div class="mt-3">
+                    <strong>This is a reply to:</strong>
+                    <div class="border rounded p-3 mt-2 text-muted">
+                        <small>{{ flag.comment.parent.user.username }} wrote:</small>
+                        <div class="mt-1">{{ flag.comment.parent.content }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('paste.view', short_id=flag.comment.paste.short_id) }}#comment-{{ flag.comment.id }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> View Comment in Context
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Take Action</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="delete_comment" id="delete_comment">
+                        <label class="form-check-label" for="delete_comment">
+                            Delete this comment
+                        </label>
+                        <small class="form-text text-danger d-block">
+                            Warning: This action cannot be undone!
+                        </small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i> Approve Flag
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">
+                            <i class="bi bi-x-circle me-1"></i> Reject Flag
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

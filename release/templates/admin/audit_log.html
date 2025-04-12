@@ -1,0 +1,168 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Audit Log - Admin{% endblock %}
+
+{% block admin_content %}
+<h2><i class="bi bi-journal-check me-2"></i>Audit Log</h2>
+<hr>
+
+<div class="card">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Admin Actions Log</h5>
+        
+        <div class="d-flex">
+            <div class="dropdown me-2">
+                <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="actionFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if action_filter %}
+                    Action: {{ action_filter }}
+                    {% else %}
+                    Filter by Action
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="actionFilterDropdown">
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('admin.audit_log') }}">
+                            All Actions
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% for action in unique_actions %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('admin.audit_log', action=action) }}">
+                            {{ action }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Admin</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Date</th>
+                    <th>IP Address</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td>{{ log.id }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.user_detail', user_id=log.admin_id) }}">
+                            {{ log.admin.username }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {{ 'bg-danger' if log.action.startswith('delete') else 
+                               'bg-success' if log.action.startswith('add') else 
+                               'bg-warning text-dark' if log.action.startswith('flag') else 
+                               'bg-info' }}">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">{{ log.entity_type }}</span>
+                        {{ log.entity_id }}
+                    </td>
+                    <td>{{ log.created_at|timesince }}</td>
+                    <td>
+                        <small class="text-muted">{{ log.ip_address or 'N/A' }}</small>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                data-bs-toggle="tooltip" data-bs-html="true"
+                                title="{{ log.details or 'No details provided' }}">
+                            <i class="bi bi-info-circle"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-3">
+                        {% if action_filter %}
+                            No audit logs found for action "{{ action_filter }}"
+                        {% else %}
+                            No audit logs found
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if logs.pages > 1 %}
+    <div class="card-footer d-flex justify-content-center">
+        <nav aria-label="Audit log pagination">
+            <ul class="pagination mb-0">
+                {% if logs.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.audit_log', page=logs.prev_num, action=action_filter) }}">
+                        Previous
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == logs.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.audit_log', page=page_num, action=action_filter) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if logs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.audit_log', page=logs.next_num, action=action_filter) }}">
+                        Next
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+{% block additional_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

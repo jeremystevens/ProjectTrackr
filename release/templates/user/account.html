@@ -1,0 +1,388 @@
+{% extends "layout.html" %}
+
+{% block title %}Your Account - FlaskBin{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+    }
+    .feature-list li {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    .feature-list li i {
+        margin-right: 0.5rem;
+        color: var(--success-color);
+    }
+    .progress {
+        height: 0.75rem;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        background-color: var(--border-color);
+        margin-bottom: 0.5rem;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: var(--primary-color);
+    }
+    .usage-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+    .feature-unavailable {
+        opacity: 0.5;
+    }
+    .feature-unavailable i {
+        color: var(--text-muted) !important;
+    }
+    .plan-card {
+        height: 100%;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    .plan-card.current {
+        border-color: var(--primary-color);
+        border-width: 2px;
+    }
+    .plan-card.popular {
+        border-color: var(--success-color);
+        border-width: 2px;
+    }
+    .plan-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        z-index: 1;
+    }
+    .current-badge {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    .popular-badge {
+        background-color: var(--success-color);
+        color: white;
+    }
+    .plan-price {
+        font-size: 1.75rem;
+        font-weight: bold;
+        margin: 0.5rem 0 1rem;
+    }
+    .plan-features {
+        min-height: 180px;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-id-card me-2"></i>Your Account
+            </h1>
+            <p class="text-muted">
+                Manage your account details and subscription preferences.
+            </p>
+        </div>
+    </div>
+
+    <!-- Current Plan Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>Current Plan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h3 class="mb-1">{{ tier_name }} Plan</h3>
+                            <div class="fs-5">
+                                {% if user.subscription_tier == 'free' %}
+                                    Free
+                                {% elif user.subscription_tier == 'starter' %}
+                                    $5/month
+                                {% elif user.subscription_tier == 'pro' %}
+                                    $10/month
+                                {% elif user.subscription_tier == 'team' %}
+                                    $25/month
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if user.subscription_tier != 'team' %}
+                            <a href="{{ url_for('account.upgrade_subscription') }}" class="btn btn-primary">
+                                <i class="fas fa-arrow-circle-up me-2"></i>Upgrade Plan
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    {% if subscription_active and user.subscription_tier != 'free' %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Your subscription is active. {{ days_remaining }} days remaining.
+                        </div>
+                    {% endif %}
+
+                    <!-- Feature Usage for paid plans -->
+                    {% if user.subscription_tier != 'free' %}
+                        <h5 class="mb-3 mt-4">Usage Summary</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- AI Calls Usage -->
+                                <div class="mb-3">
+                                    <h6 class="mb-1">AI Code Assistance</h6>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" style="width: {{ features.ai_calls.percentage }}%"></div>
+                                    </div>
+                                    <div class="usage-label">
+                                        <span>{{ features.ai_calls.remaining }} remaining</span>
+                                        <span>{{ features.ai_calls.total }} total</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- AI Search Usage -->
+                                <div class="mb-3">
+                                    <h6 class="mb-1">AI Search Queries</h6>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" style="width: {{ features.ai_search.percentage }}%"></div>
+                                    </div>
+                                    <div class="usage-label">
+                                        <span>{{ features.ai_search.remaining }} remaining</span>
+                                        <span>{{ features.ai_search.total }} total</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Free AI Trials for Free Users -->
+                        {% if features.free_ai_trials.remaining > 0 %}
+                        <div class="alert alert-info mt-3">
+                            <h5 class="mb-2"><i class="fas fa-gift me-2"></i>Free AI Feature Trials</h5>
+                            <p class="mb-2">Try our AI features before subscribing! You have <strong>{{ features.free_ai_trials.remaining }} trial use{{ 's' if features.free_ai_trials.remaining != 1 else '' }}</strong> remaining.</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: {{ features.free_ai_trials.percentage }}%"></div>
+                            </div>
+                            <div class="usage-label mt-1">
+                                <span>{{ features.free_ai_trials.remaining }} remaining</span>
+                                <span>{{ features.free_ai_trials.total }} total</span>
+                            </div>
+                            <p class="mt-2 mb-0 small">Free trials let you test our AI code summarization, smart tagging, and more.</p>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mt-3">
+                            <h5 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Free AI Trials Used</h5>
+                            <p class="mb-2">You've used all your free AI feature trials. Upgrade to a premium plan to continue using AI features.</p>
+                            <p class="mt-2 mb-0 small">Premium plans include AI-powered code summarization, smart tagging, refactoring, and more.</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="alert alert-light mt-3">
+                            <i class="fas fa-lightbulb me-2"></i> Upgrade to a premium plan to unlock unlimited AI features and analytics.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Plans -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tags me-2"></i>Available Plans
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Free Plan -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card plan-card h-100 {% if user.subscription_tier == 'free' %}current{% endif %}">
+                                {% if user.subscription_tier == 'free' %}
+                                    <div class="plan-badge current-badge">Current Plan</div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h4>Free</h4>
+                                    <div class="plan-price">$0 <small>/month</small></div>
+                                    <div class="plan-features">
+                                        <ul class="feature-list">
+                                            <li><i class="fas fa-check"></i> Create & store pastes</li>
+                                            <li><i class="fas fa-check"></i> Public/unlisted/private visibility</li>
+                                            <li><i class="fas fa-check"></i> Basic syntax highlighting</li>
+                                            <li><i class="fas fa-check"></i> <strong>3 free AI feature trials</strong></li>
+                                            <li class="feature-unavailable"><i class="fas fa-times"></i> Unlimited AI features</li>
+                                            <li class="feature-unavailable"><i class="fas fa-times"></i> Analytics</li>
+                                        </ul>
+                                    </div>
+                                    {% if user.subscription_tier == 'free' %}
+                                        <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                                    {% else %}
+                                        <a href="{{ url_for('account.simulate_upgrade', tier='free') }}" class="btn btn-outline-secondary w-100">Downgrade</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Starter AI Plan -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card plan-card h-100 {% if user.subscription_tier == 'starter' %}current{% endif %}">
+                                {% if user.subscription_tier == 'starter' %}
+                                    <div class="plan-badge current-badge">Current Plan</div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h4>Starter AI</h4>
+                                    <div class="plan-price">$5 <small>/month</small></div>
+                                    <div class="plan-features">
+                                        <ul class="feature-list">
+                                            <li><i class="fas fa-check"></i> <strong>AI-Generated Tags</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>AI Fix Suggestions (lite)</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>Basic Analytics</strong></li>
+                                            <li><i class="fas fa-check"></i> All Free features</li>
+                                            <li class="feature-unavailable"><i class="fas fa-times"></i> Advanced AI features</li>
+                                        </ul>
+                                    </div>
+                                    {% if user.subscription_tier == 'starter' %}
+                                        <button class="btn btn-outline-primary w-100" disabled>Current Plan</button>
+                                    {% else %}
+                                        <a href="{{ url_for('account.simulate_upgrade', tier='starter') }}" class="btn btn-outline-primary w-100">Select Plan</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pro AI Plan -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card plan-card h-100 {% if user.subscription_tier == 'pro' %}current{% elif user.subscription_tier != 'pro' %}popular{% endif %}">
+                                {% if user.subscription_tier == 'pro' %}
+                                    <div class="plan-badge current-badge">Current Plan</div>
+                                {% elif user.subscription_tier != 'pro' %}
+                                    <div class="plan-badge popular-badge">Most Popular</div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h4>Pro AI</h4>
+                                    <div class="plan-price">$10 <small>/month</small></div>
+                                    <div class="plan-features">
+                                        <ul class="feature-list">
+                                            <li><i class="fas fa-check"></i> <strong>Full AI Code Refactoring</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>Advanced AI Search</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>Custom Syntax Themes</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>Scheduled Publishing</strong></li>
+                                            <li><i class="fas fa-check"></i> All Starter features</li>
+                                        </ul>
+                                    </div>
+                                    {% if user.subscription_tier == 'pro' %}
+                                        <button class="btn btn-outline-info w-100" disabled>Current Plan</button>
+                                    {% else %}
+                                        <a href="{{ url_for('account.simulate_upgrade', tier='pro') }}" class="btn btn-outline-info w-100">Select Plan</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dev Team Plan -->
+                        <div class="col-md-3 mb-4">
+                            <div class="card plan-card h-100 {% if user.subscription_tier == 'team' %}current{% endif %}">
+                                {% if user.subscription_tier == 'team' %}
+                                    <div class="plan-badge current-badge">Current Plan</div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h4>Dev Team</h4>
+                                    <div class="plan-price">$25 <small>/month</small></div>
+                                    <div class="plan-features">
+                                        <ul class="feature-list">
+                                            <li><i class="fas fa-check"></i> <strong>Live Collaboration</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>Team Seats (5 users)</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>Full Analytics Suite</strong></li>
+                                            <li><i class="fas fa-check"></i> <strong>500+ AI Calls</strong></li>
+                                            <li><i class="fas fa-check"></i> All Pro features</li>
+                                        </ul>
+                                    </div>
+                                    {% if user.subscription_tier == 'team' %}
+                                        <button class="btn btn-outline-success w-100" disabled>Current Plan</button>
+                                    {% else %}
+                                        <a href="{{ url_for('account.simulate_upgrade', tier='team') }}" class="btn btn-outline-success w-100">Select Plan</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Billing Info (for premium plans) -->
+    {% if user.subscription_tier != 'free' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Billing Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> In production, this section will display payment methods and billing history.
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        <a href="{{ url_for('account.simulate_upgrade', tier='free') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-times-circle me-2"></i> Cancel Subscription
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Account Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Account Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Email:</strong> {{ user.email }}</p>
+                            <p><strong>Account Created:</strong> {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> {{ user.get_account_status() }}</p>
+                            <p><strong>Total Pastes:</strong> {{ user.total_pastes }}</p>
+                            <p><strong>Total Views:</strong> {{ user.total_views }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

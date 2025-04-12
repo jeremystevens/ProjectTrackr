@@ -1,0 +1,126 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Review Flagged Paste - Admin{% endblock %}
+
+{% block admin_content %}
+<h2><i class="fas fa-flag me-2"></i>Review Flagged Paste</h2>
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Flag Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Flag ID:</strong> {{ flag.id }}</p>
+                <p>
+                    <strong>Reason:</strong> 
+                    <span class="badge 
+                        {{ 'bg-danger' if flag.reason in ['illegal', 'harmful'] else 
+                           'bg-warning text-dark' if flag.reason in ['spam', 'inappropriate'] else 
+                           'bg-secondary' }}">
+                        {{ flag.reason }}
+                    </span>
+                </p>
+                {% if flag.details %}
+                <p><strong>Details:</strong> {{ flag.details }}</p>
+                {% endif %}
+                <p>
+                    <strong>Reporter:</strong> 
+                    {% if flag.reporter %}
+                        <a href="{{ url_for('admin.user_detail', user_id=flag.reporter.id) }}">
+                            {{ flag.reporter.username }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">Anonymous User</span>
+                    {% endif %}
+                </p>
+                <p><strong>Reported:</strong> {{ flag.created_at|timesince }}</p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Paste Information</h5>
+            </div>
+            <div class="card-body">
+                <h5>{{ flag.paste.title }}</h5>
+                <p>
+                    <strong>Author:</strong> 
+                    {% if flag.paste.user_id %}
+                        <a href="{{ url_for('admin.user_detail', user_id=flag.paste.user_id) }}">
+                            {{ flag.paste.author.username }}
+                        </a>
+                    {% else %}
+                        Anonymous
+                    {% endif %}
+                </p>
+                <p><strong>Created:</strong> {{ flag.paste.created_at|timesince }}</p>
+                <p>
+                    <strong>Visibility:</strong> 
+                    <span class="badge {{ 'bg-primary' if flag.paste.visibility == 'public' else ('bg-secondary' if flag.paste.visibility == 'unlisted' else 'bg-danger') }}">
+                        {{ flag.paste.visibility }}
+                    </span>
+                </p>
+                <p><strong>Syntax:</strong> {{ flag.paste.syntax }}</p>
+                <p><strong>Size:</strong> {{ flag.paste.size }} bytes</p>
+                <p><strong>Views:</strong> {{ flag.paste.views }}</p>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('paste.view', short_id=flag.paste.short_id) }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-1"></i> View Original Paste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Paste Content Preview</h5>
+            </div>
+            <div class="card-body">
+                <pre class="border rounded bg-dark p-3" style="max-height: 400px; overflow-y: auto;"><code>{{ flag.paste.content|truncate(1000, True) }}</code></pre>
+                
+                {% if flag.paste.content|length > 1000 %}
+                <div class="alert alert-info mt-2">
+                    <i class="fas fa-info-circle me-1"></i> Content truncated. View the original paste to see the full content.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Take Action</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="delete_paste" id="delete_paste">
+                        <label class="form-check-label" for="delete_paste">
+                            Delete this paste
+                        </label>
+                        <small class="form-text text-danger d-block">
+                            Warning: This action cannot be undone!
+                        </small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="fas fa-check-circle me-1"></i> Approve Flag
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">
+                            <i class="fas fa-times-circle me-1"></i> Reject Flag
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
