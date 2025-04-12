@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.DEBUG)
 class Base(DeclarativeBase):
     pass
 
-# Initialize extensions
+# Initialize extensions without binding them to an app yet
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 csrf = CSRFProtect()
@@ -36,68 +36,86 @@ limiter = Limiter(
     strategy="fixed-window"
 )
 
-# Create the application
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Needed for url_for to generate with https
+# Global variable to track if models have been initialized
+_models_initialized = False
 
-# Configure custom error pages
-app.config['TRAP_HTTP_EXCEPTIONS'] = True
-app.config['ERROR_INCLUDE_MESSAGE'] = True
+def create_app():
+    """
+    Application factory function that creates and configures the Flask app
+    This pattern helps prevent circular imports and duplicate model registration
+    """
+    # Create the application
+    app = Flask(__name__)
+    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Needed for url_for to generate with https
 
-# Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # Configure custom error pages
+    app.config['TRAP_HTTP_EXCEPTIONS'] = True
+    app.config['ERROR_INCLUDE_MESSAGE'] = True
 
-# Initialize the app with extensions
-db.init_app(app)
-login_manager.init_app(app)
-csrf.init_app(app)
-limiter.init_app(app)
-login_manager.login_view = 'auth.login'
-login_manager.login_message_category = 'info'
+    # Configure the database
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-@app.before_request
-def before_request():
-    g.current_time = datetime.utcnow()
+    # Initialize the app with extensions
+    db.init_app(app)
+    login_manager.init_app(app)
+    csrf.init_app(app)
+    limiter.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message_category = 'info'
 
-# Import models outside of app context to ensure they are only imported once
-import models  # This imports all models but doesn't use them directly
+    @app.before_request
+    def before_request():
+        g.current_time = datetime.utcnow()
 
-# Set up login manager loader
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(models.User, int(user_id))
+    # Import models only once to prevent duplicate registration
+    global _models_initialized
+    if not _models_initialized:
+        # This import initializes the models with SQLAlchemy 
+        import models  
+        _models_initialized = True
+    
+    # Set up login manager loader
+    @login_manager.user_loader
+    def load_user(user_id):
+        from models import User
+        return db.session.get(User, int(user_id))
 
-# Import routes after models to avoid circular imports
-from routes.auth import auth_bp
-from routes.paste import paste_bp
-from routes.user import user_bp
-from routes.search import search_bp
-from routes.comment import comment_bp
-from routes.notification import notification_bp
-from routes.collection import collection_bp
-from routes.admin import admin_bp
-from routes.account import account_bp
+    # Import blueprints inside the create_app function to avoid circular imports
+    from routes.auth import auth_bp
+    from routes.paste import paste_bp
+    from routes.user import user_bp
+    from routes.search import search_bp
+    from routes.comment import comment_bp
+    from routes.notification import notification_bp
+    from routes.collection import collection_bp
+    from routes.admin import admin_bp
+    from routes.account import account_bp
 
-# Register blueprints
-app.register_blueprint(auth_bp)
-app.register_blueprint(paste_bp)
-app.register_blueprint(user_bp)
-app.register_blueprint(search_bp)
-app.register_blueprint(comment_bp)
-app.register_blueprint(notification_bp)
-app.register_blueprint(collection_bp)
-app.register_blueprint(admin_bp)
-app.register_blueprint(account_bp)
+    # Register blueprints
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(paste_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(comment_bp)
+    app.register_blueprint(notification_bp)
+    app.register_blueprint(collection_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(account_bp)
 
-with app.app_context():
-    # Create database tables
-    db.create_all()
+    with app.app_context():
+        # Create database tables
+        db.create_all()
+        
+    return app
+    
+# Create the application instance
+app = create_app()
 
 # Add template filters
 @app.template_filter('timesince')
