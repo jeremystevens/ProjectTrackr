@@ -1,33 +1,36 @@
+#!/usr/bin/env python3
 """
-Standalone MySQL WSGI application for Render deployment.
+MySQL-only WSGI for Render deployment
 
-This file is completely independent of the existing codebase to avoid
-any SQLAlchemy mapper conflicts or circular imports.
+A clean implementation of the FlaskBin application
+without any PostgreSQL dependencies or monkey-patching.
 """
 import os
 import logging
-import pymysql
 from datetime import datetime, timedelta
 import secrets
-import hashlib
-from flask import Flask, render_template, redirect, url_for, flash, request, abort, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_wtf.csrf import CSRFProtect
 
-# Set up logging
+# Import Flask packages 
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, current_user, login_required
+from flask_wtf.csrf import CSRFProtect
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.info("Starting MySQL WSGI entry point")
 
-# Create Flask application
+# Create Flask app
 app = Flask(__name__)
 
-# Configure app settings
+# MySQL connection string - will be overridden by environment variable in production
+MYSQL_URI = "mysql+pymysql://u213077714_flaskbin:hOJ27K?5@185.212.71.204:3306/u213077714_flaskbin"
+
+# Configure app
 app.config.update(
     SECRET_KEY=os.environ.get("SESSION_SECRET", "dev-secret-key"),
-    SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", "mysql+pymysql://u213077714_flaskbin:hOJ27K?5@185.212.71.204:3306/u213077714_flaskbin"),
+    SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", MYSQL_URI),
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
     SQLALCHEMY_ENGINE_OPTIONS={
         "pool_recycle": 300,
@@ -36,10 +39,17 @@ app.config.update(
     MAX_CONTENT_LENGTH=5 * 1024 * 1024  # 5MB max upload
 )
 
-# Create database instance
+# Initialize extensions
 db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+csrf = CSRFProtect(app)
 
-# Define model classes
+# Configure login_manager
+login_manager.login_view = 'index'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
+
+# Define User model
 class User(UserMixin, db.Model):
     """User model for authentication and profile information."""
     __tablename__ = 'users'
@@ -64,9 +74,44 @@ class User(UserMixin, db.Model):
     payment_id = db.Column(db.String(100))
     free_ai_trials_used = db.Column(db.Integer, default=0)
     
+    def __repr__(self):
+        return f'<User {self.username}>'
+    
+    def set_password(self, password):
+        """Set the user's password hash."""
+        self.password_hash = generate_password_hash(password)
+    
     def check_password(self, password):
+        """Check if the password matches."""
         return check_password_hash(self.password_hash, password)
+    
+    def get_reset_token(self, expires_in=3600):
+        """Generate a password reset token."""
+        reset_token = secrets.token_urlsafe(32)
+        # In a real application, store this token in the database with expiration
+        return reset_token
+    
+    def generate_api_key(self):
+        """Generate a new API key for the user."""
+        self.api_key = secrets.token_urlsafe(32)
+        return self.api_key
+    
+    def is_account_locked(self):
+        """Check if the account is locked due to failed login attempts."""
+        if self.locked_until and self.locked_until > datetime.utcnow():
+            return True
+        return False
+    
+    @property
+    def is_subscription_active(self):
+        """Check if the user has an active subscription."""
+        if self.subscription_tier == 'free':
+            return False
+        if not self.subscription_expires:
+            return False
+        return self.subscription_expires > datetime.utcnow()
 
+# Define Paste model
 class Paste(db.Model):
     """Paste model for storing code snippets and text."""
     __tablename__ = 'pastes'
@@ -94,9 +139,39 @@ class Paste(db.Model):
     
     user = db.relationship('User', backref='pastes', foreign_keys=[user_id])
     parent = db.relationship('Paste', backref='forks', remote_side=[id], foreign_keys=[parent_id])
+    
+    def __repr__(self):
+        return f'<Paste {self.short_id}>'
+    
+    def set_password(self, password):
+        """Set the paste's password hash."""
+        if password:
+            self.password_hash = generate_password_hash(password)
+        else:
+            self.password_hash = None
+    
+    def check_password(self, password):
+        """Check if the password matches."""
+        if not self.password_hash:
+            return True
+        return check_password_hash(self.password_hash, password)
+    
+    def is_expired(self):
+        """Check if the paste has expired."""
+        if not self.expires_at:
+            return False
+        return self.expires_at < datetime.utcnow()
+    
+    @property
+    def formatted_expiry(self):
+        """Return formatted expiry time or 'Never'."""
+        if not self.expires_at:
+            return "Never"
+        return self.expires_at.strftime("%Y-%m-%d %H:%M:%S")
 
+# Define PasteCollection model
 class PasteCollection(db.Model):
-    """Collections for organizing pastes."""
+    """Collection model for organizing pastes."""
     __tablename__ = 'paste_collections'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -108,116 +183,20 @@ class PasteCollection(db.Model):
     
     user = db.relationship('User', backref='collections')
     pastes = db.relationship('Paste', backref='collection')
-
-# Set up Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+    
+    def __repr__(self):
+        return f'<PasteCollection {self.name}>'
 
 # User loader for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
-    try:
-        return User.query.get(int(user_id))
-    except Exception as e:
-        logger.error(f"Error loading user: {e}")
-        return None
+    """Load a user by ID for Flask-Login."""
+    return User.query.get(int(user_id))
 
-# Set up CSRF protection
-csrf = CSRFProtect()
-csrf.init_app(app)
-
-# Helper functions
-def get_random_string(length=10):
-    """Generate a random string of fixed length."""
-    return secrets.token_urlsafe(length)[:length]
-
-def generate_short_id():
-    """Generate a unique short ID for pastes."""
-    while True:
-        short_id = get_random_string(8)
-        if not Paste.query.filter_by(short_id=short_id).first():
-            return short_id
-
-# Routes
-@app.route('/')
-def index():
-    """Home page with new paste form and recent public pastes."""
-    recent_pastes = Paste.query.filter_by(is_public=True).order_by(Paste.created_at.desc()).limit(10).all()
-    
-    # Pass simple maintenance message to the template
-    message = "This site is now using MySQL database. We're transitioning from PostgreSQL to improve performance."
-    
-    return render_template('index.html', recent_pastes=recent_pastes, message=message)
-
-@app.route('/paste/<short_id>')
-def view_paste(short_id):
-    """View a specific paste."""
-    paste = Paste.query.filter_by(short_id=short_id).first_or_404()
-    
-    # Increment view count
-    paste.views += 1
-    db.session.commit()
-    
-    return render_template('paste/view.html', paste=paste)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """User login page."""
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        user = User.query.filter_by(username=username).first()
-        
-        if user and user.check_password(password):
-            login_user(user)
-            flash('Login successful!', 'success')
-            return redirect(url_for('index'))
-        
-        flash('Invalid username or password', 'error')
-    
-    return render_template('auth/login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    """Log out the current user."""
-    logout_user()
-    flash('You have been logged out.', 'info')
-    return redirect(url_for('index'))
-
-@app.route('/health')
-def health_check():
-    """Health check endpoint for Render."""
-    return {'status': 'ok', 'database': 'mysql'}
-
-# Error handlers
-@app.errorhandler(404)
-def not_found_error(error):
-    """Handle 404 Not Found errors."""
-    return render_template('errors/404.html'), 404
-
-@app.errorhandler(500)
-def internal_server_error(error):
-    """Handle 500 Internal Server errors."""
-    logger.error(f"Internal server error: {error}")
-    return render_template('errors/500.html'), 500
-
-# Maintenance route
-@app.route('/maintenance')
-def maintenance():
-    """Display maintenance page with custom message."""
-    message = "We're updating our database infrastructure from PostgreSQL to MySQL. This transition will improve performance and stability."
-    return render_template('maintenance.html', message=message)
-
-# Register filters
+# Template filters
 @app.template_filter('timesince')
 def timesince_filter(dt):
-    """Format the datetime as a pretty relative time."""
+    """Format datetime as relative time since."""
     now = datetime.utcnow()
     diff = now - dt
     
@@ -238,5 +217,93 @@ def timesince_filter(dt):
     else:
         return "just now"
 
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 errors."""
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    """Handle 500 errors."""
+    db.session.rollback()
+    logger.error(f"Internal server error: {error}")
+    return render_template('errors/500.html'), 500
+
+@app.errorhandler(403)
+def handle_csrf_error(e):
+    """Handle CSRF errors."""
+    return render_template('errors/500.html', 
+                           error="CSRF verification failed. Please try again."), 403
+
+def handle_db_error(error):
+    """Handle database errors."""
+    db.session.rollback()
+    logger.error(f"Database error: {error}")
+    return render_template('errors/500.html',
+                           error="A database error occurred. Please try again later."), 500
+
+# Context processor for utility functions
+@app.context_processor
+def utility_processor():
+    """Add utility functions to template context."""
+    def is_ten_minute_expiration(paste):
+        """Check if a paste has 10-minute expiration"""
+        if not paste.expires_at:
+            return False
+        
+        time_diff = paste.expires_at - paste.created_at
+        return abs(time_diff.total_seconds() - 600) < 30  # Within 30 seconds of 10 minutes
+    
+    return {
+        'now': datetime.utcnow,
+        'is_ten_minute_expiration': is_ten_minute_expiration
+    }
+
+# Routes
+@app.route('/')
+def index():
+    """Home page / paste creation form."""
+    recent_pastes = Paste.query.filter_by(is_public=True).order_by(Paste.created_at.desc()).limit(10).all()
+    return render_template('index.html', recent_pastes=recent_pastes)
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render."""
+    try:
+        # Try a simple query to verify database connection
+        User.query.first()
+        return jsonify({
+            'status': 'ok', 
+            'database': 'mysql',
+            'version': '1.0.0',
+            'time': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+# Create tables and initialize database
+with app.app_context():
+    db.create_all()
+    
+    # Ensure admin user exists
+    admin_user = User.query.filter_by(username='admin').first()
+    if not admin_user:
+        admin_user = User(
+            username='admin',
+            email='admin@example.com',
+            is_admin=True,
+            api_key=secrets.token_urlsafe(32)
+        )
+        admin_user.set_password('adminpassword')
+        db.session.add(admin_user)
+        db.session.commit()
+        logger.info("Created admin user")
+
+# Run the app if executed directly
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=5000, debug=True)
