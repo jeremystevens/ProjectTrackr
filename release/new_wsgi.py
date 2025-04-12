@@ -1,121 +1,106 @@
 """
-WSGI configuration module for production deployment.
+WSGI entry point for FlaskBin in production.
 
-This module creates a Flask application using the factory pattern,
-configures it for production, and makes it available as a WSGI application.
+This file is specifically designed to avoid SQLAlchemy mapper conflicts when deployed.
+It uses a completely flat structure with careful import ordering.
 """
-
 import os
+import logging
 
-# Flask imports
-from flask import Flask, render_template, g, jsonify
-from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect, CSRFError
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.info("Starting WSGI application")
 
-# Import database items
-from new_db import db, init_db
+# Import Flask and create the app
+from flask import Flask
+app = Flask(__name__)
 
-# Set up extensions
-login_manager = LoginManager()
-csrf = CSRFProtect()
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-    strategy="fixed-window"
+# Configure app
+app.config.update(
+    SECRET_KEY=os.environ.get("SESSION_SECRET", "dev-secret-key"),
+    SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", "sqlite:///pastebin.db"),
+    SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    SQLALCHEMY_ENGINE_OPTIONS={
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
 )
 
-def create_app():
-    """Create and configure the Flask application"""
-    # Create the Flask application
-    app = Flask(__name__)
+# Import SQLAlchemy instance
+from new_db import db
+db.init_app(app)
+
+# Set up extensions within app context
+with app.app_context():
+    # Import models after db initialization
+    logger.info("Importing models")
+    from new_models import User, Paste, PasteRevision, Comment, PasteCollection, Tag, PasteTag
     
-    # Basic app configuration
-    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    # Create tables if they don't exist
+    logger.info("Creating database tables")
+    db.create_all()
     
-    # Initialize database with the app - this just configures the db, doesn't create tables
-    init_db(app)
-    
-    # Initialize other extensions with the app
+    # Initialize Flask-Login
+    from flask_login import LoginManager
+    login_manager = LoginManager()
     login_manager.init_app(app)
-    csrf.init_app(app)
-    limiter.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
     
-    # Configure the app outside of app_context to avoid circular imports
+    # Configure user loader
     @login_manager.user_loader
     def load_user(user_id):
-        # Import User model - this is safe because models are already initialized
-        from new_models import User
         return db.session.get(User, int(user_id))
     
-    # Use a single app_context for all initialization
-    with app.app_context():
-        # Import models - new approach with safe import utility
-        from model_package.import_models import import_all_models
-        import_all_models()
-        
-        # Now import and register blueprints
-        from routes.auth import auth_bp
-        from routes.paste import paste_bp
-        from routes.user import user_bp
-        from routes.search import search_bp
-        from routes.comment import comment_bp
-        from routes.notification import notification_bp
-        from routes.collection import collection_bp
-        from routes.admin import admin_bp
-        from routes.account import account_bp
-        
-        # Register all the blueprints
-        app.register_blueprint(auth_bp)
-        app.register_blueprint(paste_bp)
-        app.register_blueprint(user_bp)
-        app.register_blueprint(search_bp)
-        app.register_blueprint(comment_bp)
-        app.register_blueprint(notification_bp)
-        app.register_blueprint(collection_bp)
-        app.register_blueprint(admin_bp)
-        app.register_blueprint(account_bp)
-        
-        # Import other routes and functions 
-        from app import (
-            timesince_filter, 
-            utility_processor,
-            bad_request_error,
-            unauthorized_error,
-            forbidden_error,
-            not_found_error,
-            method_not_allowed_error,
-            too_many_requests_error,
-            internal_server_error,
-            handle_unhandled_exception,
-            csrf_error
-        )
-        
-        # Apply error handlers and filters 
-        app.template_filter('timesince')(timesince_filter)
-        app.context_processor(utility_processor)
-        app.errorhandler(400)(bad_request_error)
-        app.errorhandler(401)(unauthorized_error)
-        app.errorhandler(403)(forbidden_error)
-        app.errorhandler(404)(not_found_error)
-        app.errorhandler(405)(method_not_allowed_error)
-        app.errorhandler(429)(too_many_requests_error)
-        app.errorhandler(500)(internal_server_error)
-        app.errorhandler(Exception)(handle_unhandled_exception)
-        
-        # Create all database tables if needed
-        db.create_all()
-        
-    return app
+    # Initialize CSRF protection
+    from flask_wtf.csrf import CSRFProtect
+    csrf = CSRFProtect()
+    csrf.init_app(app)
+    
+    # Register Blueprints AFTER model imports to avoid circular references
+    logger.info("Registering blueprints")
+    from routes.auth import auth_bp
+    from routes.paste import paste_bp
+    from routes.user import user_bp
+    from routes.search import search_bp
+    from routes.comment import comment_bp
+    from routes.notification import notification_bp
+    from routes.collection import collection_bp
+    from routes.admin import admin_bp
+    from routes.account import account_bp
+    
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(paste_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(comment_bp)
+    app.register_blueprint(notification_bp)
+    app.register_blueprint(collection_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(account_bp)
 
-# Create the application instance for WSGI servers
-application = create_app()
+# Now register error handlers outside app context
+from flask import render_template
+from flask_wtf.csrf import CSRFError
+from sqlalchemy.exc import SQLAlchemyError
 
-# For backwards compatibility
-app = application
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    error_id = f"ERR-{os.urandom(3).hex()}"
+    return render_template('errors/500.html', error_id=error_id), 500
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return render_template('errors/csrf_error.html'), 400
+
+@app.errorhandler(SQLAlchemyError)
+def handle_db_error(error):
+    app.logger.error(f"Database error: {error}")
+    return render_template('errors/500.html', error_id="DB-ERROR"), 500
+
+logger.info("WSGI application initialization complete")
