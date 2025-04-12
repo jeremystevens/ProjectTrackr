@@ -42,7 +42,7 @@ def add_paste_encryption_columns():
             if 'is_encrypted' not in columns:
                 logger.info("Adding 'is_encrypted' column")
                 with db.engine.connect() as conn:
-                    conn.execute(sqlalchemy.text('ALTER TABLE pastes ADD COLUMN is_encrypted TINYINT(1) DEFAULT FALSE'))
+                    conn.execute(sqlalchemy.text('ALTER TABLE pastes ADD COLUMN is_encrypted BOOLEAN DEFAULT FALSE'))
                     conn.commit()
             else:
                 logger.info("Column 'is_encrypted' already exists")
@@ -60,7 +60,7 @@ def add_paste_encryption_columns():
             if 'password_protected' not in columns:
                 logger.info("Adding 'password_protected' column")
                 with db.engine.connect() as conn:
-                    conn.execute(sqlalchemy.text('ALTER TABLE pastes ADD COLUMN password_protected TINYINT(1) DEFAULT FALSE'))
+                    conn.execute(sqlalchemy.text('ALTER TABLE pastes ADD COLUMN password_protected BOOLEAN DEFAULT FALSE'))
                     conn.commit()
             else:
                 logger.info("Column 'password_protected' already exists")

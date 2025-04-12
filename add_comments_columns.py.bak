@@ -50,7 +50,7 @@ def add_comments_table():
         print("Adding comments_enabled column to pastes table...")
         # Add the comments_enabled column to the pastes table
         with engine.connect() as connection:
-            connection.execute(text("ALTER TABLE pastes ADD COLUMN comments_enabled TINYINT(1) DEFAULT TRUE"))
+            connection.execute(text("ALTER TABLE pastes ADD COLUMN comments_enabled BOOLEAN DEFAULT TRUE"))
             connection.commit()
         print("comments_enabled column added to pastes table successfully.")
     

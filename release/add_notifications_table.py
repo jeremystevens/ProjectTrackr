@@ -32,14 +32,14 @@ def add_notifications_table():
         # Define the SQL for creating the notifications table
         sql = """
         CREATE TABLE notifications (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
             paste_id INTEGER REFERENCES pastes(id) ON DELETE CASCADE,
             comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
             type VARCHAR(50) NOT NULL,
             message TEXT NOT NULL,
-            read BOOLEAN DEFAULT FALSE,
+            read TINYINT(1) DEFAULT FALSE,
             created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
         );
         CREATE INDEX idx_notifications_user_id ON notifications(user_id);
