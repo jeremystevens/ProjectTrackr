@@ -378,7 +378,7 @@ def view(short_id):
                           comment_form=comment_form, comments=comments,
                           burn_notice=burn_notice)
 
-@paste_bp.route('/raw/<short_id>')
+@paste_bp.route('/paste/<short_id>/raw')
 def raw(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
@@ -479,7 +479,7 @@ def raw(short_id):
     # Return plain text
     return Response(content, mimetype='text/plain')
 
-@paste_bp.route('/download/<short_id>')
+@paste_bp.route('/paste/<short_id>/download')
 def download(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
@@ -581,7 +581,7 @@ def download(short_id):
     
     return response
 
-@paste_bp.route('/embed/<short_id>')
+@paste_bp.route('/paste/<short_id>/embed')
 def embed(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
@@ -690,7 +690,7 @@ def embed(short_id):
                           highlighted_code=highlighted_code, css=css,
                           burn_notice=burn_notice)
 
-@paste_bp.route('/edit/<short_id>', methods=['GET', 'POST'])
+@paste_bp.route('/paste/<short_id>/edit', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("20 per hour")
 def edit(short_id):
@@ -804,7 +804,7 @@ def edit(short_id):
     
     return render_template('paste/edit.html', form=form, paste=paste)
 
-@paste_bp.route('/delete/<short_id>', methods=['POST'])
+@paste_bp.route('/paste/<short_id>/delete', methods=['POST'])
 @login_required
 @limiter.limit("10 per hour")
 def delete(short_id):
