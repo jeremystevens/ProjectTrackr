@@ -1,0 +1,251 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ paste.title or 'Untitled Paste' }} - FlaskBin{% endblock %}
+
+{% block head %}
+<!-- Additional styles for the code container -->
+<style>
+    .code-container {
+        position: relative;
+        margin-bottom: 1rem;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: #f1f1f1;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+    }
+    .code-header h3 {
+        margin-bottom: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .code-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .code-actions button, .code-actions a {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+        text-decoration: none;
+    }
+    .code-actions button:hover, .code-actions a:hover {
+        color: #0d6efd;
+    }
+    .code-content {
+        position: relative;
+        overflow-x: auto;
+        border: 1px solid #dee2e6;
+    }
+    .code-content pre {
+        margin: 0;
+        padding: 1rem;
+        border-radius: 0;
+    }
+    .metadata {
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .metadata span {
+        margin-right: 1rem;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+    .metadata i {
+        margin-right: 0.25rem;
+    }
+    .alert-expiry {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        margin-bottom: 1rem;
+    }
+    .action-button {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .report-button {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+    .report-button:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ paste.title or 'Untitled Paste' }}</li>
+            </ol>
+        </nav>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-paste me-2"></i>{{ paste.title or 'Untitled Paste' }}</h4>
+                <div>
+                    {% if current_user.is_authenticated and (current_user.id == paste.user_id or current_user.is_admin) %}
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-trash-alt me-2"></i>Delete</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="metadata">
+                    <span><i class="fas fa-user"></i> Author: 
+                        {% if paste.user %}
+                            <a href="#">{{ paste.user.username }}</a>
+                        {% else %}
+                            Anonymous
+                        {% endif %}
+                    </span>
+                    <span><i class="fas fa-calendar-alt"></i> Created: {{ paste.created_at | timesince }}</span>
+                    <span><i class="fas fa-eye"></i> Views: {{ paste.views }}</span>
+                    {% if paste.language %}
+                        <span><i class="fas fa-code"></i> Language: {{ paste.language }}</span>
+                    {% endif %}
+                    {% if paste.expires_at %}
+                        <span><i class="fas fa-clock"></i> Expires: 
+                            {% if is_ten_minute_expiration(paste) %}
+                                <span id="expiration-countdown" data-expires="{{ paste.expires_at.isoformat() }}">
+                                    {{ (paste.expires_at - now()).total_seconds() | int }} seconds
+                                </span>
+                            {% else %}
+                                {{ paste.expires_at | timesince }}
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+
+                {% if paste.expires_at %}
+                    <div class="alert alert-warning alert-expiry">
+                        <i class="fas fa-exclamation-triangle me-2"></i> This paste will expire {{ paste.expires_at | timesince }}.
+                    </div>
+                {% endif %}
+
+                <!-- Action buttons -->
+                <div class="mb-3">
+                    <a href="#" class="btn btn-sm btn-outline-primary action-button">
+                        <i class="fas fa-download me-1"></i> Download
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-secondary action-button">
+                        <i class="fas fa-print me-1"></i> Print View
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-success action-button">
+                        <i class="fas fa-code-branch me-1"></i> Fork
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-info action-button">
+                        <i class="fas fa-share-alt me-1"></i> Share
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-danger report-button action-button">
+                        <i class="fas fa-flag me-1"></i> Report
+                    </a>
+                </div>
+
+                <!-- Code container -->
+                <div class="code-container">
+                    <div class="code-header">
+                        <div>
+                            <span class="badge bg-secondary">{{ paste.language or 'plaintext' }}</span>
+                        </div>
+                        <div class="code-actions">
+                            <button type="button" class="btn-copy" title="Copy to clipboard">
+                                <i class="fas fa-copy me-1"></i> Copy
+                            </button>
+                            <a href="#" title="Raw view">
+                                <i class="fas fa-file-alt me-1"></i> Raw
+                            </a>
+                            <a href="#" title="Embed">
+                                <i class="fas fa-code me-1"></i> Embed
+                            </a>
+                        </div>
+                    </div>
+                    <div class="code-content">
+                        <pre><code class="{{ paste.language }}">{{ paste.content }}</code></pre>
+                    </div>
+                </div>
+
+                <!-- AI Summary (Only shown for premium users or if free trials are available) -->
+                {% if paste.ai_summary %}
+                <div class="card mt-4 border-info">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-robot me-2"></i> AI Summary
+                    </div>
+                    <div class="card-body">
+                        <p>{{ paste.ai_summary }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Comments section (placeholder) -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Comments</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-center text-muted">Comments will be implemented in a future update.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize copy button
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyButton = document.querySelector('.btn-copy');
+        if (copyButton) {
+            copyButton.addEventListener('click', function() {
+                const codeElement = document.querySelector('.code-content code');
+                const textarea = document.createElement('textarea');
+                textarea.value = codeElement.textContent;
+                textarea.style.position = 'fixed';
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    // Show success state
+                    const originalText = copyButton.innerHTML;
+                    copyButton.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+                    copyButton.style.color = '#198754';
+                    
+                    // Reset after 2 seconds
+                    setTimeout(function() {
+                        copyButton.innerHTML = originalText;
+                        copyButton.style.color = '';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                
+                document.body.removeChild(textarea);
+            });
+        }
+    });
+</script>
+{% endblock %}

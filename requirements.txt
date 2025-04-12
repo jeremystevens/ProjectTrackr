@@ -21,3 +21,11 @@ openai
 sentry-sdk
 tabulate
 # psycopg2 removed - using pymysql instead-binary
+flask
+flask-limiter
+flask-login
+flask-sqlalchemy
+flask-wtf
+gunicorn
+pymysql
+werkzeug
