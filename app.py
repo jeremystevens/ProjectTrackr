@@ -65,40 +65,39 @@ login_manager.login_message_category = 'info'
 def before_request():
     g.current_time = datetime.utcnow()
 
+# Import models outside of app context to ensure they are only imported once
+import models  # This imports all models but doesn't use them directly
+
+# Set up login manager loader
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(models.User, int(user_id))
+
+# Import routes after models to avoid circular imports
+from routes.auth import auth_bp
+from routes.paste import paste_bp
+from routes.user import user_bp
+from routes.search import search_bp
+from routes.comment import comment_bp
+from routes.notification import notification_bp
+from routes.collection import collection_bp
+from routes.admin import admin_bp
+from routes.account import account_bp
+
 # Register blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(paste_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(search_bp)
+app.register_blueprint(comment_bp)
+app.register_blueprint(notification_bp)
+app.register_blueprint(collection_bp)
+app.register_blueprint(admin_bp)
+app.register_blueprint(account_bp)
+
 with app.app_context():
-    # Import models after initializing db to avoid circular imports
-    from models import User, Paste
-    
-    # Import routes after models to avoid circular imports
-    from routes.auth import auth_bp
-    from routes.paste import paste_bp
-    from routes.user import user_bp
-    from routes.search import search_bp
-    from routes.comment import comment_bp
-    from routes.notification import notification_bp
-    from routes.collection import collection_bp
-    from routes.admin import admin_bp
-    from routes.account import account_bp
-    
-    # Register blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(paste_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(search_bp)
-    app.register_blueprint(comment_bp)
-    app.register_blueprint(notification_bp)
-    app.register_blueprint(collection_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(account_bp)
-    
     # Create database tables
     db.create_all()
-    
-    # Set up login manager loader
-    @login_manager.user_loader
-    def load_user(user_id):
-        return db.session.get(User, int(user_id))
 
 # Add template filters
 @app.template_filter('timesince')

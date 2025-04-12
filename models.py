@@ -3,7 +3,9 @@ import hashlib
 import uuid
 import secrets
 import os
+# Import db from app but don't import anything else to avoid circular imports
 from app import db
+# Import the rest of the dependencies
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
