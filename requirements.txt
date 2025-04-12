@@ -20,3 +20,4 @@ flask-wtf
 openai
 sentry-sdk
 tabulate
+# psycopg2 removed - using pymysql instead-binary

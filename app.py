@@ -7,13 +7,29 @@ It initializes all extensions, registers blueprints, and sets up error handlers.
 import os
 import logging
 import pymysql
+
+# Setup PyMySQL as the dialect used
+import sqlalchemy.dialects.mysql
+sqlalchemy.dialects.mysql.dialect = sqlalchemy.dialects.mysql.pymysql.dialect
+sqlalchemy.dialects.mysql.base.dialect = sqlalchemy.dialects.mysql.pymysql.dialect
+
+# Patch sqlalchemy dialect's imports to prevent PostgreSQL dependency loading
+import types
+import sqlalchemy.dialects.postgresql
+sqlalchemy.dialects.postgresql.psycopg2 = types.ModuleType('psycopg2_stub')
+sqlalchemy.dialects.postgresql.psycopg2.dialect = type('dialect', (), {})
+sqlalchemy.dialects.postgresql.psycopg2.dialect.dbapi = pymysql
+sqlalchemy.dialects.postgresql.psycopg2.dialect.on_connect = lambda: None
+sqlalchemy.dialects.postgresql.psycopg2._psycopg2_extras = types.ModuleType('_psycopg2_extras_stub')
+
 from datetime import datetime, timedelta
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, current_user, login_required
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +65,7 @@ def create_app():
     csrf.init_app(app)
     
     # Configure login_manager
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'index'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
     
@@ -59,16 +75,30 @@ def create_app():
     # Import models inside app context to avoid circular imports
     with app.app_context():
         # Import models
-        import models
+        from models import User, Paste
         
         # Create all tables if they don't exist
         db.create_all()
         
-        # Import and register blueprints
+        # Ensure admin user exists
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = User(
+                username='admin',
+                email='admin@example.com',
+                is_admin=True,
+                api_key=secrets.token_urlsafe(32)
+            )
+            admin_user.set_password('adminpassword')
+            db.session.add(admin_user)
+            db.session.commit()
+            logger.info("Created admin user")
+        
+        # Base routes
         @app.route('/')
         def index():
             """Render the home page."""
-            recent_pastes = models.Paste.query.filter_by(is_public=True).order_by(models.Paste.created_at.desc()).limit(10).all()
+            recent_pastes = Paste.query.filter_by(is_public=True).order_by(Paste.created_at.desc()).limit(10).all()
             return render_template('index.html', recent_pastes=recent_pastes)
             
         @app.route('/health')
@@ -76,34 +106,18 @@ def create_app():
             """Health check endpoint for Render."""
             return {'status': 'ok', 'database': 'mysql'}
             
-        # Register blueprints if they exist
-        try:
-            from routes.auth import auth_bp
-            app.register_blueprint(auth_bp)
-            logger.info("Registered auth_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import auth_bp")
+        @app.route('/favicon.ico')
+        def favicon():
+            """Serve favicon."""
+            return send_from_directory(os.path.join(app.root_path, 'static'),
+                                      'favicon.ico', mimetype='image/vnd.microsoft.icon')
             
-        try:
-            from routes.paste import paste_bp
-            app.register_blueprint(paste_bp)
-            logger.info("Registered paste_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import paste_bp")
-            
-        try:
-            from routes.user import user_bp
-            app.register_blueprint(user_bp)
-            logger.info("Registered user_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import user_bp")
-            
-        try:
-            from routes.admin import admin_bp
-            app.register_blueprint(admin_bp)
-            logger.info("Registered admin_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import admin_bp")
+        # Static routes
+        @app.route('/robots.txt')
+        def robots_txt():
+            """Serve robots.txt"""
+            return send_from_directory(os.path.join(app.root_path, 'static'),
+                                       'robots.txt', mimetype='text/plain')
         
         # Add error handlers
         @app.errorhandler(404)
@@ -146,6 +160,44 @@ def create_app():
         @login_manager.user_loader
         def load_user(user_id):
             """Load a user by ID for Flask-Login."""
-            return models.User.query.get(int(user_id))
+            return User.query.get(int(user_id))
             
+        # Import and register blueprints if they exist - but wrapped in try/except
+        try:
+            from routes.auth import auth_bp
+            app.register_blueprint(auth_bp)
+            logger.info("Registered auth_bp blueprint")
+        except ImportError:
+            logger.warning("Could not import auth_bp")
+            
+        try:
+            from routes.paste import paste_bp
+            app.register_blueprint(paste_bp)
+            logger.info("Registered paste_bp blueprint")
+        except ImportError:
+            logger.warning("Could not import paste_bp")
+            
+        try:
+            from routes.user import user_bp
+            app.register_blueprint(user_bp)
+            logger.info("Registered user_bp blueprint")
+        except ImportError:
+            logger.warning("Could not import user_bp")
+            
+        try:
+            from routes.admin import admin_bp
+            app.register_blueprint(admin_bp)
+            logger.info("Registered admin_bp blueprint")
+        except ImportError:
+            logger.warning("Could not import admin_bp")
+        
+        # Context processors
+        @app.context_processor
+        def utility_processor():
+            """Add utility functions to the template context."""
+            return {
+                'now': datetime.utcnow
+            }
+        
+    # Return the app
     return app

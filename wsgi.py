@@ -8,6 +8,20 @@ import os
 import pymysql
 import logging
 
+# Setup PyMySQL as the dialect used
+import sqlalchemy.dialects.mysql
+sqlalchemy.dialects.mysql.dialect = sqlalchemy.dialects.mysql.pymysql.dialect
+sqlalchemy.dialects.mysql.base.dialect = sqlalchemy.dialects.mysql.pymysql.dialect
+
+# Patch sqlalchemy dialect's imports to prevent PostgreSQL dependency loading
+import types
+import sqlalchemy.dialects.postgresql
+sqlalchemy.dialects.postgresql.psycopg2 = types.ModuleType('psycopg2_stub')
+sqlalchemy.dialects.postgresql.psycopg2.dialect = type('dialect', (), {})
+sqlalchemy.dialects.postgresql.psycopg2.dialect.dbapi = pymysql
+sqlalchemy.dialects.postgresql.psycopg2.dialect.on_connect = lambda: None
+sqlalchemy.dialects.postgresql.psycopg2._psycopg2_extras = types.ModuleType('_psycopg2_extras_stub')
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
