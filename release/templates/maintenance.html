@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Internal Server Error - FlaskBin</title>
+    <title>Maintenance Mode - FlaskBin</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,7 +27,7 @@
             animation: fadeIn 1s ease-in-out;
         }
         h1 {
-            color: #ffa726;
+            color: #61dafb;
             margin-bottom: 20px;
             font-size: 2.5em;
         }
@@ -39,29 +39,14 @@
         .icon {
             font-size: 4em;
             margin-bottom: 20px;
-            color: #ffa726;
+            color: #61dafb;
         }
-        .error-id {
-            display: inline-block;
-            background-color: #333;
-            padding: 5px 10px;
+        .status {
+            background-color: #3a3a3a;
             border-radius: 4px;
-            font-family: monospace;
-            margin: 10px 0;
-        }
-        .home-link {
-            display: inline-block;
-            background-color: #ffa726;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.2s;
+            padding: 15px;
             margin-top: 20px;
-        }
-        .home-link:hover {
-            background-color: #e89518;
+            border-left: 4px solid #61dafb;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -71,13 +56,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="icon">⚠️</div>
-        <h1>500 - Internal Server Error</h1>
-        <p>Something went wrong on our servers. We're working to fix the issue.</p>
-        {% if error_id %}
-        <p>Please reference error ID <span class="error-id">{{ error_id }}</span> when reporting this issue.</p>
-        {% endif %}
-        <a href="/" class="home-link">Go Home</a>
+        <div class="icon">🛠️</div>
+        <h1>Maintenance in Progress</h1>
+        <p>FlaskBin is currently undergoing scheduled maintenance to improve your experience. We'll be back shortly with new features and improvements.</p>
+        <p>{{ message }}</p>
+        <div class="status">
+            <p><strong>Status:</strong> We're resolving a deployment issue. Please check back in a few minutes.</p>
+        </div>
     </div>
 </body>
 </html>

@@ -1,0 +1,125 @@
+BuildError
+Could not build url for endpoint 'paste.index'. Did you mean 'static' instead?
+mechanism
+wsgi
+handled
+false
+werkzeug/routing/map.py in build at line 950
+
+flask/app.py in url_for at line 1686
+
+flask/app.py in url_for at line 1697
+
+/opt/render/project/src/templates/layout.html in top-level template code at line 29
+
+Set up Code Mapping
+In App
+
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('paste.index') }}">
+                <i class="fas fa-clipboard-list me-2"></i>FlaskBin
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+config	
+
+{
+10 items
+}
+cycler	
+<class 'jinja2.utils.Cycler'>
+dict	
+<class 'dict'>
+get_flashed_messages	
+<function get_flashed_messages at 0x7d147e2d3560>
+joiner	
+<class 'jinja2.utils.Joiner'>
+lipsum	
+<function generate_lorem_ipsum at 0x7d147e1cfe20>
+namespace	
+<class 'jinja2.utils.Namespace'>
+range	
+<class 'range'>
+request	
+<Request 'https://flaskbin.onrender.com/favicon.ico' [GET]>
+url_for	
+<bound method Flask.url_for of <Flask 'wsgi'>>
+
+Show More
+/opt/render/project/src/templates/errors/500.html in top-level template code at line 1
+In App
+
+jinja2/environment.py in handle_exception at line 942
+
+jinja2/environment.py in render at line 1295
+
+flask/templating.py in _render at line 132
+
+flask/templating.py in render_template at line 151
+
+wsgi.py in internal_server_error at line 138
+In App
+
+flask/app.py in handle_exception at line 1399
+
+flask/app.py in wsgi_app at line 2193
+
+flask/app.py in __call__ at line 2213
+
+BuildError
+Could not build url for endpoint 'paste.index'. Did you mean 'static' instead?
+mechanism
+wsgi
+handled
+false
+werkzeug/routing/map.py in build at line 950
+
+flask/app.py in url_for at line 1686
+
+flask/app.py in url_for at line 1697
+
+/opt/render/project/src/templates/layout.html in top-level template code at line 29
+In App
+
+/opt/render/project/src/templates/errors/404.html in top-level template code at line 1
+In App
+
+jinja2/environment.py in handle_exception at line 942
+
+jinja2/environment.py in render at line 1295
+
+flask/templating.py in _render at line 132
+
+flask/templating.py in render_template at line 151
+
+wsgi.py in not_found_error at line 134
+In App
+
+flask/app.py in handle_http_exception at line 1281
+
+flask/app.py in handle_user_exception at line 1341
+
+flask/app.py in full_dispatch_request at line 1486
+
+flask/app.py in wsgi_app at line 2190
+
+NotFound
+404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+mechanism
+wsgi
+handled
+false
+werkzeug/routing/map.py in match at line 655
+
+flask/ctx.py in match_request at line 353
+
+flask/app.py in raise_routing_exception at line 1440
+
+flask/app.py in dispatch_request at line 1458
+
+flask/app.py in full_dispatch_request at line 1484
