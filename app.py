@@ -73,12 +73,8 @@ def create_app():
     def before_request():
         g.current_time = datetime.utcnow()
 
-    # Import models only once to prevent duplicate registration
-    global _models_initialized
-    if not _models_initialized:
-        # This import initializes the models with SQLAlchemy 
-        import models  
-        _models_initialized = True
+    # We'll initialize models when they're actually needed 
+    # No need to import models globally
     
     # Set up login manager loader
     @login_manager.user_loader
@@ -109,6 +105,8 @@ def create_app():
     app.register_blueprint(account_bp)
 
     with app.app_context():
+        # Import models to register them with SQLAlchemy
+        import models
         # Create database tables
         db.create_all()
         

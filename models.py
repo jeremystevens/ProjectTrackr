@@ -3,18 +3,18 @@ import hashlib
 import uuid
 import secrets
 import os
-# Import db from app but don't import anything else to avoid circular imports
-from app import db
-# Import the rest of the dependencies
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
-# Import functions inside methods to avoid circular imports
-# from utils import encrypt_content, decrypt_content
+
+# Import db directly from app
+# The models will be registered with SQLAlchemy only when they are used
+# inside an application context, avoiding the duplicate mapping error
+from app import db
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-
+    
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
