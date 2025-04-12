@@ -1,11 +1,10 @@
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# For Render deployment, we should use the app from wsgi.py
-# This avoids circular imports and model mapping conflicts
-from wsgi import app
+# Import app instance from app.py
+# The app is created by the app.py create_app() function
+from app import app
 
-# This file is used for local development
-# For production deployment, use 'wsgi:app' instead of 'main:app'
+# This file is used by gunicorn as the WSGI entry point
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

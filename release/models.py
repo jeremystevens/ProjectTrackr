@@ -7,10 +7,9 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
 
-# Import db directly from app
-# The models will be registered with SQLAlchemy only when they are used
-# inside an application context, avoiding the duplicate mapping error
-from app import db
+# Import db from db module instead of app
+# This avoids circular imports between app and models
+from db import db
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

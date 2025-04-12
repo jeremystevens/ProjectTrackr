@@ -13,23 +13,19 @@ gunicorn --bind 0.0.0.0:$PORT main:app
 import os
 import logging
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Import db from db module to avoid circular import issues
+from db import db, init_db
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Create a base class for SQLAlchemy models
-class Base(DeclarativeBase):
-    pass
-
 # Initialize extensions without binding them to an app yet
-db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 csrf = CSRFProtect()
 limiter = Limiter(
@@ -48,16 +44,10 @@ def create_app():
     app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
-    # Configure the database
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # Initialize database with the app
+    init_db(app)
     
-    # Initialize extensions with the app
-    db.init_app(app)
+    # Initialize other extensions with the app
     login_manager.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
