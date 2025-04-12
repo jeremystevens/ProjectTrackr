@@ -97,15 +97,8 @@ with app.app_context():
     # Import and register blueprints AFTER models
     logger.info("Registering blueprints")
     
-    # IMPORTANT: Set this to prevent User model multiple registrations
-    import sys
-    sys.modules['models'] = type('FakeModels', (), {
-        'User': User,  # Use our User model instead of importing from models.py
-        '_MODELS_REGISTERED': True,  # Prevent further model registrations
-        '_DEFINED_MODELS': set(['User']),  # Mark User as defined
-        'register_model': lambda x: True,  # Make register_model always return True
-        'register_models': lambda: None  # Make register_models a no-op
-    })
+    # We need to make sure models are loaded correctly
+    # The application is already live, so let's not mess with working code
     
     try:
         from routes.auth import auth_bp
