@@ -22,7 +22,7 @@ Ensure the following environment variables are properly configured in your deplo
 1. Create a new Web Service
 2. Connect to your GitHub repository containing this release code
 3. Set the build command to: `pip install -r requirements.txt`
-4. Set the start command to: `gunicorn --bind 0.0.0.0:$PORT main:app`
+4. Set the start command to: `gunicorn --bind 0.0.0.0:$PORT deploy_wsgi:app`
 5. Add the required environment variables
 6. Deploy
 

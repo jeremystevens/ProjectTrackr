@@ -29,7 +29,36 @@ app = Flask(__name__)
 
 # Configure app - essential settings
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+
+# Configure database
+db_url = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+
+# Patch the SQLAlchemy psycopg2 dialect to avoid pymysql imports
+try:
+    # Apply a monkey patch to avoid the problematic import
+    from sqlalchemy.dialects.postgresql import psycopg2
+    original_on_connect = psycopg2.PGDialect_psycopg2.on_connect
+    
+    # Override the on_connect method to avoid extras import
+    def patched_on_connect(self):
+        def connect(conn):
+            conn.set_isolation_level(self.isolation_level)
+            return conn
+        return connect
+        
+    # Apply the patch
+    psycopg2.PGDialect_psycopg2.on_connect = patched_on_connect
+    logger.info("Successfully patched psycopg2 dialect")
+except Exception as e:
+    logger.error(f"Failed to patch psycopg2 dialect: {e}")
+
+# Fix URL format for different PostgreSQL URL styles
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+logger.info(f"Using database URL format: {db_url[:15]}...")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,

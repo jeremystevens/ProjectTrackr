@@ -33,6 +33,12 @@ def get_direct_connection():
     if _pg_conn is None or _pg_conn.closed:
         try:
             db_url = os.environ.get("DATABASE_URL", "")
+            
+            # Render provides Postgres URLs in the format: postgres://user:pass@host:port/db
+            # But psycopg2 prefers: postgresql://user:pass@host:port/db
+            if db_url.startswith('postgres://'):
+                db_url = db_url.replace('postgres://', 'postgresql://', 1)
+                
             _pg_conn = psycopg2.connect(db_url)
             _pg_conn.autocommit = False  # Explicit transaction control
             logger.info("Created direct psycopg2 connection")
@@ -157,8 +163,35 @@ def close_direct_connection():
 
 def init_db(app):
     """Initialize the database with the Flask app"""
-    # Configure the database
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+    # Configure the database 
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+    
+    # Patch the SQLAlchemy psycopg2 dialect to avoid pymysql imports
+    try:
+        # Apply a monkey patch to avoid the problematic import
+        from sqlalchemy.dialects.postgresql import psycopg2
+        original_on_connect = psycopg2.PGDialect_psycopg2.on_connect
+        
+        # Override the on_connect method to avoid extras import
+        def patched_on_connect(self):
+            def connect(conn):
+                conn.set_isolation_level(self.isolation_level)
+                return conn
+            return connect
+            
+        # Apply the patch
+        psycopg2.PGDialect_psycopg2.on_connect = patched_on_connect
+        logger.info("Successfully patched psycopg2 dialect")
+    except Exception as e:
+        logger.error(f"Failed to patch psycopg2 dialect: {e}")
+    
+    # Fix URL format for different PostgreSQL URL styles
+    if db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+    
+    logger.info(f"Using database URL format: {db_url[:15]}...")
+    
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_recycle": 300,
         "pool_pre_ping": True,

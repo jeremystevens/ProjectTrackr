@@ -29,7 +29,68 @@ app = Flask(__name__)
 
 # Configure app - essential settings
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+
+# Configure database
+db_url = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
+
+# Apply more aggressive monkey patch to fix SQLAlchemy psycopg2 dialect issue
+try:
+    # First try to fix by direct monkey patching of SQLAlchemy's psycopg2 module
+    import sys
+    import types
+    from sqlalchemy.dialects.postgresql import psycopg2 as sa_psycopg2
+    
+    # Create a more comprehensive mock extras module with Hstore support
+    # Create a mock psycopg2 extras module and add it to sys.modules
+    mock_extras = types.ModuleType('psycopg2.extras')
+    
+    # Add required functions
+    mock_extras.register_uuid = lambda conn: None
+    mock_extras.register_default_json = lambda conn: None
+    mock_extras.register_default_jsonb = lambda conn: None
+    
+    # Add HstoreAdapter class
+    class HstoreAdapter:
+        @staticmethod
+        def get_oids(conn):
+            # Return dummy OIDs that won't be used but prevent errors
+            return (-1, -2)
+            
+    mock_extras.HstoreAdapter = HstoreAdapter
+    sys.modules['psycopg2.extras'] = mock_extras
+    
+    # Replace the _psycopg2_extras property on the PGDialect_psycopg2 class
+    def _patched_extras(self):
+        return mock_extras
+        
+    # Replace the on_connect method to avoid accessing _psycopg2_extras
+    def _patched_on_connect(self):
+        def connect(conn):
+            conn.set_isolation_level(self.isolation_level)
+            return conn
+        return connect
+    
+    # Create a patched initialize method to bypass hstore checks
+    def _patched_initialize(self, connection):
+        # Skip the hstore initialization that causes problems
+        pass
+        
+    # Apply the patches
+    sa_psycopg2.PGDialect_psycopg2._psycopg2_extras = property(_patched_extras)
+    sa_psycopg2.PGDialect_psycopg2.on_connect = _patched_on_connect
+    sa_psycopg2.PGDialect_psycopg2.initialize = _patched_initialize
+    
+    logger.info("Successfully applied aggressive patch to psycopg2 dialect")
+except Exception as e:
+    logger.error(f"Failed to apply aggressive patch to psycopg2 dialect: {e}")
+
+# Fix URL format for different PostgreSQL URL styles
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+logger.info(f"Using database URL: {db_url}")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,

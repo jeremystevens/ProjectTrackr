@@ -25,4 +25,5 @@ dependencies = [
     "trafilatura>=2.0.0",
     "sentry-sdk[flask]>=2.25.1",
     "cryptography>=44.0.2",
+    "pymysql>=1.1.1",
 ]
