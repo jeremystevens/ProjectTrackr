@@ -21,6 +21,20 @@ class Base(DeclarativeBase):
 # Initialize extensions without binding them to an app yet
 db = SQLAlchemy(model_class=Base)
 
+# Singleton pattern to ensure models are only registered once
+_MODELS_REGISTERED = False
+
+# Check if this module is being imported for the first time
+def is_first_import():
+    global _MODELS_REGISTERED
+    if _MODELS_REGISTERED:
+        return False
+    _MODELS_REGISTERED = True
+    return True
+
+# Call this function to mark that models have been registered
+is_first_import()
+
 # Direct psycopg2 connection for efficient operations
 _pg_conn = None
 

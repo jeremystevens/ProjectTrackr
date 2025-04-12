@@ -40,6 +40,10 @@ def register_models():
 # Track if models are being registered during initial import
 register_models()
 
+# Import db.is_first_import to check if this is the first time models.py is being loaded
+from db import is_first_import
+first_import = is_first_import()
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
