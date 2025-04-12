@@ -17,10 +17,12 @@ logger = logging.getLogger(__name__)
 logger.info("Starting deployment WSGI app")
 
 # Import Flask and extensions
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from sqlalchemy.exc import SQLAlchemyError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Create Flask app instance
 app = Flask(__name__)
@@ -47,6 +49,14 @@ login_manager.login_message_category = 'info'
 # Initialize CSRF protection
 csrf = CSRFProtect()
 csrf.init_app(app)
+
+# Initialize rate limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 
 # Initialize the database and load models once
 with app.app_context():
