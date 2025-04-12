@@ -238,5 +238,16 @@ def utility_processor():
         'is_ten_minute_expiration': is_ten_minute_expiration
     }
 
+# Add a direct root route handler for deployment
+@app.route('/')
+def home():
+    """
+    Direct root route handler to avoid blueprint resolution issues on Render.
+    This will import and use the paste.index view function directly.
+    """
+    logger.info("Using direct root route handler")
+    from routes.paste import index
+    return index()
+
 # Report successful setup
 logger.info("Render deployment WSGI app initialization complete")
