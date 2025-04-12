@@ -3,6 +3,7 @@ import hashlib
 import uuid
 import secrets
 import os
+import sys
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
@@ -10,6 +11,20 @@ from sqlalchemy.sql import func
 # Import db from db module instead of app
 # This avoids circular imports between app and models
 from db import db
+
+# Prevent models from being registered multiple times
+# This is needed for the SQLAlchemy mapper conflicts in production
+_MODELS_REGISTERED = False
+
+def register_models():
+    """Register all models with SQLAlchemy. This should only be called once."""
+    global _MODELS_REGISTERED
+    if _MODELS_REGISTERED:
+        return
+    _MODELS_REGISTERED = True
+
+# Only register models once
+register_models()
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

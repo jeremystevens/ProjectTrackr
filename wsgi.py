@@ -35,8 +35,13 @@ limiter = Limiter(
     strategy="fixed-window"
 )
 
+# Flag to track if app has been initialized
+_APP_INITIALIZED = False
+
 def create_app():
     """Create and configure the Flask application"""
+    global _APP_INITIALIZED
+    
     # Create the Flask application
     app = Flask(__name__)
     
@@ -44,7 +49,7 @@ def create_app():
     app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
-    # Initialize database with the app
+    # Initialize database with the app - this just configures the db, doesn't create tables
     init_db(app)
     
     # Initialize other extensions with the app
@@ -54,19 +59,22 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
     
-    with app.app_context():
-        # Import models - do this first to avoid circular imports
-        import models
-        
-        # Import user model for login manager
+    # Configure the app outside of app_context to avoid circular imports
+    @login_manager.user_loader
+    def load_user(user_id):
+        # Importing User here to avoid circular imports
         from models import User
+        return db.session.get(User, int(user_id))
+    
+    # Use a single app_context for all initialization
+    with app.app_context():
+        # IMPORTANT: Only import models once to prevent mapper conflicts
+        # Import before other route imports to ensure models are registered first
+        if not _APP_INITIALIZED:
+            import models
+            _APP_INITIALIZED = True
         
-        # Set up login manager loader 
-        @login_manager.user_loader
-        def load_user(user_id):
-            return db.session.get(User, int(user_id))
-            
-        # Register blueprints after models are imported
+        # Now import and register blueprints
         from routes.auth import auth_bp
         from routes.paste import paste_bp
         from routes.user import user_bp
@@ -88,7 +96,7 @@ def create_app():
         app.register_blueprint(admin_bp)
         app.register_blueprint(account_bp)
         
-        # Import other routes and functions as needed
+        # Import other routes and functions 
         from app import (
             timesince_filter, 
             utility_processor,
@@ -103,7 +111,7 @@ def create_app():
             csrf_error
         )
         
-        # Apply the same error handlers and filters 
+        # Apply error handlers and filters 
         app.template_filter('timesince')(timesince_filter)
         app.context_processor(utility_processor)
         app.errorhandler(400)(bad_request_error)
@@ -115,7 +123,7 @@ def create_app():
         app.errorhandler(500)(internal_server_error)
         app.errorhandler(Exception)(handle_unhandled_exception)
         
-        # Create all database tables
+        # Create all database tables if needed
         db.create_all()
         
     return app
