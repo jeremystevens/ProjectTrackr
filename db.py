@@ -264,11 +264,27 @@ def init_db(app):
     except Exception as e:
         logger.error(f"Failed to apply aggressive patch to psycopg2 dialect: {e}")
     
+    # Use environment variable DB_URL or fallback to DATABASE_URL for Render compatibility
+    # If neither is available, fall back to SQLite
+    render_db_url = os.environ.get("DB_URL", None)
+    if render_db_url:
+        db_url = render_db_url
+        logger.info("Using Render DB_URL environment variable")
+    
     # Fix URL format for different PostgreSQL URL styles
-    if db_url.startswith('postgres://'):
+    if db_url and db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql://', 1)
     
-    logger.info(f"Using database URL: {db_url}")
+    # Log a sanitized version of the URL (hiding credentials)
+    if db_url and 'postgresql://' in db_url:
+        parts = db_url.split('@')
+        if len(parts) > 1:
+            sanitized_url = f"postgresql://****:****@{parts[1]}"
+            logger.info(f"Using database URL: {sanitized_url}")
+        else:
+            logger.info("Using PostgreSQL database")
+    else:
+        logger.info(f"Using database URL: {db_url}")
     
     app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
