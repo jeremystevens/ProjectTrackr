@@ -1079,7 +1079,7 @@ def flag_paste(short_id):
         
         if existing_flag:
             flash('You have already flagged this paste. A moderator will review it soon.', 'info')
-            return redirect(url_for('paste.view', short_id=short_id))
+            return redirect(f'/paste/{short_id}')
     
     form = FlagContentForm()
     
@@ -1095,7 +1095,7 @@ def flag_paste(short_id):
         db.session.commit()
         
         flash('Thank you for flagging this content. A moderator will review it soon.', 'success')
-        return redirect(url_for('paste.view', short_id=short_id))
+        return redirect(f'/paste/{short_id}')
     
     return render_template(
         'paste/flag_paste.html',
