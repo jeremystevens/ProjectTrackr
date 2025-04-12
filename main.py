@@ -1,9 +1,9 @@
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Import app instance from app.py
-# The app is created by the app.py create_app() function
-from app import create_app
+# Import app instance from create_app.py
+# The app is created by our robust application factory
+from create_app import create_app
 
 # Create the app using the factory function
 app = create_app()
