@@ -1,166 +1,108 @@
-# FlaskBin Deployment Guide
+# Deployment Guide for FlaskBin
 
-This is the production-ready version of FlaskBin, a modern pastebin application designed for developers and code sharers.
+This guide explains how to deploy the FlaskBin application to production environments, focusing on deployment to Render.com.
 
-## Environment Variables
+## SQLAlchemy Mapper Conflicts
 
-Ensure the following environment variables are properly configured in your deployment environment:
+One of the main challenges we've faced is SQLAlchemy mapper conflicts during deployment. These conflicts occur because:
 
-- `DATABASE_URL`: PostgreSQL connection URL
-- `SESSION_SECRET`: A secure random string for Flask session encryption
-- `SENTRY_DSN`: (Optional) Sentry error tracking DSN
-- `SENDGRID_API_KEY`: (Optional) For email notifications
-- `TWILIO_ACCOUNT_SID`: (Optional) For SMS notifications
-- `TWILIO_AUTH_TOKEN`: (Optional) For SMS notifications
-- `TWILIO_PHONE_NUMBER`: (Optional) For SMS notifications
-- `OPENAI_API_KEY`: (Optional) For AI features
+1. SQLAlchemy complains about models being registered multiple times when using complex import structures
+2. Circular imports between modules create initialization issues
+3. The application factory pattern combined with blueprint registration can lead to duplicate model registration
 
-## Deployment Steps
+## Solution: Simplified Deployment Structure
 
-### Render
+We've resolved these issues using a simplified deployment structure with the following components:
 
-1. Create a new Web Service
-2. Connect to your GitHub repository containing this release code
-3. Set the build command to: `pip install -r requirements.txt`
-4. Set the start command to: `gunicorn --bind 0.0.0.0:$PORT main:app`
-5. Add the required environment variables
-6. Deploy
+1. `deploy_wsgi.py`: A specialized WSGI entry point for production that:
+   - Uses a flat structure without the application factory pattern
+   - Avoids circular imports by careful import ordering
+   - Explicitly provides dependencies to modules that need them
+   - Includes explicit URL prefixes for all blueprints
 
-### Heroku
+2. Direct PostgreSQL Access:
+   - Added `db.py` functions for direct PostgreSQL connections using psycopg2
+   - Created `utils/bulk_operations.py` module for efficient bulk data operations
+   - Uses PostgreSQL's native COPY command for high-performance data transfers
 
-1. Create a new Heroku app
-2. Connect to your GitHub repository
-3. Add the Heroku Postgres add-on
-4. Configure the environment variables in the app settings
-5. Deploy the main branch
+3. Utility Function Integration:
+   - Integrated critical utility functions into proper module structure
+   - Made dependencies optional with try/except blocks to improve resilience
 
-### Manual Deployment
+## Deploying to Render.com
 
-1. Set up a Python 3.11+ environment
-2. Install dependencies: `pip install -r requirements.txt`
-3. Configure environment variables
-4. Run using Gunicorn: `gunicorn --bind 0.0.0.0:$PORT main:app`
+### Prerequisites
 
-## Database Initialization
+- A Render.com account
+- PostgreSQL database (can be provisioned on Render.com)
+- Environment variables (see below)
 
-The application will automatically create all necessary database tables on first run through SQLAlchemy's `db.create_all()` called in `app.py`.
+### Environment Variables
 
-### Database Migrations
+Set the following environment variables in Render Dashboard:
 
-If you're updating from a previous version of FlaskBin, you'll need to run the migration scripts to add new tables and columns. Run these scripts in the following order (if they haven't been run before):
+- `DATABASE_URL`: PostgreSQL connection string
+- `SESSION_SECRET`: Secret key for Flask sessions
+- `OPENAI_API_KEY`: (Optional) For AI code summarization features
+- `SENTRY_DSN`: (Optional) For error tracking
 
-1. Basic migrations:
-   ```bash
-   python add_security_columns.py
-   python add_account_lockout_columns.py
-   python add_user_ban_columns.py
-   ```
+### Deployment Steps
 
-2. Paste feature migrations:
-   ```bash
-   python add_burn_after_read_column.py
-   python add_paste_encryption_columns.py
-   python add_paste_fork_columns.py
-   python add_paste_revisions_table.py
-   ```
+1. Push your code to a Git repository
+2. Connect the repository to Render
+3. Select the "Web Service" type
+4. Configure with:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn --bind 0.0.0.0:$PORT deploy_wsgi:app`
+   - Environment: Python 3.11
+   - Add your environment variables
 
-3. Social feature migrations:
-   ```bash
-   python add_comments_columns.py
-   python add_notifications_table.py
-   python add_paste_collections_table.py
-   python add_tags_table.py
-   ```
+### render.yaml Configuration
 
-4. Premium feature migrations:
-   ```bash
-   python add_subscription_fields.py
-   python add_free_ai_trial_column.py
-   ```
+```yaml
+services:
+  - type: web
+    name: flaskbin
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT deploy_wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+```
 
-5. Administration migrations:
-   ```bash
-   python add_admin_tables.py
-   ```
+## Troubleshooting
 
-6. Fix scripts (if needed):
-   ```bash
-   python fix_download_route.py
-   python fix_embed_route.py
-   python fix_print_view.py
-   ```
+### Common Issues
 
-## Important Notes
+1. **500 Server Errors**: Check Render logs for specific error messages
+2. **URL Build Errors**: Verify blueprint registration in `deploy_wsgi.py`
+3. **Database Connection Issues**: Confirm DATABASE_URL is correctly formatted
+4. **Import Errors**: Ensure all required packages are in `requirements.txt`
 
-- Ensure PostgreSQL is version 12+ for best compatibility
-- This release version has all development files removed
-- Check the logs after deployment to ensure proper initialization
+### Debugging
 
-## Managing Expired Pastes
+- Use Sentry for error tracking
+- Increase log level in `deploy_wsgi.py` with `logging.basicConfig(level=logging.DEBUG)`
+- Check the Render logs for detailed error messages
 
-FlaskBin includes a maintenance script called `prune_expired.py` that should be set up to run periodically. This script removes pastes that have reached their expiration date, keeping your database clean and optimized.
+## Performance Optimization
 
-### Setting Up Scheduled Pruning
+The direct PostgreSQL access introduced in this deployment approach offers significant performance benefits:
 
-#### On Linux/Unix Systems (using cron)
+- Bypasses SQLAlchemy ORM overhead for bulk operations
+- Uses native PostgreSQL COPY commands for efficient data transfer
+- Avoids mapper registration issues that can cause slowdowns
 
-1. Edit the crontab:
-   ```bash
-   crontab -e
-   ```
+## Security Considerations
 
-2. Add a line to run the script daily at midnight:
-   ```
-   0 0 * * * cd /path/to/flaskbin && python prune_expired.py >> prune_expired.log 2>&1
-   ```
+- Always use environment variables for secrets
+- Ensure proper CSRF protection is enabled
+- Consider enabling HTTPS-only cookies
+- Review database user permissions
 
-#### On Windows (using Task Scheduler)
+## Additional Resources
 
-1. Open Task Scheduler
-2. Create a Basic Task
-3. Set the trigger to daily at midnight
-4. Set the action to "Start a program"
-5. Browse to your Python executable and add the full path to prune_expired.py as an argument
-
-#### On Heroku
-
-Use the Heroku Scheduler add-on:
-1. Install the add-on: `heroku addons:create scheduler:standard`
-2. Configure it to run `python prune_expired.py` daily
-
-#### On Render
-
-Use Render's Cron Jobs feature:
-1. Create a new Cron Job service
-2. Set the schedule to `0 0 * * *` (daily at midnight)
-3. Set the command to `python prune_expired.py`
-
-## Setting Up an Administrator Account
-
-FlaskBin includes an admin dashboard for managing users, reported pastes, and system settings. To set up an administrator account:
-
-1. First, ensure that you have a regular user account registered in the system.
-
-2. Run the `set_admin.py` script with your username:
-
-   ```bash
-   python set_admin.py --username your_username
-   ```
-
-   Or, if you want to specify a user by email:
-
-   ```bash
-   python set_admin.py --email your_email@example.com
-   ```
-
-3. The script will confirm the user has been granted admin privileges.
-
-4. Log in with the newly promoted admin account.
-
-5. Access the admin panel via the navigation menu or by visiting `/admin` directly.
-
-The admin dashboard gives you access to:
-- Reviewing and moderating flagged/reported content
-- Managing user accounts (ban/unban, view activities)
-- System statistics and performance metrics
-- Configuration settings
+- [Flask Documentation](https://flask.palletsprojects.com/)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [Render.com Documentation](https://render.com/docs)
