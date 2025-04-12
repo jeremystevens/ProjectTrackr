@@ -905,7 +905,7 @@ def archive():
     
     return render_template('archive/index.html', pastes=pastes)
 
-@paste_bp.route('/<short_id>/revisions')
+@paste_bp.route('/paste/<short_id>/revisions')
 @login_required
 def revisions(short_id):
     """View revision history for a paste (registered users only)"""
@@ -924,7 +924,7 @@ def revisions(short_id):
     
     return render_template('paste/revisions.html', paste=paste, revisions=revisions, form=form)
 
-@paste_bp.route('/<short_id>/revision/<int:revision_number>')
+@paste_bp.route('/paste/<short_id>/revision/<int:revision_number>')
 @login_required
 def view_revision(short_id, revision_number):
     """View a specific revision of a paste (registered users only)"""
@@ -1016,7 +1016,7 @@ def highlight_preview():
             'css': ''
         }
 
-@paste_bp.route('/<short_id>/fork', methods=['POST'])
+@paste_bp.route('/paste/<short_id>/fork', methods=['POST'])
 @limiter.limit("20 per hour")
 def fork(short_id):
     """Fork an existing paste"""
@@ -1061,7 +1061,7 @@ def fork(short_id):
     return redirect(url_for('paste.view', short_id=fork.short_id))
 
 
-@paste_bp.route('/flag/<string:short_id>', methods=['GET', 'POST'])
+@paste_bp.route('/paste/flag/<string:short_id>', methods=['GET', 'POST'])
 def flag_paste(short_id):
     """Route for flagging a paste as inappropriate content"""
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
