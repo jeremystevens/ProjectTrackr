@@ -197,7 +197,7 @@ def create():
     
     return redirect(url_for('paste.index'))
 
-@paste_bp.route('/<short_id>', methods=['GET', 'POST'])
+@paste_bp.route('/paste/<short_id>', methods=['GET', 'POST'])
 def view(short_id):
     paste = Paste.query.filter_by(short_id=short_id).first_or_404()
     
