@@ -1,5 +1,0 @@
-User-agent: *
-Disallow: /auth/
-Disallow: /user/
-Disallow: /admin/
-Allow: /

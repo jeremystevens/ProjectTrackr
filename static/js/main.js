@@ -1,120 +1,147 @@
-// FlaskBin main JavaScript
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize syntax highlighting if Highlight.js is loaded
-    if (typeof hljs !== 'undefined') {
-        document.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-        });
-    }
+  // Initialize tooltips
+  const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  if (tooltips.length > 0) {
+    tooltips.forEach(tooltip => {
+      new bootstrap.Tooltip(tooltip);
+    });
+  }
+
+  // Auto-resize textarea
+  const pasteTextarea = document.getElementById('content');
+  if (pasteTextarea) {
+    pasteTextarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
     
-    // Initialize copy to clipboard buttons
-    const copyButtons = document.querySelectorAll('.btn-copy');
-    if (copyButtons.length > 0) {
-        copyButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const codeBlock = this.closest('.pre-container').querySelector('code');
-                
-                // Create a temporary textarea element to copy from
-                const textarea = document.createElement('textarea');
-                textarea.value = codeBlock.textContent;
-                textarea.style.position = 'fixed';  // Avoid scrolling to bottom
-                document.body.appendChild(textarea);
-                textarea.select();
-                
-                try {
-                    // Execute copy command
-                    document.execCommand('copy');
-                    
-                    // Provide visual feedback
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    this.classList.add('text-success');
-                    
-                    // Reset after a short delay
-                    setTimeout(() => {
-                        this.innerHTML = originalText;
-                        this.classList.remove('text-success');
-                    }, 2000);
-                } catch (err) {
-                    console.error('Failed to copy text: ', err);
-                }
-                
-                document.body.removeChild(textarea);
-            });
-        });
-    }
-    
-    // Initialize paste expiration countdown
-    const expirationElement = document.getElementById('expiration-countdown');
-    if (expirationElement && expirationElement.dataset.expires) {
-        updateExpirationCountdown();
-        setInterval(updateExpirationCountdown, 1000);
-    }
-    
-    // Form validation
-    const newPasteForm = document.getElementById('new-paste-form');
-    if (newPasteForm) {
-        newPasteForm.addEventListener('submit', function(event) {
-            const contentField = document.getElementById('content');
-            if (!contentField.value.trim()) {
-                event.preventDefault();
-                alert('Please enter paste content');
-                contentField.focus();
-            }
-        });
-    }
+    // Initial resize
+    pasteTextarea.style.height = 'auto';
+    pasteTextarea.style.height = (pasteTextarea.scrollHeight) + 'px';
+  }
+
+  // Copy to clipboard functionality
+  const copyButtons = document.querySelectorAll('.btn-copy');
+  if (copyButtons.length > 0) {
+    copyButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const targetId = this.getAttribute('data-clipboard-target');
+        const targetElement = document.querySelector(targetId);
+        
+        if (targetElement) {
+          // Create a temporary textarea to copy from
+          const textarea = document.createElement('textarea');
+          textarea.value = targetElement.textContent;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'absolute';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          
+          // Select and copy
+          textarea.select();
+          document.execCommand('copy');
+          
+          // Clean up
+          document.body.removeChild(textarea);
+          
+          // Update button text temporarily
+          const originalText = this.textContent;
+          this.textContent = 'Copied!';
+          
+          setTimeout(() => {
+            this.textContent = originalText;
+          }, 2000);
+        }
+      });
+    });
+  }
+
+  // Confirmation dialogs
+  const confirmButtons = document.querySelectorAll('[data-confirm]');
+  if (confirmButtons.length > 0) {
+    confirmButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        const message = this.getAttribute('data-confirm');
+        if (!confirm(message)) {
+          e.preventDefault();
+        }
+      });
+    });
+  }
+
+  // Paste expiration countdown
+  const expirationElements = document.querySelectorAll('.expiration-countdown');
+  if (expirationElements.length > 0) {
+    expirationElements.forEach(element => {
+      // First try to use the timestamp attribute which is more reliable
+      const expiresTimestamp = element.getAttribute('data-expires-timestamp');
+      const expiryType = element.getAttribute('data-expiry-type');
+      
+      // For debugging
+      console.log("Expiry type:", expiryType);
+      
+      if (expiresTimestamp) {
+        // Convert timestamp (seconds) to milliseconds for JS Date
+        const expiresAt = new Date(parseFloat(expiresTimestamp) * 1000);
+        
+        console.log("Expiration time (from timestamp):", expiresAt);
+        console.log("Current time:", new Date());
+        
+        // Special case for 10-minute pastes to ensure accuracy
+        if (expiryType === '10min') {
+          console.log("10-minute paste detected");
+        }
+        
+        const updateCountdown = () => {
+          const now = new Date();
+          
+          // Calculate the time difference in milliseconds
+          const distance = expiresAt.getTime() - now.getTime();
+          
+          console.log("Remaining milliseconds:", distance);
+          
+          if (distance < 0) {
+            element.textContent = 'Expired';
+            return;
+          }
+          
+          // Calculate days, hours, minutes, and seconds
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+          
+          // Format the countdown with concise format (29D 18H 25M 8S)
+          let countdownText = '';
+          
+          if (days > 0) {
+            countdownText += `${days}D `;
+          }
+          
+          countdownText += `${hours}H ${minutes}M ${seconds}S`;
+          
+          element.textContent = countdownText;
+        };
+        
+        // Update immediately and then every second
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+      }
+    });
+  }
+
+  // Form validation
+  const forms = document.querySelectorAll('.needs-validation');
+  if (forms.length > 0) {
+    forms.forEach(form => {
+      form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+      });
+    });
+  }
 });
-
-// Helper function to update expiration countdown
-function updateExpirationCountdown() {
-    const expirationElement = document.getElementById('expiration-countdown');
-    if (!expirationElement || !expirationElement.dataset.expires) return;
-    
-    const expiresAt = new Date(expirationElement.dataset.expires).getTime();
-    const now = new Date().getTime();
-    const distance = expiresAt - now;
-    
-    if (distance <= 0) {
-        expirationElement.innerHTML = '<span class="text-danger">Expired</span>';
-        return;
-    }
-    
-    // Calculate time components
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    let countdown = '';
-    if (days > 0) countdown += `${days}d `;
-    if (hours > 0 || days > 0) countdown += `${hours}h `;
-    if (minutes > 0 || hours > 0 || days > 0) countdown += `${minutes}m `;
-    countdown += `${seconds}s`;
-    
-    expirationElement.textContent = countdown;
-}
-
-// Function to handle dark mode toggle
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    
-    // Save preference to localStorage
-    localStorage.setItem('darkMode', isDarkMode);
-    
-    // Update toggle button icon
-    const toggleIcon = document.querySelector('.dark-mode-toggle i');
-    if (toggleIcon) {
-        toggleIcon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
-    }
-}
-
-// Check for saved dark mode preference
-if (localStorage.getItem('darkMode') === 'true') {
-    document.body.classList.add('dark-mode');
-    const toggleIcon = document.querySelector('.dark-mode-toggle i');
-    if (toggleIcon) {
-        toggleIcon.className = 'fas fa-sun';
-    }
-}

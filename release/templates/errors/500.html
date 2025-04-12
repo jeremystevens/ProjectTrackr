@@ -1,59 +1,83 @@
-{% extends "layout.html" %}
-
-{% block title %}500 - Server Error - FlaskBin{% endblock %}
-
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 text-center py-5">
-        <div class="error-container">
-            <h1 class="display-1 fw-bold text-danger">500</h1>
-            <h2 class="mb-4">Internal Server Error</h2>
-            <div class="card mb-4">
-                <div class="card-body">
-                    <p class="lead">Something went wrong on our end. We're working on fixing it.</p>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <span>Here's what you can do in the meantime:</span>
-                    </div>
-                    <ul class="text-start list-group list-group-flush">
-                        <li class="list-group-item">
-                            <i class="fas fa-redo me-2"></i>
-                            Try refreshing the page
-                        </li>
-                        <li class="list-group-item">
-                            <i class="fas fa-clock me-2"></i>
-                            Wait a few minutes and try again
-                        </li>
-                        <li class="list-group-item">
-                            <i class="fas fa-history me-2"></i>
-                            Go back and try a different action
-                        </li>
-                    </ul>
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        <a href="{{ url_for('paste.index') }}" class="btn btn-primary">
-                            <i class="fas fa-home me-2"></i>Return to Home
-                        </a>
-                        <button onclick="window.location.reload()" class="btn btn-warning">
-                            <i class="fas fa-redo me-2"></i>Refresh Page
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            {% if error_id %}
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">Error Information</h5>
-                </div>
-                <div class="card-body">
-                    <p class="mb-2">If the problem persists, please contact an administrator with this reference ID:</p>
-                    <div class="alert alert-light">
-                        <code>{{ error_id }}</code>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Server Error - FlaskBin</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #e1e1e1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            padding: 30px;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in-out;
+        }
+        h1 {
+            color: #ffa726;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        p {
+            font-size: 1.1em;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+        .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #ffa726;
+        }
+        .error-id {
+            display: inline-block;
+            background-color: #333;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .home-link {
+            display: inline-block;
+            background-color: #ffa726;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+        }
+        .home-link:hover {
+            background-color: #e89518;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⚠️</div>
+        <h1>500 - Internal Server Error</h1>
+        <p>Something went wrong on our servers. We're working to fix the issue.</p>
+        {% if error_id %}
+        <p>Please reference error ID <span class="error-id">{{ error_id }}</span> when reporting this issue.</p>
+        {% endif %}
+        <a href="/" class="home-link">Go Home</a>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

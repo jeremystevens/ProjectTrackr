@@ -1,5 +1,5 @@
 """
-Utility module for bulk database operations using MySQL.
+Utility module for bulk database operations using PostgreSQL's COPY command.
 
 This module provides functions for efficiently importing/exporting data and 
 performing bulk operations that would be slow with SQLAlchemy ORM.
@@ -9,15 +9,13 @@ import io
 import csv
 import logging
 from datetime import datetime
-from app import db
-from sqlalchemy import text
-from db import execute_raw_sql, get_direct_connection
+from db import copy_from_csv, copy_to_csv, execute_raw_sql
 
 logger = logging.getLogger(__name__)
 
 def bulk_export_pastes(user_id=None, limit=None, format='csv'):
     """
-    Export pastes in bulk using MySQL.
+    Export pastes in bulk using PostgreSQL's COPY command.
     
     Args:
         user_id: Optional user ID to filter by
@@ -35,52 +33,25 @@ def bulk_export_pastes(user_id=None, limit=None, format='csv'):
         'created_at', 'expires_at', 'views', 'visibility'
     ]
     
-    # Build SQL query using proper MySQL syntax
-    sql = f"SELECT {', '.join(columns)} FROM pastes"
-    
-    # Add WHERE clause if needed
-    where_clauses = []
+    # Create WHERE clause if needed
+    where_clause = None
     if user_id is not None:
-        where_clauses.append(f"user_id = {user_id}")
-        
-    if where_clauses:
-        sql += " WHERE " + " AND ".join(where_clauses)
-    
-    # Add ORDER BY and LIMIT clauses separately
-    sql += " ORDER BY created_at DESC"
+        where_clause = f"user_id = {user_id}"
     
     if limit is not None:
-        sql += f" LIMIT {limit}"
+        limit_clause = f"LIMIT {limit}"
+        where_clause = f"{where_clause} {limit_clause}" if where_clause else limit_clause
     
-    # Execute the query
-    conn = get_direct_connection()
-    cursor = conn.cursor()
+    # Use the COPY command to export data
+    copy_to_csv(output, 'pastes', columns, delimiter=',', where_clause=where_clause)
     
-    try:
-        cursor.execute(sql)
-        
-        # Create CSV in memory
-        writer = csv.writer(output)
-        
-        # Write header row
-        writer.writerow(columns)
-        
-        # Write data rows
-        for row in cursor:
-            # Convert all values to strings and handle None values
-            row_values = [str(value) if value is not None else '' for value in row]
-            writer.writerow(row_values)
-        
-        # Reset buffer position for reading
-        output.seek(0)
-        return output
-    finally:
-        cursor.close()
-        conn.close()
+    # Reset the cursor to the beginning of the stream
+    output.seek(0)
+    return output
 
 def bulk_import_pastes(file_obj, user_id=None):
     """
-    Import pastes in bulk using MySQL.
+    Import pastes in bulk using PostgreSQL's COPY command.
     
     Args:
         file_obj: File-like object containing CSV data
@@ -89,56 +60,28 @@ def bulk_import_pastes(file_obj, user_id=None):
     Returns:
         Number of pastes imported
     """
-    from models import Paste
-    
     # Create a temporary table for the import
     execute_raw_sql("""
-        CREATE TEMPORARY TABLE temp_pastes (
+        CREATE TEMP TABLE temp_pastes (
             title TEXT,
             content TEXT,
-            language VARCHAR(50),
-            visibility VARCHAR(20),
-            expires_at DATETIME
+            language TEXT,
+            visibility TEXT,
+            expires_at TIMESTAMP
         )
     """, fetch=False)
     
     try:
-        # Read CSV data
-        csv_reader = csv.DictReader(file_obj)
-        row_count = 0
-        
-        # Process in batches for efficiency
-        batch_size = 1000
-        batch = []
-        
-        for row in csv_reader:
-            # Prepare values for SQL insertion
-            title = row.get('title', '') or 'Untitled Paste'
-            content = row.get('content', '')
-            language = row.get('language', 'plaintext')
-            visibility = row.get('visibility', 'public')
-            expires_at = row.get('expires_at')
-            
-            # Add to batch
-            values = f"('{title.replace("'", "''")}', '{content.replace("'", "''")}', '{language}', '{visibility}', "
-            values += f"{'NULL' if not expires_at else f"'{expires_at}'"});"
-            
-            batch.append(f"INSERT INTO temp_pastes (title, content, language, visibility, expires_at) VALUES {values}")
-            row_count += 1
-            
-            if len(batch) >= batch_size:
-                # Execute batch
-                for sql in batch:
-                    execute_raw_sql(sql, fetch=False)
-                batch = []
-        
-        # Insert remaining batch
-        if batch:
-            for sql in batch:
-                execute_raw_sql(sql, fetch=False)
+        # Use COPY to import the data into the temp table
+        rows_imported = copy_from_csv(
+            file_obj, 
+            'temp_pastes', 
+            columns=['title', 'content', 'language', 'visibility', 'expires_at'], 
+            delimiter=','
+        )
         
         # Generate short IDs and timestamps
-        timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.utcnow()
         
         # Insert from temp table to real table with proper user_id and timestamps
         uid_value = user_id if user_id is not None else 'NULL'
@@ -148,13 +91,13 @@ def bulk_import_pastes(file_obj, user_id=None):
                 created_at, expires_at, user_id, views
             )
             SELECT 
-                SUBSTRING(MD5(RAND()), 1, 8),
+                substr(md5(random()::text), 1, 8),
                 title, content, language, visibility,
                 '{timestamp}', expires_at, {uid_value}, 0
             FROM temp_pastes
         """, fetch=False)
         
-        return row_count
+        return rows_imported
     finally:
         # Clean up the temp table
         execute_raw_sql("DROP TABLE IF EXISTS temp_pastes", fetch=False)
@@ -166,7 +109,7 @@ def bulk_delete_expired_pastes():
     Returns:
         Number of pastes deleted
     """
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.utcnow()
     result = execute_raw_sql(
         "DELETE FROM pastes WHERE expires_at IS NOT NULL AND expires_at < %s",
         (now,),
@@ -212,13 +155,13 @@ def generate_paste_stats_report():
         SELECT 
             COUNT(*) as total_pastes,
             COUNT(DISTINCT user_id) as total_users_with_pastes,
-            COALESCE(SUM(views), 0) as total_views
+            SUM(views) as total_views
         FROM pastes
     """)[0]
     
     stats['total_pastes'] = counts[0]
     stats['total_users_with_pastes'] = counts[1]
-    stats['total_views'] = counts[2]
+    stats['total_views'] = counts[2] or 0
     
     # Get language distribution
     languages = execute_raw_sql("""

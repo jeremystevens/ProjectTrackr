@@ -1,140 +1,363 @@
 {% extends "layout.html" %}
 
-{% block title %}Home - FlaskBin{% endblock %}
+{% block title %}FlaskBin - Create a New Paste{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Paste</h4>
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create a New Paste</h4>
             </div>
-            <div class="card-body">
-                <form method="post" action="{{ url_for('index') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="card-body paste-form">
+                <form method="POST" action="{{ url_for('paste.create') }}" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
+                    
                     <div class="mb-3">
-                        <label for="title" class="form-label">Title (optional)</label>
-                        <input type="text" class="form-control" id="title" name="title" placeholder="Untitled Paste">
+                        <label for="title" class="form-label">Title</label>
+                        {{ form.title(class="form-control", placeholder="Paste title (optional)") }}
                     </div>
-                    <div class="mb-3">
-                        <label for="content" class="form-label">Content</label>
-                        <textarea class="form-control" id="content" name="content" rows="10" required></textarea>
-                    </div>
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="language" class="form-label">Syntax Highlighting</label>
-                            <select class="form-select" id="language" name="language">
-                                <option value="plaintext" selected>Plain Text</option>
-                                <option value="python">Python</option>
-                                <option value="javascript">JavaScript</option>
-                                <option value="java">Java</option>
-                                <option value="csharp">C#</option>
-                                <option value="cpp">C++</option>
-                                <option value="php">PHP</option>
-                                <option value="ruby">Ruby</option>
-                                <option value="html">HTML</option>
-                                <option value="css">CSS</option>
-                                <option value="sql">SQL</option>
-                                <option value="bash">Bash</option>
-                                <option value="json">JSON</option>
-                                <option value="xml">XML</option>
-                                <option value="markdown">Markdown</option>
-                            </select>
+                            <label for="template" class="form-label">Template (optional)</label>
+                            {{ form.template(class="form-select", id="template-selector") }}
+                            <small id="templateHelp" class="form-text text-muted">Select a template to use as a starting point</small>
                         </div>
+                        
+                        {% if current_user.is_authenticated %}
+                        <div class="col-md-6">
+                            <label for="collection_id" class="form-label">Folder:</label>
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    {{ form.collection_id(class="form-select") }}
+                                </div>
+                                <a href="{{ url_for('collection.create') }}" class="btn btn-outline-primary ms-1" style="width: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                            </div>
+                            <small class="form-text text-muted">Organize your pastes into folders</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                        {{ form.content(class="form-control", rows=15, required=True, id="content-area") }}
+                        <div class="invalid-feedback">
+                            Please enter some content for your paste.
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="syntax" class="form-label">Syntax Highlighting</label>
+                            {{ form.syntax(class="form-select", id="syntax-selector") }}
+                        </div>
+                        
                         <div class="col-md-6">
                             <label for="expiration" class="form-label">Expiration</label>
-                            <select class="form-select" id="expiration" name="expiration">
-                                <option value="never" selected>Never</option>
-                                <option value="10min">10 Minutes</option>
-                                <option value="1hour">1 Hour</option>
-                                <option value="1day">1 Day</option>
-                                <option value="1week">1 Week</option>
-                                <option value="1month">1 Month</option>
-                            </select>
+                            {{ form.expiration(class="form-select") }}
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_public" name="is_public" checked>
-                                <label class="form-check-label" for="is_public">
-                                    Public Paste
-                                </label>
-                            </div>
+                    
+                    <div class="mb-3">
+                        <label for="visibility" class="form-label">Visibility</label>
+                        {{ form.visibility(class="form-select") }}
+                    </div>
+                    
+                    {% if current_user.is_authenticated and current_user.is_premium and form.tags is defined %}
+                    <div class="mb-3">
+                        <label for="tags" class="form-label d-flex align-items-center">
+                            Tags <span class="badge bg-warning text-dark ms-2">Premium</span>
+                        </label>
+                        {{ form.tags(class="form-control", placeholder="Comma-separated tags (e.g., javascript, tutorial, code)") }}
+                        <small class="form-text text-muted">Add tags to help organize and find your pastes later</small>
+                    </div>
+                    {% elif form.tags is defined %}
+                    <div class="mb-3">
+                        <label for="tags" class="form-label d-flex align-items-center">
+                            Tags <span class="badge bg-secondary ms-2">Premium Feature</span>
+                        </label>
+                        {{ form.tags(class="form-control", placeholder="Comma-separated tags", disabled=True) }}
+                        <small class="form-text text-muted">
+                            <a href="{{ url_for('account.upgrade_subscription') }}">Upgrade to Premium</a> to use tagging features
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.comments_enabled(class="form-check-input") }}
+                        <label class="form-check-label" for="comments_enabled">Enable comments</label>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.burn_after_read(class="form-check-input") }}
+                        <label class="form-check-label" for="burn_after_read">{{ form.burn_after_read.label.text }}</label>
+                        <small class="form-text text-muted d-block">This paste will be permanently deleted after it is viewed for the first time by someone other than you.</small>
+                    </div>
+                    
+                    {% if form.enable_encryption is defined %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-lock me-2"></i> Password Protection</h5>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="burn_after_read" name="burn_after_read">
-                                <label class="form-check-label" for="burn_after_read">
-                                    Burn After Read
+                        <div class="card-body">
+                            <!-- Enable encryption checkbox -->
+                            <div class="form-check mb-4">
+                                {{ form.enable_encryption(class="form-check-input") }}
+                                <label class="form-check-label fw-bold" for="enable_encryption">
+                                    Password Protect this Paste
                                 </label>
+                                <div class="text-muted small mt-1">
+                                    When enabled, viewers will need to enter a password to see the content.
+                                </div>
+                            </div>
+                            
+                            <hr class="mb-3">
+                            
+                            <!-- Hidden field for encryption type -->
+                            {{ form.encryption_type() }}
+                            
+                            <!-- Password fields -->
+                            <div class="mb-3">
+                                <label for="encryption_password" class="form-label fw-bold">Password</label>
+                                {{ form.encryption_password(class="form-control", placeholder="Enter a strong password") }}
+                                <div class="text-muted small mt-1">
+                                    Choose a strong password that's easy for you to remember.
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label for="confirm_encryption_password" class="form-label fw-bold">Confirm Password</label>
+                                {{ form.confirm_encryption_password(class="form-control", placeholder="Confirm your password") }}
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>Create Paste
-                    </button>
+                    {% endif %}
+                    
+                    {% if current_user.is_authenticated %}
+                    <div class="mb-3 form-check">
+                        {{ form.post_as_guest(class="form-check-input") }}
+                        <label class="form-check-label" for="post_as_guest">Paste as a guest</label>
+                    </div>
+                    {% endif %}
+                    
+                    <div id="syntax-preview" class="syntax-preview mb-3">
+                        <div class="text-muted">Enter some code to see syntax highlighting preview</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                    
+                    {% if not current_user.is_authenticated %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tip:</strong> <a href="{{ url_for('auth.register') }}" class="alert-link">Register</a> or 
+                            <a href="{{ url_for('auth.login') }}" class="alert-link">Login</a> to keep track of your pastes!
+                        </div>
+                    {% endif %}
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-secondary text-white">
-                <h4 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Pastes</h4>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <!-- Recent Pastes -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Pastes</h5>
             </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    {% if recent_pastes %}
+            <div class="card-body p-0 recent-pastes">
+                {% if recent_pastes %}
+                    <div class="list-group list-group-flush">
                         {% for paste in recent_pastes %}
-                            <a href="{{ url_for('index') }}" class="list-group-item list-group-item-action">
+                            <a href="{{ url_for('paste.view', short_id=paste.short_id) }}" class="list-group-item list-group-item-action">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ paste.title or 'Untitled Paste' }}</h5>
-                                    <small>{{ paste.created_at | timesince }}</small>
+                                    <h6 class="mb-1 text-truncate" style="max-width: 180px;">
+                                        {{ paste.title }}
+                                    </h6>
+                                    <small class="badge bg-secondary">{{ paste.syntax }}</small>
                                 </div>
-                                <p class="mb-1 text-muted">
-                                    <span class="badge bg-light text-dark">{{ paste.language or 'plaintext' }}</span>
-                                    <span class="badge bg-light text-dark">{{ paste.views }} views</span>
-                                </p>
+                                <small class="text-muted">
+                                    {% if paste.user_id %}
+                                        By {{ paste.author.username }}
+                                    {% else %}
+                                        By Guest
+                                    {% endif %}
+                                    {{ paste.created_at | timesince }}
+                                </small>
                             </a>
                         {% endfor %}
-                    {% else %}
-                        <div class="list-group-item text-center text-muted py-4">
-                            <i class="fas fa-paste fa-3x mb-3"></i>
-                            <p>No public pastes yet</p>
-                        </div>
-                    {% endif %}
-                </div>
+                    </div>
+                {% else %}
+                    <div class="p-3 text-center">
+                        <p class="text-muted mb-0">No recent pastes available.</p>
+                    </div>
+                {% endif %}
             </div>
-            {% if recent_pastes %}
-                <div class="card-footer text-center">
-                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
-                        View All Public Pastes
-                    </a>
-                </div>
-            {% endif %}
+            <div class="card-footer text-center">
+                <a href="{{ url_for('paste.archive') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
         </div>
-        <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>About FlaskBin</h4>
+        
+        <!-- About Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About FlaskBin</h5>
             </div>
             <div class="card-body">
-                <p>FlaskBin is a modern pastebin application built with Flask. It allows you to share code snippets and text notes quickly and easily.</p>
-                <h5>Features:</h5>
-                <ul>
-                    <li>Syntax highlighting for various languages</li>
-                    <li>Public and private pastes</li>
-                    <li>Optional expiration</li>
-                    <li>Burn after read option</li>
-                    <li>User accounts for tracking your pastes</li>
+                <p>FlaskBin is a modern pastebin application for storing and sharing text online. Features include:</p>
+                <ul class="mb-0">
+                    <li>Syntax highlighting for multiple languages</li>
+                    <li>User accounts to manage your pastes</li>
+                    <li>Public, unlisted, and private paste options</li>
+                    <li>Paste expiration settings</li>
+                    <li>Raw view and download options</li>
+                    <li>Code templates for quick starts</li>
                 </ul>
-                <p>
-                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-info">
-                        <i class="fas fa-book me-1"></i>Learn More
-                    </a>
-                </p>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Select elements
+  const templateSelector = document.getElementById("template-selector");
+  const contentArea = document.getElementById("content-area");
+  const syntaxSelector = document.getElementById("syntax-selector");
+  const helpText = document.getElementById("templateHelp");
+  
+  // Password protection toggle handling using jQuery
+  console.log("Setting up password protection handlers");
+  
+  $(document).ready(function() {
+    // Toggle password fields visibility based on checkbox
+    $("#enable_encryption").on("change", function() {
+      if ($(this).prop("checked")) {
+        $("#encryption_password, #confirm_encryption_password").prop("required", true);
+      } else {
+        $("#encryption_password, #confirm_encryption_password").prop("required", false);
+      }
+    });
+    
+    // Initial check
+    $("#enable_encryption").trigger("change");
+  });
+  // Add event listener to template selector
+  templateSelector.addEventListener("change", function() {
+    const templateId = parseInt(this.value);
+    
+    if (templateId <= 0) {
+      helpText.textContent = "Select a template to use as a starting point";
+      return;
+    }
+    
+    // Load template data via AJAX
+    fetch("/template/" + templateId)
+      .then(response => response.json())
+      .then(data => {
+        // Update help text
+        helpText.innerHTML = "<i class=\"fas fa-info-circle me-1\"></i> " + data.description;
+        
+        // If content is empty or user confirms replacement, update content
+        if (!contentArea.value.trim() || confirm("Replace your current content with this template?")) {
+          contentArea.value = data.content;
+          syntaxSelector.value = data.syntax;
+          updateSyntaxPreview();
+        }
+      })
+      .catch(error => {
+        console.error("Error loading template:", error);
+        helpText.innerHTML = "<span class=\"text-danger\">Error loading template</span>";
+      });
+  });
+  
+  // Syntax preview functionality
+  function updateSyntaxPreview() {
+    const content = contentArea.value;
+    const syntax = syntaxSelector.value;
+    const previewContainer = document.getElementById("syntax-preview");
+    
+    if (!content || content.trim() === "") {
+      previewContainer.innerHTML = '<div class="text-muted">Enter some code to see syntax highlighting preview</div>';
+      return;
+    }
+    
+    // Show loading indicator
+    previewContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    
+    // Make the fetch request
+    fetch("/api/highlight", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken
+      },
+      body: new URLSearchParams({
+        'content': content.substring(0, 500),  // Limit to 500 chars for preview
+        'syntax': syntax
+      })
+    })
+    .then(response => {
+      console.log("Response status:", response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log("Got highlight data:", data);
+      
+      // Add the highlighted HTML and CSS
+      if (data.css && !document.getElementById('pygments-css')) {
+        const style = document.createElement('style');
+        style.id = 'pygments-css';
+        style.textContent = data.css;
+        document.head.appendChild(style);
+      }
+      
+      previewContainer.innerHTML = '<div class="preview-code">' + data.highlighted + '</div>';
+      
+      if (content.length > 500) {
+        const ellipsis = document.createElement('div');
+        ellipsis.className = 'text-muted';
+        ellipsis.textContent = '... (preview truncated)';
+        previewContainer.appendChild(ellipsis);
+      }
+    })
+    .catch(error => {
+      console.error("Error getting syntax preview:", error);
+      previewContainer.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error generating preview.</div>';
+    });
+  }
+  
+  // Set up syntax preview events
+  contentArea.addEventListener("input", debounce(updateSyntaxPreview, 500));
+  syntaxSelector.addEventListener("change", updateSyntaxPreview);
+  
+  // Debounce function to prevent too many requests
+  function debounce(func, wait) {
+    let timeout;
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(context, args);
+      }, wait);
+    };
+  }
+  
+  // Initial syntax preview update
+  setTimeout(updateSyntaxPreview, 1000);
+});
+</script>
 {% endblock %}

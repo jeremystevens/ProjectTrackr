@@ -1,151 +1,275 @@
-"""
-FlaskBin - A modern pastebin application
-
-This module contains the factory function for creating the Flask application.
-It initializes all extensions, registers blueprints, and sets up error handlers.
-"""
 import os
 import logging
-import pymysql
-from datetime import datetime, timedelta
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, current_user, login_required
-from flask_wtf.csrf import CSRFProtect
+from datetime import datetime
+from flask import Flask, g, render_template, request
 from werkzeug.middleware.proxy_fix import ProxyFix
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import sentry_sdk
+
+# Import db from db module to avoid circular import issues
+from db import db, init_db
+
+# Initialize Sentry SDK
+sentry_sdk.init(
+    dsn="https://ea15360e41b2c867bdc005baebf0889c@o1129642.ingest.us.sentry.io/4509130694787072",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-# Initialize extensions
-db = SQLAlchemy()
+# Initialize extensions without binding them to an app yet
 login_manager = LoginManager()
 csrf = CSRFProtect()
-
-# MySQL connection string - will be overridden by environment variable in production
-MYSQL_CONNECTION_STRING = "mysql+pymysql://u213077714_flaskbin:hOJ27K?5@185.212.71.204:3306/u213077714_flaskbin"
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
 
 def create_app():
-    """Create and configure the Flask application."""
+    """
+    Application factory function that creates and configures the Flask app
+    This pattern helps prevent circular imports and duplicate model registration
+    """
+    # Create the application
     app = Flask(__name__)
+    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Needed for url_for to generate with https
+
+    # Configure custom error pages
+    app.config['TRAP_HTTP_EXCEPTIONS'] = True
+    app.config['ERROR_INCLUDE_MESSAGE'] = True
+
+    # Initialize database with the app
+    init_db(app)
     
-    # Configure app
-    app.config.update(
-        SECRET_KEY=os.environ.get("SESSION_SECRET", "dev-secret-key"),
-        SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", MYSQL_CONNECTION_STRING),
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        SQLALCHEMY_ENGINE_OPTIONS={
-            "pool_recycle": 300,
-            "pool_pre_ping": True,
-        },
-        MAX_CONTENT_LENGTH=5 * 1024 * 1024  # 5MB max upload
-    )
-    
-    # Initialize extensions with app
-    db.init_app(app)
+    # Initialize the app with extensions
     login_manager.init_app(app)
     csrf.init_app(app)
-    
-    # Configure login_manager
+    limiter.init_app(app)
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
+
+    @app.before_request
+    def before_request():
+        g.current_time = datetime.utcnow()
     
-    # Fix for use behind proxy
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-    
-    # Import models inside app context to avoid circular imports
+    # Add template filters
+    @app.template_filter('timesince')
+    def timesince_filter(dt):
+        """Format the datetime as a pretty relative time."""
+        now = datetime.utcnow()
+        diff = now - dt
+        
+        seconds = diff.total_seconds()
+        if seconds < 60:
+            return f"{int(seconds)} seconds ago"
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{int(minutes)} minutes ago"
+        hours = minutes // 60
+        if hours < 24:
+            return f"{int(hours)} hours ago"
+        days = hours // 24
+        if days < 30:
+            return f"{int(days)} days ago"
+        months = days // 30
+        if months < 12:
+            return f"{int(months)} months ago"
+        years = months // 12
+        return f"{int(years)} years ago"
+
+    @app.context_processor
+    def utility_processor():
+        def is_ten_minute_expiration(paste):
+            """Check if a paste has 10-minute expiration"""
+            # Check for special short_id
+            if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
+                return True
+                
+            # If that doesn't work, check the time difference
+            if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
+                # Calculate total minutes of expiration
+                diff = paste.expires_at - paste.created_at
+                total_minutes = diff.total_seconds() / 60
+                
+                # If it's close to 10 minutes (between 9 and 11)
+                if 9 <= total_minutes <= 11:
+                    return True
+                    
+            return False
+        
+        return {
+            'now': datetime.utcnow(),
+            'is_ten_minute_expiration': is_ten_minute_expiration
+        }
+
     with app.app_context():
-        # Import models
+        # Import models - do this first to avoid circular imports
         import models
         
-        # Create all tables if they don't exist
-        db.create_all()
+        # Import user model for login manager
+        from models import User
         
-        # Import and register blueprints
-        @app.route('/')
-        def index():
-            """Render the home page."""
-            recent_pastes = models.Paste.query.filter_by(is_public=True).order_by(models.Paste.created_at.desc()).limit(10).all()
-            return render_template('index.html', recent_pastes=recent_pastes)
-            
-        @app.route('/health')
-        def health_check():
-            """Health check endpoint for Render."""
-            return {'status': 'ok', 'database': 'mysql'}
-            
-        # Register blueprints if they exist
-        try:
-            from routes.auth import auth_bp
-            app.register_blueprint(auth_bp)
-            logger.info("Registered auth_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import auth_bp")
-            
-        try:
-            from routes.paste import paste_bp
-            app.register_blueprint(paste_bp)
-            logger.info("Registered paste_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import paste_bp")
-            
-        try:
-            from routes.user import user_bp
-            app.register_blueprint(user_bp)
-            logger.info("Registered user_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import user_bp")
-            
-        try:
-            from routes.admin import admin_bp
-            app.register_blueprint(admin_bp)
-            logger.info("Registered admin_bp blueprint")
-        except ImportError:
-            logger.warning("Could not import admin_bp")
-        
-        # Add error handlers
-        @app.errorhandler(404)
-        def not_found_error(error):
-            """Handle 404 errors."""
-            return render_template('errors/404.html'), 404
-            
-        @app.errorhandler(500)
-        def internal_error(error):
-            """Handle 500 errors."""
-            db.session.rollback()
-            logger.error(f"Internal server error: {error}")
-            return render_template('errors/500.html'), 500
-            
-        # Template filters
-        @app.template_filter('timesince')
-        def timesince_filter(dt):
-            """Format datetime as relative time since."""
-            now = datetime.utcnow()
-            diff = now - dt
-            
-            if diff.days > 365:
-                years = diff.days // 365
-                return f"{years} year{'s' if years != 1 else ''} ago"
-            elif diff.days > 30:
-                months = diff.days // 30
-                return f"{months} month{'s' if months != 1 else ''} ago"
-            elif diff.days > 0:
-                return f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
-            elif diff.seconds > 3600:
-                hours = diff.seconds // 3600
-                return f"{hours} hour{'s' if hours != 1 else ''} ago"
-            elif diff.seconds > 60:
-                minutes = diff.seconds // 60
-                return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-            else:
-                return "just now"
-                
-        # User loader for Flask-Login
+        # Set up login manager loader
         @login_manager.user_loader
         def load_user(user_id):
-            """Load a user by ID for Flask-Login."""
-            return models.User.query.get(int(user_id))
-            
+            return db.session.get(User, int(user_id))
+
+        # Import blueprints inside the app context to avoid circular imports
+        from routes.auth import auth_bp
+        from routes.paste import paste_bp
+        from routes.user import user_bp
+        from routes.search import search_bp
+        from routes.comment import comment_bp
+        from routes.notification import notification_bp
+        from routes.collection import collection_bp
+        from routes.admin import admin_bp
+        from routes.account import account_bp
+
+        # Register blueprints
+        app.register_blueprint(auth_bp)
+        app.register_blueprint(paste_bp)
+        app.register_blueprint(user_bp)
+        app.register_blueprint(search_bp)
+        app.register_blueprint(comment_bp)
+        app.register_blueprint(notification_bp)
+        app.register_blueprint(collection_bp)
+        app.register_blueprint(admin_bp)
+        app.register_blueprint(account_bp)
+        
+        # Create database tables
+        db.create_all()
+        
+    return app
+    
+# Note: We're not creating the app here anymore - we do it in main.py or wsgi.py instead
+# This prevents duplicate model registration issues
+
+# Define template filters and error handlers as part of the create_app function
+def register_filters_and_error_handlers(app):
+    # Add template filters
+    @app.template_filter('timesince')
+    def timesince_filter(dt):
+        """Format the datetime as a pretty relative time."""
+        now = datetime.utcnow()
+        diff = now - dt
+        
+        seconds = diff.total_seconds()
+        if seconds < 60:
+            return f"{int(seconds)} seconds ago"
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{int(minutes)} minutes ago"
+        hours = minutes // 60
+        if hours < 24:
+            return f"{int(hours)} hours ago"
+        days = hours // 24
+        if days < 30:
+            return f"{int(days)} days ago"
+        months = days // 30
+        if months < 12:
+            return f"{int(months)} months ago"
+        years = months // 12
+        return f"{int(years)} years ago"
+
+    @app.context_processor
+    def utility_processor():
+        def is_ten_minute_expiration(paste):
+            """Check if a paste has 10-minute expiration"""
+            # Check for special short_id
+            if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
+                return True
+                
+            # If that doesn't work, check the time difference
+            if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
+                # Calculate total minutes of expiration
+                diff = paste.expires_at - paste.created_at
+                total_minutes = diff.total_seconds() / 60
+                
+                # If it's close to 10 minutes (between 9 and 11)
+                if 9 <= total_minutes <= 11:
+                    return True
+                    
+            return False
+        
+        return {
+            'now': datetime.utcnow(),
+            'is_ten_minute_expiration': is_ten_minute_expiration
+        }
+
+    # Error handlers
+    @app.errorhandler(400)
+    def bad_request_error(error):
+        """Handle 400 Bad Request errors"""
+        app.logger.error(f"400 Error: {error}")
+        error_details = str(error) if app.debug else None
+        return render_template('errors/400.html', error_details=error_details), 400
+
+    @app.errorhandler(401)
+    def unauthorized_error(error):
+        """Handle 401 Unauthorized errors"""
+        app.logger.error(f"401 Error: {error}")
+        return render_template('errors/401.html'), 401
+
+    @app.errorhandler(403)
+    def forbidden_error(error):
+        """Handle 403 Forbidden errors"""
+        app.logger.error(f"403 Error: {error}")
+        return render_template('errors/403.html'), 403
+
+    @app.errorhandler(404)
+    def not_found_error(error):
+        """Handle 404 Not Found errors"""
+        app.logger.error(f"404 Error: {error}")
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed_error(error):
+        """Handle 405 Method Not Allowed errors"""
+        app.logger.error(f"405 Error: {error}")
+        allowed_methods = error.get_headers().get('Allow', '').split(', ') if hasattr(error, 'get_headers') else []
+        return render_template('errors/405.html', allowed_methods=allowed_methods), 405
+
+    @app.errorhandler(429)
+    def too_many_requests_error(error):
+        """Handle 429 Too Many Requests errors"""
+        app.logger.error(f"429 Error: {error}")
+        # Extract retry-after value if available
+        retry_after = None
+        if hasattr(error, 'description') and isinstance(error.description, dict):
+            retry_after = error.description.get('retry_after')
+        return render_template('errors/429.html', retry_after=retry_after), 429
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        """Handle 500 Internal Server errors"""
+        # Generate a unique error ID for tracking
+        error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+        app.logger.critical(f"500 Error ID {error_id}: {error}")
+        app.logger.exception("Exception details:")
+        return render_template('errors/500.html', error_id=error_id), 500
+
+    @app.errorhandler(Exception)
+    def handle_unhandled_exception(error):
+        """Handle any unhandled exceptions"""
+        error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+        app.logger.critical(f"Unhandled Exception ID {error_id}: {error}")
+        app.logger.exception("Exception details:")
+        return render_template('errors/500.html', error_id=error_id), 500
+
+    # CSRF error handler
+    @app.errorhandler(CSRFError)
+    def csrf_error(error):
+        """Handle CSRF errors"""
+        app.logger.error(f"CSRF Error: {error}")
+        return render_template('errors/csrf_error.html'), 400
+        
     return app

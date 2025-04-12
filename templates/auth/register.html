@@ -2,44 +2,156 @@
 
 {% block title %}Register - FlaskBin{% endblock %}
 
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/password-strength.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const securityQuestionSelect = document.getElementById("security_question");
+        const customQuestionContainer = document.getElementById("custom_question_container");
+        
+        // Show/hide custom question field based on selection
+        securityQuestionSelect.addEventListener("change", function() {
+            if (this.value === "custom") {
+                customQuestionContainer.classList.remove("d-none");
+            } else {
+                customQuestionContainer.classList.add("d-none");
+            }
+        });
+        
+        // Initial check in case the page reloads with "custom" selected
+        if (securityQuestionSelect.value === "custom") {
+            customQuestionContainer.classList.remove("d-none");
+        }
+    });
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
                 <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Register</h4>
             </div>
             <div class="card-body">
-                <form method="post" action="{{ url_for('index') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    {{ form.hidden_tag() }}
+                    
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        {{ form.username(class="form-control", placeholder="Choose a username", id="username") }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">
+                                {% for error in form.username.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Username must be 3-64 characters long and can only contain letters, numbers, and underscores.
+                        </small>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label for="email" class="form-label">Email Address</label>
+                        {{ form.email(class="form-control", placeholder="Enter your email", id="email") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger">
+                                {% for error in form.email.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            We'll never share your email with anyone else.
+                        </small>
                     </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            {{ form.password(class="form-control", placeholder="Create a password", id="password") }}
+                            
+                            <!-- Password Strength Meter -->
+                            <div class="mt-2">
+                                <label class="form-label small text-muted">Password Strength</label>
+                                <meter id="password-strength-meter" class="form-control" min="0" max="4" value="0" low="2" high="3" optimum="4"></meter>
+                                <small id="password-strength-text" class="form-text"></small>
+                            </div>
+                            
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Passwords require: 8+ characters, a number, an uppercase letter, and a special character.
+                            </small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            {{ form.confirm_password(class="form-control", placeholder="Confirm your password", id="confirm_password") }}
+                            {% if form.confirm_password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.confirm_password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="security_question" class="form-label">Security Question</label>
+                        {{ form.security_question(class="form-control", id="security_question") }}
+                        {% if form.security_question.errors %}
+                            <div class="text-danger">
+                                {% for error in form.security_question.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            This question will be used to verify your identity if you need to reset your password.
+                        </small>
                     </div>
+                    
+                    <div id="custom_question_container" class="mb-3 d-none">
+                        <label for="custom_question" class="form-label">Custom Security Question</label>
+                        {{ form.custom_question(class="form-control", placeholder="Enter your custom security question", id="custom_question") }}
+                        {% if form.custom_question.errors %}
+                            <div class="text-danger">
+                                {% for error in form.custom_question.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <label for="security_answer" class="form-label">Security Answer</label>
+                        {{ form.security_answer(class="form-control", placeholder="Enter your answer", id="security_answer") }}
+                        {% if form.security_answer.errors %}
+                            <div class="text-danger">
+                                {% for error in form.security_answer.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Remember this answer exactly as you enter it (not case-sensitive).
+                        </small>
                     </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
-                        <label class="form-check-label" for="terms">I agree to the <a href="{{ url_for('index') }}">Terms of Service</a></label>
+                    <div class="d-grid mt-3">
+                        {{ form.submit(class="btn btn-primary") }}
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-user-plus me-2"></i>Register
-                    </button>
                 </form>
-                <hr>
-                <div class="text-center">
-                    <p>Already have an account? <a href="{{ url_for('index') }}">Login here</a></p>
-                </div>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
             </div>
         </div>
     </div>

@@ -1,18 +1,13 @@
-"""
-Main entry point for the FlaskBin application.
-This file delegates to the MySQL-compatible version to avoid SQLAlchemy dialect conflicts.
-"""
-import os
-import sys
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
-# Add the mysql_version directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mysql_version'))
+# Import app instance from app.py
+# The app is created by the app.py create_app() function
+from app import create_app
 
-# Import the app from the MySQL version
-from mysql_version.simple_app import app
+# Create the app using the factory function
+app = create_app()
 
-# This variable is required for Gunicorn to find the application
-application = app
-
+# This file is used by gunicorn as the WSGI entry point
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
