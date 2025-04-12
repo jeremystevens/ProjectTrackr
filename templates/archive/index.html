@@ -14,7 +14,7 @@
             {% endif %}
         </h4>
         
-        <a href="{{ url_for('paste.index') }}" class="btn btn-sm btn-primary">
+        <a href="/" class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i> New Paste
         </a>
     </div>
@@ -37,13 +37,13 @@
                         {% for paste in pastes.items %}
                             <tr>
                                 <td>
-                                    <a href="{{ url_for('paste.view', short_id=paste.short_id) }}">
+                                    <a href="/paste/{{ paste.short_id }}">
                                         {{ paste.title }}
                                     </a>
                                 </td>
                                 <td>
                                     {% if paste.user_id %}
-                                        <a href="{{ url_for('user.profile', username=paste.author.username) }}">
+                                        <a href="/user/{{ paste.author.username }}">
                                             <img src="{{ paste.author.get_avatar_url(24) }}" class="rounded-circle me-1" width="20" height="20">
                                             {{ paste.author.username }}
                                         </a>
@@ -52,7 +52,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('search.archive_by_syntax', syntax=paste.syntax) }}" class="badge bg-secondary text-decoration-none">
+                                    <a href="/search/syntax/{{ paste.syntax }}" class="badge bg-secondary text-decoration-none">
                                         {{ paste.syntax }}
                                     </a>
                                 </td>
@@ -76,7 +76,7 @@
                         <ul class="pagination justify-content-center mb-0">
                             {% if pastes.has_prev %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for(request.endpoint, page=pastes.prev_num, **request.view_args) }}" aria-label="Previous">
+                                    <a class="page-link" href="/archive?page={{ pastes.prev_num }}" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
                                     </a>
                                 </li>
@@ -96,7 +96,7 @@
                                         </li>
                                     {% else %}
                                         <li class="page-item">
-                                            <a class="page-link" href="{{ url_for(request.endpoint, page=page_num, **request.view_args) }}">{{ page_num }}</a>
+                                            <a class="page-link" href="/archive?page={{ page_num }}">{{ page_num }}</a>
                                         </li>
                                     {% endif %}
                                 {% else %}
@@ -108,7 +108,7 @@
                             
                             {% if pastes.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for(request.endpoint, page=pastes.next_num, **request.view_args) }}" aria-label="Next">
+                                    <a class="page-link" href="/archive?page={{ pastes.next_num }}" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
                                     </a>
                                 </li>
