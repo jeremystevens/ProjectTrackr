@@ -28,9 +28,3 @@ def init_db(app):
     
     # Initialize the database with the app
     db.init_app(app)
-    
-    # Create all tables
-    with app.app_context():
-        # Import models here to register them with SQLAlchemy
-        import models
-        db.create_all()

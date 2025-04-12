@@ -47,16 +47,10 @@ def create_app():
     app.config['TRAP_HTTP_EXCEPTIONS'] = True
     app.config['ERROR_INCLUDE_MESSAGE'] = True
 
-    # Configure the database
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pastebin.db")
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
+    # Initialize database with the app
+    init_db(app)
+    
     # Initialize the app with extensions
-    db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
@@ -67,40 +61,40 @@ def create_app():
     def before_request():
         g.current_time = datetime.utcnow()
 
-    # We'll initialize models when they're actually needed 
-    # No need to import models globally
-    
-    # Set up login manager loader
-    @login_manager.user_loader
-    def load_user(user_id):
-        from models import User
-        return db.session.get(User, int(user_id))
-
-    # Import blueprints inside the create_app function to avoid circular imports
-    from routes.auth import auth_bp
-    from routes.paste import paste_bp
-    from routes.user import user_bp
-    from routes.search import search_bp
-    from routes.comment import comment_bp
-    from routes.notification import notification_bp
-    from routes.collection import collection_bp
-    from routes.admin import admin_bp
-    from routes.account import account_bp
-
-    # Register blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(paste_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(search_bp)
-    app.register_blueprint(comment_bp)
-    app.register_blueprint(notification_bp)
-    app.register_blueprint(collection_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(account_bp)
-
     with app.app_context():
-        # Import models to register them with SQLAlchemy
+        # Import models - do this first to avoid circular imports
         import models
+        
+        # Import user model for login manager
+        from models import User
+        
+        # Set up login manager loader
+        @login_manager.user_loader
+        def load_user(user_id):
+            return db.session.get(User, int(user_id))
+
+        # Import blueprints inside the app context to avoid circular imports
+        from routes.auth import auth_bp
+        from routes.paste import paste_bp
+        from routes.user import user_bp
+        from routes.search import search_bp
+        from routes.comment import comment_bp
+        from routes.notification import notification_bp
+        from routes.collection import collection_bp
+        from routes.admin import admin_bp
+        from routes.account import account_bp
+
+        # Register blueprints
+        app.register_blueprint(auth_bp)
+        app.register_blueprint(paste_bp)
+        app.register_blueprint(user_bp)
+        app.register_blueprint(search_bp)
+        app.register_blueprint(comment_bp)
+        app.register_blueprint(notification_bp)
+        app.register_blueprint(collection_bp)
+        app.register_blueprint(admin_bp)
+        app.register_blueprint(account_bp)
+        
         # Create database tables
         db.create_all()
         

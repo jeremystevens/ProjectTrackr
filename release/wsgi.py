@@ -55,9 +55,17 @@ def create_app():
     login_manager.login_message_category = 'info'
     
     with app.app_context():
-        # Import models (must be done inside app context to avoid mapper conflicts)
-        from models import User, Paste
+        # Import models - do this first to avoid circular imports
+        import models
         
+        # Import user model for login manager
+        from models import User
+        
+        # Set up login manager loader 
+        @login_manager.user_loader
+        def load_user(user_id):
+            return db.session.get(User, int(user_id))
+            
         # Register blueprints after models are imported
         from routes.auth import auth_bp
         from routes.paste import paste_bp
@@ -79,11 +87,6 @@ def create_app():
         app.register_blueprint(collection_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(account_bp)
-        
-        # Set up login manager loader 
-        @login_manager.user_loader
-        def load_user(user_id):
-            return db.session.get(User, int(user_id))
         
         # Import other routes and functions as needed
         from app import (
