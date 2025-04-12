@@ -210,19 +210,19 @@
                         <a href="/paste/{{ paste.short_id }}/raw" class="btn btn-sm btn-outline-secondary" target="_blank">
                             <i class="fas fa-code me-1"></i> Raw
                         </a>
-                        <a href="/download/{{ paste.short_id }}" class="btn btn-sm btn-outline-secondary">
+                        <a href="/paste/{{ paste.short_id }}/download" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-download me-1"></i> Download
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-clipboard-target="#paste-content">
                             <i class="fas fa-copy me-1"></i> Copy
                         </button>
-                        <a href="/print/{{ paste.short_id }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <a href="/paste/{{ paste.short_id }}/print" class="btn btn-sm btn-outline-secondary" target="_blank">
                             <i class="fas fa-print me-1"></i> Print
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#forkModal">
                             <i class="fas fa-code-branch me-1"></i> Fork
                         </button>
-                        <a href="/flag/{{ paste.short_id }}" class="btn btn-sm btn-outline-danger">
+                        <a href="/paste/{{ paste.short_id }}/flag" class="btn btn-sm btn-outline-danger">
                             <i class="fas fa-flag me-1"></i> Report
                         </a>
                     </div>
@@ -315,7 +315,7 @@
                     data-clipboard-text="{{ request.host_url }}{{ paste.short_id }}">
                 <i class="fas fa-link me-1"></i> Copy Link
             </button>
-            <a href="/embed/{{ paste.short_id }}" 
+            <a href="/paste/{{ paste.short_id }}/embed" 
                target="_blank" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-code me-1"></i> Embed
             </a>
@@ -332,7 +332,7 @@
         <h5 class="modal-title" id="forkModalLabel">Fork Paste</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/{{ paste.short_id }}/fork" method="POST">
+      <form action="/paste/{{ paste.short_id }}/fork" method="POST">
         {% if form %}
             {{ form.hidden_tag() }}
         {% endif %}
@@ -372,7 +372,7 @@
     <div class="card-body">
         {% if current_user.is_authenticated %}
             <div class="comment-form mb-4">
-                <form method="POST" action="/comment/add/{{ paste.short_id }}">
+                <form method="POST" action="/paste/{{ paste.short_id }}/comment/add">
                     {{ comment_form.hidden_tag() }}
                     <div class="mb-3">
                         {{ comment_form.content(class="form-control", rows=3, placeholder="Add your comment...") }}
