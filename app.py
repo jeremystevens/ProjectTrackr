@@ -60,6 +60,56 @@ def create_app():
     @app.before_request
     def before_request():
         g.current_time = datetime.utcnow()
+    
+    # Add template filters
+    @app.template_filter('timesince')
+    def timesince_filter(dt):
+        """Format the datetime as a pretty relative time."""
+        now = datetime.utcnow()
+        diff = now - dt
+        
+        seconds = diff.total_seconds()
+        if seconds < 60:
+            return f"{int(seconds)} seconds ago"
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{int(minutes)} minutes ago"
+        hours = minutes // 60
+        if hours < 24:
+            return f"{int(hours)} hours ago"
+        days = hours // 24
+        if days < 30:
+            return f"{int(days)} days ago"
+        months = days // 30
+        if months < 12:
+            return f"{int(months)} months ago"
+        years = months // 12
+        return f"{int(years)} years ago"
+
+    @app.context_processor
+    def utility_processor():
+        def is_ten_minute_expiration(paste):
+            """Check if a paste has 10-minute expiration"""
+            # Check for special short_id
+            if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
+                return True
+                
+            # If that doesn't work, check the time difference
+            if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
+                # Calculate total minutes of expiration
+                diff = paste.expires_at - paste.created_at
+                total_minutes = diff.total_seconds() / 60
+                
+                # If it's close to 10 minutes (between 9 and 11)
+                if 9 <= total_minutes <= 11:
+                    return True
+                    
+            return False
+        
+        return {
+            'now': datetime.utcnow(),
+            'is_ten_minute_expiration': is_ten_minute_expiration
+        }
 
     with app.app_context():
         # Import models - do this first to avoid circular imports
@@ -100,122 +150,126 @@ def create_app():
         
     return app
     
-# Create the application instance
-app = create_app()
+# Note: We're not creating the app here anymore - we do it in main.py or wsgi.py instead
+# This prevents duplicate model registration issues
 
-# Add template filters
-@app.template_filter('timesince')
-def timesince_filter(dt):
-    """Format the datetime as a pretty relative time."""
-    now = datetime.utcnow()
-    diff = now - dt
-    
-    seconds = diff.total_seconds()
-    if seconds < 60:
-        return f"{int(seconds)} seconds ago"
-    minutes = seconds // 60
-    if minutes < 60:
-        return f"{int(minutes)} minutes ago"
-    hours = minutes // 60
-    if hours < 24:
-        return f"{int(hours)} hours ago"
-    days = hours // 24
-    if days < 30:
-        return f"{int(days)} days ago"
-    months = days // 30
-    if months < 12:
-        return f"{int(months)} months ago"
-    years = months // 12
-    return f"{int(years)} years ago"
+# Define template filters and error handlers as part of the create_app function
+def register_filters_and_error_handlers(app):
+    # Add template filters
+    @app.template_filter('timesince')
+    def timesince_filter(dt):
+        """Format the datetime as a pretty relative time."""
+        now = datetime.utcnow()
+        diff = now - dt
+        
+        seconds = diff.total_seconds()
+        if seconds < 60:
+            return f"{int(seconds)} seconds ago"
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{int(minutes)} minutes ago"
+        hours = minutes // 60
+        if hours < 24:
+            return f"{int(hours)} hours ago"
+        days = hours // 24
+        if days < 30:
+            return f"{int(days)} days ago"
+        months = days // 30
+        if months < 12:
+            return f"{int(months)} months ago"
+        years = months // 12
+        return f"{int(years)} years ago"
 
-@app.context_processor
-def utility_processor():
-    def is_ten_minute_expiration(paste):
-        """Check if a paste has 10-minute expiration"""
-        # Check for special short_id
-        if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
-            return True
-            
-        # If that doesn't work, check the time difference
-        if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
-            # Calculate total minutes of expiration
-            diff = paste.expires_at - paste.created_at
-            total_minutes = diff.total_seconds() / 60
-            
-            # If it's close to 10 minutes (between 9 and 11)
-            if 9 <= total_minutes <= 11:
+    @app.context_processor
+    def utility_processor():
+        def is_ten_minute_expiration(paste):
+            """Check if a paste has 10-minute expiration"""
+            # Check for special short_id
+            if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
                 return True
                 
-        return False
-    
-    return {
-        'now': datetime.utcnow(),
-        'is_ten_minute_expiration': is_ten_minute_expiration
-    }
+            # If that doesn't work, check the time difference
+            if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
+                # Calculate total minutes of expiration
+                diff = paste.expires_at - paste.created_at
+                total_minutes = diff.total_seconds() / 60
+                
+                # If it's close to 10 minutes (between 9 and 11)
+                if 9 <= total_minutes <= 11:
+                    return True
+                    
+            return False
+        
+        return {
+            'now': datetime.utcnow(),
+            'is_ten_minute_expiration': is_ten_minute_expiration
+        }
 
-# Error handlers
-@app.errorhandler(400)
-def bad_request_error(error):
-    """Handle 400 Bad Request errors"""
-    app.logger.error(f"400 Error: {error}")
-    error_details = str(error) if app.debug else None
-    return render_template('errors/400.html', error_details=error_details), 400
+    # Error handlers
+    @app.errorhandler(400)
+    def bad_request_error(error):
+        """Handle 400 Bad Request errors"""
+        app.logger.error(f"400 Error: {error}")
+        error_details = str(error) if app.debug else None
+        return render_template('errors/400.html', error_details=error_details), 400
 
-@app.errorhandler(401)
-def unauthorized_error(error):
-    """Handle 401 Unauthorized errors"""
-    app.logger.error(f"401 Error: {error}")
-    return render_template('errors/401.html'), 401
+    @app.errorhandler(401)
+    def unauthorized_error(error):
+        """Handle 401 Unauthorized errors"""
+        app.logger.error(f"401 Error: {error}")
+        return render_template('errors/401.html'), 401
 
-@app.errorhandler(403)
-def forbidden_error(error):
-    """Handle 403 Forbidden errors"""
-    app.logger.error(f"403 Error: {error}")
-    return render_template('errors/403.html'), 403
+    @app.errorhandler(403)
+    def forbidden_error(error):
+        """Handle 403 Forbidden errors"""
+        app.logger.error(f"403 Error: {error}")
+        return render_template('errors/403.html'), 403
 
-@app.errorhandler(404)
-def not_found_error(error):
-    """Handle 404 Not Found errors"""
-    app.logger.error(f"404 Error: {error}")
-    return render_template('errors/404.html'), 404
+    @app.errorhandler(404)
+    def not_found_error(error):
+        """Handle 404 Not Found errors"""
+        app.logger.error(f"404 Error: {error}")
+        return render_template('errors/404.html'), 404
 
-@app.errorhandler(405)
-def method_not_allowed_error(error):
-    """Handle 405 Method Not Allowed errors"""
-    app.logger.error(f"405 Error: {error}")
-    allowed_methods = error.get_headers().get('Allow', '').split(', ') if hasattr(error, 'get_headers') else []
-    return render_template('errors/405.html', allowed_methods=allowed_methods), 405
+    @app.errorhandler(405)
+    def method_not_allowed_error(error):
+        """Handle 405 Method Not Allowed errors"""
+        app.logger.error(f"405 Error: {error}")
+        allowed_methods = error.get_headers().get('Allow', '').split(', ') if hasattr(error, 'get_headers') else []
+        return render_template('errors/405.html', allowed_methods=allowed_methods), 405
 
-@app.errorhandler(429)
-def too_many_requests_error(error):
-    """Handle 429 Too Many Requests errors"""
-    app.logger.error(f"429 Error: {error}")
-    # Extract retry-after value if available
-    retry_after = None
-    if hasattr(error, 'description') and isinstance(error.description, dict):
-        retry_after = error.description.get('retry_after')
-    return render_template('errors/429.html', retry_after=retry_after), 429
+    @app.errorhandler(429)
+    def too_many_requests_error(error):
+        """Handle 429 Too Many Requests errors"""
+        app.logger.error(f"429 Error: {error}")
+        # Extract retry-after value if available
+        retry_after = None
+        if hasattr(error, 'description') and isinstance(error.description, dict):
+            retry_after = error.description.get('retry_after')
+        return render_template('errors/429.html', retry_after=retry_after), 429
 
-@app.errorhandler(500)
-def internal_server_error(error):
-    """Handle 500 Internal Server errors"""
-    # Generate a unique error ID for tracking
-    error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
-    app.logger.critical(f"500 Error ID {error_id}: {error}")
-    app.logger.exception("Exception details:")
-    return render_template('errors/500.html', error_id=error_id), 500
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        """Handle 500 Internal Server errors"""
+        # Generate a unique error ID for tracking
+        error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+        app.logger.critical(f"500 Error ID {error_id}: {error}")
+        app.logger.exception("Exception details:")
+        return render_template('errors/500.html', error_id=error_id), 500
 
-@app.errorhandler(Exception)
-def handle_unhandled_exception(error):
-    """Handle any unhandled exceptions"""
-    error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
-    app.logger.critical(f"Unhandled Exception ID {error_id}: {error}")
-    app.logger.exception("Exception details:")
-    return render_template('errors/500.html', error_id=error_id), 500
+    @app.errorhandler(Exception)
+    def handle_unhandled_exception(error):
+        """Handle any unhandled exceptions"""
+        error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+        app.logger.critical(f"Unhandled Exception ID {error_id}: {error}")
+        app.logger.exception("Exception details:")
+        return render_template('errors/500.html', error_id=error_id), 500
 
-# CSRF error handler
-@app.errorhandler(CSRFError)
-def csrf_error(error):
-    """Handle CSRF errors"""
-    app.logger.error(f"CSRF Error: {error}")
-    return render_template('errors/csrf_error.html'), 400
+    # CSRF error handler
+    @app.errorhandler(CSRFError)
+    def csrf_error(error):
+        """Handle CSRF errors"""
+        app.logger.error(f"CSRF Error: {error}")
+        return render_template('errors/csrf_error.html'), 400
+        
+    return app

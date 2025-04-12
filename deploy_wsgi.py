@@ -105,5 +105,57 @@ def handle_db_error(error):
     app.logger.error(f"Database error: {error}")
     return render_template('errors/500.html', error_id="DB-ERROR"), 500
 
+# Add template filters
+from datetime import datetime
+
+@app.template_filter('timesince')
+def timesince_filter(dt):
+    """Format the datetime as a pretty relative time."""
+    now = datetime.utcnow()
+    diff = now - dt
+    
+    seconds = diff.total_seconds()
+    if seconds < 60:
+        return f"{int(seconds)} seconds ago"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{int(minutes)} minutes ago"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{int(hours)} hours ago"
+    days = hours // 24
+    if days < 30:
+        return f"{int(days)} days ago"
+    months = days // 30
+    if months < 12:
+        return f"{int(months)} months ago"
+    years = months // 12
+    return f"{int(years)} years ago"
+
+@app.context_processor
+def utility_processor():
+    def is_ten_minute_expiration(paste):
+        """Check if a paste has 10-minute expiration"""
+        # Check for special short_id
+        if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
+            return True
+            
+        # If that doesn't work, check the time difference
+        if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
+            # Calculate total minutes of expiration
+            diff = paste.expires_at - paste.created_at
+            total_minutes = diff.total_seconds() / 60
+            
+            # If it's close to 10 minutes (between 9 and 11)
+            if 9 <= total_minutes <= 11:
+                return True
+                
+        return False
+    
+    return {
+        'now': datetime.utcnow(),
+        'is_ten_minute_expiration': is_ten_minute_expiration
+    }
+
 # Report successful setup
 logger.info("Render deployment WSGI app initialization complete")

@@ -1,0 +1,96 @@
+SQLAlchemy mapper conflicts arise when the mapping configuration encounters inconsistencies, typically during the association of classes with database tables. These conflicts manifest in various ways, often stemming from naming clashes, inheritance issues, or relationship duplications.
+Common Conflict Scenarios
+Column Naming Conflicts: When mapping a class to a table, if a column name in the class conflicts with an existing column name in a parent class or associated table, SQLAlchemy raises an ArgumentError. This often occurs in inheritance scenarios where subclasses inherit columns from parent classes, or when defining relationships that duplicate columns.
+Python
+
+    from sqlalchemy import Column, Integer, String, ForeignKey
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.orm import relationship, mapped_column
+
+    Base = declarative_base()
+
+    class Employee(Base):
+        __tablename__ = 'employee'
+        id = mapped_column(Integer, primary_key=True)
+        start_date = mapped_column(String)
+
+    class Manager(Employee):
+        __tablename__ = 'manager'
+        id = mapped_column(Integer, ForeignKey('employee.id'), primary_key=True)
+        start_date = mapped_column(String)  # Conflict with Employee.start_date
+To resolve this, use the use_existing_column parameter in mapped_column:
+Python
+
+    class Manager(Employee):
+        __tablename__ = 'manager'
+        id = mapped_column(Integer, ForeignKey('employee.id'), primary_key=True)
+        start_date = mapped_column(String, use_existing_column=True)
+Relationship Conflicts: Defining multiple relationships that attempt to manage the same column can lead to conflicts. This often happens when using backref or back_populates without careful consideration.
+Python
+
+    from sqlalchemy import Column, Integer, String, ForeignKey
+    from sqlalchemy.orm import relationship, declarative_base
+
+    Base = declarative_base()
+
+    class Post(Base):
+        __tablename__ = 'post'
+        id = Column(Integer, primary_key=True)
+        title = Column(String)
+        cities = relationship("City", secondary="post_city", backref="posts")
+
+    class City(Base):
+        __tablename__ = 'city'
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
+        posts = relationship("Post", secondary="post_city", backref="cities") # Conflict with Post.cities
+    
+    class PostCity(Base):
+      __tablename__ = 'post_city'
+      post_id = Column(Integer, ForeignKey('post.id'), primary_key=True)
+      city_id = Column(Integer, ForeignKey('city.id'), primary_key=True)
+In this case, the backref on both relationships creates a duplication. To resolve this, configure the relationship on one model and use back_populates on the other or configure the relationship on one model and remove the backref from the other:
+Python
+
+     class Post(Base):
+        __tablename__ = 'post'
+        id = Column(Integer, primary_key=True)
+        title = Column(String)
+        cities = relationship("City", secondary="post_city", back_populates="posts")
+
+    class City(Base):
+        __tablename__ = 'city'
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
+        posts = relationship("Post", secondary="post_city")
+    
+    class PostCity(Base):
+      __tablename__ = 'post_city'
+      post_id = Column(Integer, ForeignKey('post.id'), primary_key=True)
+      city_id = Column(Integer, ForeignKey('city.id'), primary_key=True)
+Attribute Conflicts: When an attribute name in a class conflicts with an existing attribute used for a foreign key or relationship, SQLAlchemy will raise an ArgumentError.
+Python
+
+    from sqlalchemy import Column, Integer, ForeignKey
+    from sqlalchemy.orm import relationship, declarative_base
+
+    Base = declarative_base()
+
+    class User(Base):
+        __tablename__ = 'user'
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
+
+    class Order(Base):
+        __tablename__ = 'order'
+        id = Column(Integer, primary_key=True)
+        user = Column(Integer, ForeignKey('user.id'))  # Conflict with relationship user
+        user = relationship("User", backref="orders")
+To resolve this, rename the foreign key attribute:
+Python
+
+    class Order(Base):
+        __tablename__ = 'order'
+        id = Column(Integer, primary_key=True)
+        user_id = Column(Integer, ForeignKey('user.id'))
+        user = relationship("User", backref="orders")
