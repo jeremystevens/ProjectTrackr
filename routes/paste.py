@@ -1106,7 +1106,7 @@ def flag_paste(short_id):
 
 # AI Summary Feature API Routes
 
-@paste_bp.route('/api/<short_id>/generate-summary', methods=['POST'])
+@paste_bp.route('/paste/api/<short_id>/generate-summary', methods=['POST'])
 @login_required
 def generate_summary(short_id):
     """
@@ -1188,7 +1188,7 @@ def generate_summary(short_id):
         }), 500
 
 
-@paste_bp.route('/api/<short_id>/refresh-summary', methods=['POST'])
+@paste_bp.route('/paste/api/<short_id>/refresh-summary', methods=['POST'])
 @login_required
 def refresh_summary(short_id):
     """
