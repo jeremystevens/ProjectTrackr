@@ -80,17 +80,17 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('user.profile', username=current_user.username) }}">
+                                    <a class="dropdown-item" href="/user/{{ current_user.username }}">
                                         <i class="fas fa-user me-2"></i>My Profile
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('user.dashboard') }}">
+                                    <a class="dropdown-item" href="/user/dashboard">
                                         <i class="fas fa-chart-bar me-2"></i>Dashboard
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('account.account_page') }}">
+                                    <a class="dropdown-item" href="/account/">
                                         <i class="fas fa-id-card me-2"></i>Account
                                         {% if current_user.subscription_tier != 'free' %}
                                         <span class="badge bg-primary float-end">{{ current_user.get_tier_display_name() }}</span>
@@ -98,12 +98,12 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('user.edit_profile') }}">
+                                    <a class="dropdown-item" href="/user/settings">
                                         <i class="fas fa-cog me-2"></i>Settings
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('notification.list_notifications') }}">
+                                    <a class="dropdown-item" href="/notification/">
                                         <i class="fas fa-bell me-2"></i>Notifications
                                         {% if current_user.notifications %}
                                         {% set unread_count = current_user.notifications.filter_by(read=False).count() %}
@@ -115,14 +115,14 @@
                                 </li>
                                 {% if current_user.is_admin_user() %}
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                    <a class="dropdown-item" href="/admin/">
                                         <i class="fas fa-shield-alt me-2"></i>Admin Panel
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <a class="dropdown-item" href="/auth/logout">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                                     </a>
                                 </li>
@@ -130,12 +130,12 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}" 
-                               href="{{ url_for('auth.login') }}">Login</a>
+                            <a class="nav-link {% if request.path == '/auth/login' %}active{% endif %}" 
+                               href="/auth/login">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'auth.register' %}active{% endif %}" 
-                               href="{{ url_for('auth.register') }}">Register</a>
+                            <a class="nav-link {% if request.path == '/auth/register' %}active{% endif %}" 
+                               href="/auth/register">Register</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -194,11 +194,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     
     <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/theme-switcher.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/templates.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/templates.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/syntax.js') }}"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/theme-switcher.js"></script>
+    <script src="/static/js/templates.js"></script>
+    <script src="/static/js/syntax.js"></script>
     
     {% block additional_scripts %}{% endblock %}
 </body>

@@ -1,0 +1,315 @@
+Crashed in non-app: werkzeug/routing/map.py in build
+
+Show 2 more frames
+
+/opt/render/project/src/templates/layout.html in top-level template code at line 29
+
+Set up Code Mapping
+In App
+
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('paste.index') }}">
+                <i class="fas fa-clipboard-list me-2"></i>FlaskBin
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+config	
+
+{
+10 items
+}
+cycler	
+<class 'jinja2.utils.Cycler'>
+dict	
+<class 'dict'>
+get_flashed_messages	
+<function get_flashed_messages at 0x7606ba90c900>
+joiner	
+<class 'jinja2.utils.Joiner'>
+lipsum	
+<function generate_lorem_ipsum at 0x7606ba969300>
+namespace	
+<class 'jinja2.utils.Namespace'>
+range	
+<class 'range'>
+request	
+<Request 'https://flaskbin.onrender.com/favicon.ico' [GET]>
+url_for	
+<bound method Flask.url_for of <Flask 'wsgi'>>
+
+Show More
+/opt/render/project/src/templates/errors/500.html in top-level template code at line 1
+In App
+
+Called from: jinja2/environment.py in handle_exception
+
+Show 3 more frames
+
+wsgi.py in internal_server_error at line 138
+In App
+
+Called from: flask/app.py in handle_exception
+
+Show 2 more frames
+
+BuildError
+Could not build url for endpoint 'paste.index'. Did you mean 'static' instead?
+mechanism
+wsgi
+handled
+false
+Crashed in non-app: werkzeug/routing/map.py in build
+
+Show 2 more frames
+
+/opt/render/project/src/templates/layout.html in top-level template code at line 29
+In App
+
+/opt/render/project/src/templates/errors/404.html in top-level template code at line 1
+In App
+
+Called from: jinja2/environment.py in handle_exception
+
+Show 3 more frames
+
+wsgi.py in not_found_error at line 134
+In App
+
+Called from: flask/app.py in handle_http_exception
+
+Show 3 more frames
+
+NotFound
+404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+mechanism
+wsgi
+handled
+false
+werkzeug/routing/map.py in match at line 655
+
+flask/ctx.py in match_request at line 353
+
+flask/app.py in raise_routing_exception at line 1440
+
+flask/app.py in dispatch_request at line 1458
+
+flask/app.py in full_dispatch_request at line 1484
+
+
+
+Exception - This event
+error
+08:30:00.000 PM
+NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+wsgi
+error
+08:30:00.319 PM
+Exception on /favicon.ico [GET]
+View Full Trace
+
+
+GET/favicon.icoflaskbin.onrender.com
+Headers
+Accept
+image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Accept-Encoding
+gzip, br
+Accept-Language
+en-US,en;q=0.9
+Cdn-Loop
+cloudflare; loops=1
+Cf-Connecting-Ip
+73.15.244.182
+Show more...
+Environment
+REMOTE_ADDR
+10.223.181.243
+SERVER_NAME
+0.0.0.0
+SERVER_PORT
+10000
+
+
+
+
+
+browser
+browser
+Chrome 134
+browser.name
+name
+Chrome
+client_os
+client_os.name
+name
+Windows
+environment
+environment
+production
+handled
+handled
+no
+level
+level
+error
+mechanism
+mechanism
+wsgi
+release
+release
+d1e6f22855ab
+runtime
+runtime
+CPython 3.11.11
+runtime.name
+name
+CPython
+server_name
+server_name
+srv-cvsqr7s9c44c73c41f40-5f4dd85c6-vtsjp
+transaction
+transaction
+generic WSGI request
+url
+url
+https://flaskbin.onrender.com/favicon.ico
+user
+user
+ip:73.15.244.182
+User
+Geography
+Milpitas, United States (US)
+IP Address
+73.15.244.182
+Runtime
+
+Build
+3.11.11 (main, Apr 8 2025, 04:27:35) [GCC 12.2.0]
+Name
+CPython
+Version
+3.11.11
+Browser
+
+Name
+Chrome
+Version
+134
+Client Operating System
+
+Name
+Windows
+Trace Details
+Span ID
+86fe4c80b17513e3
+Status
+unknown
+Trace ID
+168906cf3b334175a252dc1fa0951796
+
+
+sys.argv	
+
+[
+/opt/render/project/src/.venv/bin/gunicorn,
+--bind,
+0.0.0.0:10000,
+wsgi:app
+]
+Grouped by: exception stack-trace, in-app exception stack-trace
+
+
+Give Feedback
+By Exception Stack-trace
+
+
+Hash	
+4e29d0f80bc478ab41f2e26fec3d9f09
+Type	
+component
+Grouping	
+system
+chained-exception
+exception
+stack-trace
+frame
+modulewerkzeug.routing.map
+functionmatch
+context-lineraise NotFound() from None
+frame
+moduleflask.ctx
+functionmatch_request
+context-lineresult = self.url_adapter.match(return_rule=True) # type: ignore
+
+show 3 similar
+typeNotFound
+exception
+stack-trace
+frame
+modulewerkzeug.routing.map
+functionbuild
+context-lineraise BuildError(endpoint, values, method, self)
+frame
+moduleflask.app
+functionurl_for
+context-linerv = url_adapter.build( # type: ignore[union-attr]
+
+show 12 similar
+typeBuildError
+exception
+stack-trace
+frame
+modulewerkzeug.routing.map
+functionbuild
+context-lineraise BuildError(endpoint, values, method, self)
+frame
+moduleflask.app
+functionurl_for
+context-linerv = url_adapter.build( # type: ignore[union-attr]
+
+show 11 similar
+typeBuildError
+By In-app Exception Stack-trace
+
+
+Hash	
+9d7eff308560782cdc0ef7820a4fb54c
+Type	
+component
+Grouping	
+in-app
+chained-exception
+exception
+typeNotFound
+value (stripped event-specific values)<int> Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+exception
+stack-trace
+frame
+module/opt/render/project/src/templates/layout.html
+functiontop-level template code
+context-line<a class="navbar-brand" href="{{ url_for('paste.index') }}">
+frame
+module/opt/render/project/src/templates/errors/404.html
+functiontop-level template code
+context-line{% extends "layout.html" %}
+
+show 1 similar
+typeBuildError
+exception
+stack-trace
+frame
+module/opt/render/project/src/templates/layout.html
+functiontop-level template code
+context-line<a class="navbar-brand" href="{{ url_for('paste.index') }}">
+frame
+module/opt/render/project/src/templates/errors/500.html
+functiontop-level template code
+context-line{% extends "layout.html" %}
+
+show 1 similar
+typeBuildError
