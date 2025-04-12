@@ -2,14 +2,15 @@ import os
 import logging
 from datetime import datetime
 from flask import Flask, g, render_template, request
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import sentry_sdk
+
+# Import db from db module to avoid circular import issues
+from db import db, init_db
 
 # Initialize Sentry SDK
 sentry_sdk.init(
@@ -22,11 +23,7 @@ sentry_sdk.init(
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-class Base(DeclarativeBase):
-    pass
-
 # Initialize extensions without binding them to an app yet
-db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 csrf = CSRFProtect()
 limiter = Limiter(
@@ -35,9 +32,6 @@ limiter = Limiter(
     storage_uri="memory://",
     strategy="fixed-window"
 )
-
-# Global variable to track if models have been initialized
-_models_initialized = False
 
 def create_app():
     """
