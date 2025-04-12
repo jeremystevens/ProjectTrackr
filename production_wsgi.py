@@ -85,15 +85,15 @@ with app.app_context():
     from routes.admin import admin_bp
     from routes.account import account_bp
     
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(paste_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(search_bp)
-    app.register_blueprint(comment_bp)
-    app.register_blueprint(notification_bp)
-    app.register_blueprint(collection_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(account_bp)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(paste_bp, url_prefix='')  # Note: Ensure root path for paste_bp
+    app.register_blueprint(user_bp, url_prefix='/user')
+    app.register_blueprint(search_bp, url_prefix='/search')
+    app.register_blueprint(comment_bp, url_prefix='/comment')
+    app.register_blueprint(notification_bp, url_prefix='/notification')
+    app.register_blueprint(collection_bp, url_prefix='/collection')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(account_bp, url_prefix='/account')
     
     # Create database tables
     logger.info("Creating database tables")
