@@ -238,30 +238,5 @@ def utility_processor():
         'is_ten_minute_expiration': is_ten_minute_expiration
     }
 
-# Add direct route handlers for deployment to avoid blueprint resolution issues
-@app.route('/')
-def home():
-    """
-    Direct root route handler to avoid blueprint resolution issues on Render.
-    This will import and use the paste.index view function directly.
-    """
-    logger.info("Using direct root route handler")
-    from routes.paste import index
-    return index()
-
-@app.route('/create', methods=['POST'])
-def create_paste():
-    """Direct route handler for paste creation."""
-    logger.info("Using direct create route handler")
-    from routes.paste import create
-    return create()
-
-@app.route('/search/')
-def search():
-    """Direct route handler for search."""
-    logger.info("Using direct search route handler")
-    from routes.search import search
-    return search()
-
 # Report successful setup
 logger.info("Render deployment WSGI app initialization complete")
