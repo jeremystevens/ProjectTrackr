@@ -122,6 +122,7 @@ def get_client_ip():
 
 def get_viewer_id():
     """Get a unique identifier for the current viewer"""
+    # Import PasteView inside the function to avoid circular imports
     from models import PasteView
     return PasteView.get_or_create_viewer_id(session, get_client_ip())
     

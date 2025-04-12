@@ -3,11 +3,12 @@ import hashlib
 import uuid
 import secrets
 import os
-from app import db, app
+from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
-from utils import encrypt_content, decrypt_content
+# Import functions inside methods to avoid circular imports
+# from utils import encrypt_content, decrypt_content
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -756,6 +757,9 @@ class Paste(db.Model):
             # Already encrypted
             return True
             
+        # Import locally to avoid circular imports
+        from utils import encrypt_content
+        
         # Encrypt the content
         encrypted_content, salt, method = encrypt_content(self.content, password)
         
@@ -794,6 +798,9 @@ class Paste(db.Model):
         if self.password_protected and not self.check_password(password):
             return None
             
+        # Import locally to avoid circular imports
+        from utils import decrypt_content
+        
         # Decrypt the content
         method = self.encryption_method or 'fernet-random'
         decrypted_content = decrypt_content(

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user, login_required
 from sqlalchemy import or_, and_
 from datetime import datetime
-from app import db, app, limiter
+from app import db, limiter
 from models import Paste, User, PasteView, Comment, PasteRevision, Notification, PasteCollection, FlaggedPaste, FlaggedComment
 from forms import PasteForm, CommentForm, FlagContentForm
 from utils import generate_short_id, highlight_code, sanitize_html, check_shadowban, generate_ai_summary
