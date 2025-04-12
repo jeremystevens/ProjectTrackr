@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Ultra-simplified pastebin application using Flask and MySQL.
 No SQLAlchemy dialect conflicts because we're using pure pymysql.
@@ -8,52 +7,220 @@ import logging
 import secrets
 import string
 from datetime import datetime, timedelta
+import json
+import hashlib
 import pymysql
-from flask import Flask, render_template, redirect, url_for, flash, request, abort
-from flask import make_response, jsonify, session
+import pymysql.cursors
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, make_response, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Create Flask application
-app = Flask(__name__, template_folder='templates')
-app.config['SECRET_KEY'] = os.environ.get('SESSION_SECRET', 'dev-secret-key')
+# Initialize Flask app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key_for_development")
 
-# MySQL connection parameters
+# Configure session
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+
+# Database configuration
 DB_CONFIG = {
-    'host': '185.212.71.204',
-    'port': 3306,
-    'user': 'u213077714_flaskbin',
-    'password': 'hOJ27K?5',
-    'database': 'u213077714_flaskbin',
-    'charset': 'utf8mb4',
-    'cursorclass': pymysql.cursors.DictCursor
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "user": os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("DB_PASSWORD", ""),
+    "db": os.environ.get("DB_NAME", "flaskbin"),
+    "charset": "utf8mb4",
+    "cursorclass": pymysql.cursors.DictCursor,
 }
 
-# Database table names for reference
-TABLES = {
-    'pastes': 'pastes',
-    'users': 'users',
-    'comments': 'comments',
-    'paste_revisions': 'paste_revisions',
-    'paste_collections': 'paste_collections',
-    'tags': 'tags',
-    'paste_tags': 'paste_tags',
-    'notifications': 'notifications',
-    'flagged_pastes': 'flagged_pastes',
-    'flagged_comments': 'flagged_comments'
-}
+# Use environment variables if available
+if "DATABASE_URL" in os.environ:
+    # Parse DATABASE_URL for MySQL
+    db_url = os.environ["DATABASE_URL"]
+    if db_url.startswith("mysql://"):
+        parts = db_url[8:].split("@")
+        user_pass, host_port_name = parts
+        if ":" in user_pass:
+            user, password = user_pass.split(":")
+        else:
+            user, password = user_pass, ""
+        if "/" in host_port_name:
+            host_port, db_name = host_port_name.split("/")
+        else:
+            host_port, db_name = host_port_name, "flaskbin"
+        if ":" in host_port:
+            host, port = host_port.split(":")
+        else:
+            host, port = host_port, 3306
+        
+        DB_CONFIG.update({
+            "host": host,
+            "user": user,
+            "password": password,
+            "db": db_name,
+            "port": int(port)
+        })
+
+# Create table queries
+CREATE_TABLES = [
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(64) NOT NULL UNIQUE,
+        email VARCHAR(120) NOT NULL UNIQUE,
+        password_hash VARCHAR(256) NOT NULL,
+        created_at DATETIME NOT NULL,
+        last_login DATETIME,
+        is_admin BOOLEAN DEFAULT FALSE,
+        api_key VARCHAR(64),
+        is_banned BOOLEAN DEFAULT FALSE,
+        shadowbanned BOOLEAN DEFAULT FALSE,
+        free_ai_trials_used INT DEFAULT 0,
+        failed_login_attempts INT DEFAULT 0,
+        locked_until DATETIME NULL,
+        security_question VARCHAR(255) NULL,
+        security_answer_hash VARCHAR(256) NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS pastes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        short_id VARCHAR(16) NOT NULL UNIQUE,
+        title VARCHAR(255),
+        content TEXT NOT NULL,
+        language VARCHAR(30) DEFAULT 'plaintext',
+        created_at DATETIME NOT NULL,
+        expires_at DATETIME,
+        views INT DEFAULT 0,
+        user_id INT,
+        is_public BOOLEAN DEFAULT TRUE,
+        comments_enabled BOOLEAN DEFAULT TRUE,
+        burn_after_read BOOLEAN DEFAULT FALSE,
+        is_encrypted BOOLEAN DEFAULT FALSE,
+        encryption_salt VARCHAR(32),
+        encryption_iv VARCHAR(32),
+        forked_from INT,
+        fork_of VARCHAR(16),
+        collection_id INT,
+        ai_summary TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (forked_from) REFERENCES pastes(id) ON DELETE SET NULL,
+        FOREIGN KEY (collection_id) REFERENCES paste_collections(id) ON DELETE SET NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS comments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paste_id INT NOT NULL,
+        user_id INT,
+        content TEXT NOT NULL,
+        created_at DATETIME NOT NULL,
+        FOREIGN KEY (paste_id) REFERENCES pastes(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS paste_collections (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        user_id INT,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        is_public BOOLEAN DEFAULT TRUE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS tags (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50) NOT NULL UNIQUE,
+        created_at DATETIME NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS paste_tags (
+        paste_id INT NOT NULL,
+        tag_id INT NOT NULL,
+        PRIMARY KEY (paste_id, tag_id),
+        FOREIGN KEY (paste_id) REFERENCES pastes(id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS flagged_pastes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paste_id INT NOT NULL,
+        reporter_id INT,
+        reason TEXT,
+        created_at DATETIME NOT NULL,
+        resolved BOOLEAN DEFAULT FALSE,
+        resolved_by INT,
+        resolved_at DATETIME,
+        FOREIGN KEY (paste_id) REFERENCES pastes(id) ON DELETE CASCADE,
+        FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS paste_revisions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paste_id INT NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME NOT NULL,
+        user_id INT,
+        FOREIGN KEY (paste_id) REFERENCES pastes(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        message TEXT NOT NULL,
+        created_at DATETIME NOT NULL,
+        read BOOLEAN DEFAULT FALSE,
+        link VARCHAR(255),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """
+]
 
 def get_db_connection():
     """Get a database connection."""
-    return pymysql.connect(**DB_CONFIG)
+    try:
+        conn = pymysql.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        logger.error(f"Database connection error: {e}")
+        return None
+
+def init_db():
+    """Initialize the database by creating tables if they don't exist."""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            logger.error("Could not connect to database for initialization")
+            return False
+        
+        with conn.cursor() as cursor:
+            for table_query in CREATE_TABLES:
+                cursor.execute(table_query)
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Database initialization error: {e}")
+        return False
 
 def generate_short_id(length=8):
     """Generate a random short ID for pastes."""
-    characters = string.ascii_letters + string.digits
-    return ''.join(secrets.choice(characters) for _ in range(length))
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 def get_current_user():
     """Get the current user from the session."""
@@ -75,133 +242,157 @@ def is_authenticated():
     """Check if the user is authenticated."""
     return 'user_id' in session
 
-# Create a UserProxy to mimic Flask-Login's current_user
 class UserProxy:
-    @property
+    def __init__(self, user_dict):
+        self.user_dict = user_dict or {}
+    
     def is_authenticated(self):
-        return is_authenticated()
+        return True
     
     def __getattr__(self, name):
-        user = get_current_user()
-        if user is None:
-            return None
-        return user.get(name)
-
-# Create a global current_user proxy
-current_user = UserProxy()
+        return self.user_dict.get(name)
 
 def timesince(dt):
     """Format datetime as relative time since."""
-    if not dt:
-        return "never"
-    
     now = datetime.utcnow()
     diff = now - dt
     
     if diff.days > 365:
         years = diff.days // 365
-        return f"{years} year{'s' if years != 1 else ''} ago"
+        return f"{years} year{'s' if years > 1 else ''} ago"
     elif diff.days > 30:
         months = diff.days // 30
-        return f"{months} month{'s' if months != 1 else ''} ago"
+        return f"{months} month{'s' if months > 1 else ''} ago"
     elif diff.days > 0:
-        return f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
+        return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
     elif diff.seconds > 3600:
         hours = diff.seconds // 3600
-        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
     elif diff.seconds > 60:
         minutes = diff.seconds // 60
-        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
     else:
         return "just now"
 
-# Register filters and global functions
+# Register template filters
 app.jinja_env.filters['timesince'] = timesince
-app.jinja_env.globals.update(
-    is_authenticated=is_authenticated,
-    get_current_user=get_current_user,
-    current_user=current_user
-)
+
+# Make functions available in templates
+@app.context_processor
+def utility_processor():
+    return {
+        'is_authenticated': is_authenticated,
+        'get_current_user': lambda: UserProxy(get_current_user())
+    }
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """Home page / paste creation form."""
     if request.method == 'POST':
-        # Handle paste creation
-        title = request.form.get('title', '').strip() or 'Untitled Paste'
-        content = request.form.get('content', '')
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
         language = request.form.get('language', 'plaintext')
         expiration = request.form.get('expiration', 'never')
-        is_public = 'is_public' in request.form
+        visibility = request.form.get('visibility', 'public')
+        comments_enabled = 'comments_enabled' in request.form
         burn_after_read = 'burn_after_read' in request.form
+        encrypt_paste = 'encrypt_paste' in request.form
+        encryption_password = request.form.get('encryption_password', '')
         
-        # Validate content
         if not content:
             flash('Paste content cannot be empty.', 'danger')
             return redirect(url_for('index'))
         
-        # Set expiration date
+        # Handle expiration
         expires_at = None
-        if expiration != 'never':
-            if expiration == '10min':
-                expires_at = datetime.utcnow() + timedelta(minutes=10)
-            elif expiration == '1hour':
-                expires_at = datetime.utcnow() + timedelta(hours=1)
-            elif expiration == '1day':
-                expires_at = datetime.utcnow() + timedelta(days=1)
-            elif expiration == '1week':
-                expires_at = datetime.utcnow() + timedelta(weeks=1)
-            elif expiration == '1month':
-                expires_at = datetime.utcnow() + timedelta(days=30)
+        if expiration == '10min':
+            expires_at = datetime.utcnow() + timedelta(minutes=10)
+        elif expiration == '1h':
+            expires_at = datetime.utcnow() + timedelta(hours=1)
+        elif expiration == '1d':
+            expires_at = datetime.utcnow() + timedelta(days=1)
+        elif expiration == '1w':
+            expires_at = datetime.utcnow() + timedelta(weeks=1)
+        elif expiration == '1m':
+            expires_at = datetime.utcnow() + timedelta(days=30)
         
-        # Create new paste
+        # Handle visibility
+        is_public = visibility == 'public'
+        
+        # Generate a unique short_id
         short_id = generate_short_id()
-        user_id = session.get('user_id')
         
+        # Handle encryption
+        encryption_salt = None
+        encryption_iv = None
+        if encrypt_paste and encryption_password:
+            # Generate salt and iv for encryption
+            encryption_salt = secrets.token_hex(16)
+            encryption_iv = secrets.token_hex(16)
+            
+            # This is a simplified encryption example - in a real app, use a proper encryption library
+            key = hashlib.pbkdf2_hmac('sha256', encryption_password.encode(), 
+                                       encryption_salt.encode(), 100000).hex()
+            # Note: In a real implementation, encrypt the content with the key and iv
+            
         try:
             conn = get_db_connection()
             with conn.cursor() as cursor:
                 sql = """
                 INSERT INTO pastes (
                     short_id, title, content, language, created_at, expires_at, 
-                    is_public, burn_after_read, user_id
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    user_id, is_public, comments_enabled, burn_after_read,
+                    is_encrypted, encryption_salt, encryption_iv
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 cursor.execute(sql, (
                     short_id, title, content, language, datetime.utcnow(), expires_at,
-                    is_public, burn_after_read, user_id
+                    session.get('user_id'), is_public, comments_enabled, burn_after_read,
+                    encrypt_paste, encryption_salt, encryption_iv
                 ))
             conn.commit()
             conn.close()
             
-            # Redirect to the new paste
-            flash('Paste created successfully!', 'success')
             return redirect(url_for('view_paste', short_id=short_id))
         except Exception as e:
             logger.error(f"Error creating paste: {e}")
-            flash('An error occurred while creating the paste.', 'danger')
+            flash('An error occurred while saving your paste.', 'danger')
             return redirect(url_for('index'))
     
-    # GET request - show form with recent pastes
+    # Get recent public pastes
+    recent_pastes = []
+    user_pastes = []
+    
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = """
-            SELECT p.*, u.username
-            FROM pastes p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.is_public = 1
-            ORDER BY p.created_at DESC
-            LIMIT 10
-            """
-            cursor.execute(sql)
+            # Get recent public pastes
+            cursor.execute("""
+                SELECT p.*, u.username 
+                FROM pastes p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.is_public = TRUE AND (p.expires_at IS NULL OR p.expires_at > %s)
+                ORDER BY p.created_at DESC
+                LIMIT 10
+            """, (datetime.utcnow(),))
             recent_pastes = cursor.fetchall()
+            
+            # Get user's pastes if authenticated
+            if is_authenticated():
+                cursor.execute("""
+                    SELECT p.*, u.username 
+                    FROM pastes p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.user_id = %s
+                    ORDER BY p.created_at DESC
+                    LIMIT 10
+                """, (session['user_id'],))
+                user_pastes = cursor.fetchall()
         conn.close()
     except Exception as e:
-        logger.error(f"Error getting recent pastes: {e}")
-        recent_pastes = []
+        logger.error(f"Error getting pastes: {e}")
     
-    return render_template('index.html', recent_pastes=recent_pastes)
+    return render_template('index.html', recent_pastes=recent_pastes, user_pastes=user_pastes)
 
 @app.route('/<short_id>')
 def view_paste(short_id):
@@ -210,13 +401,12 @@ def view_paste(short_id):
         conn = get_db_connection()
         with conn.cursor() as cursor:
             # Get the paste
-            sql = """
-            SELECT p.*, u.username
-            FROM pastes p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.short_id = %s
-            """
-            cursor.execute(sql, (short_id,))
+            cursor.execute("""
+                SELECT p.*, u.username 
+                FROM pastes p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.short_id = %s
+            """, (short_id,))
             paste = cursor.fetchone()
             
             if not paste:
@@ -225,57 +415,66 @@ def view_paste(short_id):
             
             # Check if paste is expired
             if paste['expires_at'] and paste['expires_at'] < datetime.utcnow():
-                # Delete the paste
                 cursor.execute("DELETE FROM pastes WHERE id = %s", (paste['id'],))
                 conn.commit()
                 conn.close()
                 flash('This paste has expired.', 'warning')
                 return redirect(url_for('index'))
             
-            # Check if burn after read
+            # Check if paste is burn after read
             if paste['burn_after_read']:
-                # Keep content but mark for deletion
-                content = paste['content']
-                title = paste['title']
-                language = paste['language']
-                
-                # Delete the paste
+                burn_paste = paste.copy()
                 cursor.execute("DELETE FROM pastes WHERE id = %s", (paste['id'],))
                 conn.commit()
-                conn.close()
                 
-                # Render special template for burn-after-read
-                flash('This was a burn-after-read paste and has been deleted.', 'warning')
-                # For now, just render the normal view since we don't have a special template
-                return render_template('view.html', 
-                                     paste={
-                                         'title': title,
-                                         'content': content,
-                                         'language': language,
-                                         'burn_after_read': True,
-                                         'created_at': datetime.utcnow(),
-                                         'user': None
-                                     })
-            
-            # Get comments if comments are enabled
-            comments = []
-            if paste.get('comments_enabled', False):
-                sql = """
-                SELECT c.*, u.username
-                FROM comments c
-                LEFT JOIN users u ON c.user_id = u.id
-                WHERE c.paste_id = %s
-                ORDER BY c.created_at ASC
-                """
-                cursor.execute(sql, (paste['id'],))
-                comments = cursor.fetchall()
+                # Get comments if needed for the soon-to-be-deleted paste
+                comments = []
+                if burn_paste['comments_enabled']:
+                    cursor.execute("""
+                        SELECT c.*, u.username 
+                        FROM comments c
+                        LEFT JOIN users u ON c.user_id = u.id
+                        WHERE c.paste_id = %s
+                        ORDER BY c.created_at ASC
+                    """, (burn_paste['id'],))
+                    comments = cursor.fetchall()
+                
+                conn.close()
+                flash('This paste was set to burn after reading. It has been deleted.', 'warning')
+                return render_template('view.html', paste=burn_paste, comments=comments, related_pastes=[])
             
             # Increment view count
             cursor.execute("UPDATE pastes SET views = views + 1 WHERE id = %s", (paste['id'],))
-            conn.commit()
+            
+            # Get comments
+            comments = []
+            if paste['comments_enabled']:
+                cursor.execute("""
+                    SELECT c.*, u.username 
+                    FROM comments c
+                    LEFT JOIN users u ON c.user_id = u.id
+                    WHERE c.paste_id = %s
+                    ORDER BY c.created_at ASC
+                """, (paste['id'],))
+                comments = cursor.fetchall()
+            
+            # Get related pastes
+            related_pastes = []
+            if paste['user_id']:
+                cursor.execute("""
+                    SELECT p.*, u.username 
+                    FROM pastes p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.user_id = %s AND p.id != %s AND p.is_public = TRUE
+                    ORDER BY p.created_at DESC
+                    LIMIT 5
+                """, (paste['user_id'], paste['id']))
+                related_pastes = cursor.fetchall()
+            
+        conn.commit()
         conn.close()
         
-        return render_template('view.html', paste=paste, comments=comments)
+        return render_template('view.html', paste=paste, comments=comments, related_pastes=related_pastes)
     except Exception as e:
         logger.error(f"Error viewing paste: {e}")
         flash('An error occurred while retrieving the paste.', 'danger')
@@ -283,22 +482,26 @@ def view_paste(short_id):
 
 @app.route('/health')
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint for Render."""
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
             cursor.execute("SELECT VERSION()")
-            version = cursor.fetchone()['VERSION()']
+            version = cursor.fetchone()
         conn.close()
         
-        return jsonify({
-            'status': 'ok',
-            'database': 'mysql',
-            'version': version,
-            'time': datetime.utcnow().isoformat()
-        })
+        if version:
+            return jsonify({
+                'status': 'ok',
+                'message': 'Database connection successful',
+                'db_version': version.get('VERSION()', 'unknown')
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Database connection failed'
+            }), 500
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
         return jsonify({
             'status': 'error',
             'message': str(e)
@@ -336,7 +539,6 @@ def raw_paste(short_id):
         logger.error(f"Error viewing raw paste: {e}")
         flash('An error occurred while retrieving the paste.', 'danger')
         return redirect(url_for('index'))
-
 
 
 @app.route('/<short_id>/comment', methods=['POST'])
@@ -629,6 +831,9 @@ def internal_error(error):
     """Handle 500 errors."""
     logger.error(f"Internal server error: {error}")
     return render_template('errors/500.html'), 500
+
+# Initialize the database on startup
+init_db()
 
 # Run the app if executed directly
 if __name__ == '__main__':

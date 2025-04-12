@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
 """
-Main entry point for the MySQL-compatible FlaskBin application.
+Main entry point for the MySQL version of the Flask application.
+This is used for development only.
 """
 from simple_app import app
 

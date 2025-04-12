@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mysql_version'))
 
 # Import the app from the MySQL version
-from simple_app import app
+from mysql_version.simple_app import app
 
 # This variable is required for Gunicorn to find the application
 application = app
