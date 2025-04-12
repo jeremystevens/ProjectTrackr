@@ -4,6 +4,11 @@ WSGI entry point for Render deployment.
 This file is specifically created for deployment to Render
 and avoids the SQLAlchemy model mapping issues that can occur
 when gunicorn imports the app.
+
+IMPORTANT: This file MUST be used for deployment by using:
+gunicorn --bind 0.0.0.0:$PORT wsgi:app
+NOT:
+gunicorn --bind 0.0.0.0:$PORT main:app
 """
 import os
 import logging
