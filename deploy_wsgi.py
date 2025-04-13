@@ -38,56 +38,71 @@ if not db_url:
     logger.warning("No DATABASE_URL environment variable found, using SQLite for development")
     db_url = "sqlite:///pastebin.db"
 
-# Apply more aggressive monkey patch to fix SQLAlchemy psycopg2 dialect issue
+# Apply more aggressive patch to fix SQLAlchemy psycopg2 dialect issue
 try:
-    # First try to fix by direct monkey patching of SQLAlchemy's psycopg2 module
-    import sys
-    import types
-    from sqlalchemy.dialects.postgresql import psycopg2 as sa_psycopg2
-    
-    # Create a more comprehensive mock extras module with Hstore support
-    # Create a mock psycopg2 extras module and add it to sys.modules
-    mock_extras = types.ModuleType('psycopg2.extras')
-    
-    # Add required functions
-    mock_extras.register_uuid = lambda conn: None
-    mock_extras.register_default_json = lambda conn: None
-    mock_extras.register_default_jsonb = lambda conn: None
-    
-    # Add HstoreAdapter class
-    class HstoreAdapter:
-        @staticmethod
-        def get_oids(conn):
-            # Return dummy OIDs that won't be used but prevent errors
-            return (-1, -2)
+    # First make sure we have psycopg2 installed
+    import psycopg2
+    import psycopg2.extras
+    logger.info("Successfully imported psycopg2 and psycopg2.extras")
+except ImportError:
+    logger.error("psycopg2 not found, trying to use psycopg2-binary")
+    try:
+        import sys
+        import types
+        
+        # Create a mock psycopg2 module if it doesn't exist
+        if 'psycopg2' not in sys.modules:
+            psycopg2 = types.ModuleType('psycopg2')
+            sys.modules['psycopg2'] = psycopg2
+            logger.info("Created mock psycopg2 module")
+        
+        # Create a mock psycopg2.extras module with the necessary functions
+        mock_extras = types.ModuleType('psycopg2.extras')
+        mock_extras.register_uuid = lambda conn: None
+        mock_extras.register_default_json = lambda conn: None
+        mock_extras.register_default_jsonb = lambda conn: None
+        
+        # Add HstoreAdapter class
+        class HstoreAdapter:
+            @staticmethod
+            def get_oids(conn):
+                # Return dummy OIDs that won't be used but prevent errors
+                return (-1, -2)
+                
+        mock_extras.HstoreAdapter = HstoreAdapter
+        sys.modules['psycopg2.extras'] = mock_extras
+        logger.info("Created mock psycopg2.extras module")
+        
+        # Now patch SQLAlchemy's psycopg2 dialect
+        try:
+            from sqlalchemy.dialects.postgresql import psycopg2 as sa_psycopg2
             
-    mock_extras.HstoreAdapter = HstoreAdapter
-    sys.modules['psycopg2.extras'] = mock_extras
-    
-    # Replace the _psycopg2_extras property on the PGDialect_psycopg2 class
-    def _patched_extras(self):
-        return mock_extras
-        
-    # Replace the on_connect method to avoid accessing _psycopg2_extras
-    def _patched_on_connect(self):
-        def connect(conn):
-            conn.set_isolation_level(self.isolation_level)
-            return conn
-        return connect
-    
-    # Create a patched initialize method to bypass hstore checks
-    def _patched_initialize(self, connection):
-        # Skip the hstore initialization that causes problems
-        pass
-        
-    # Apply the patches
-    sa_psycopg2.PGDialect_psycopg2._psycopg2_extras = property(_patched_extras)
-    sa_psycopg2.PGDialect_psycopg2.on_connect = _patched_on_connect
-    sa_psycopg2.PGDialect_psycopg2.initialize = _patched_initialize
-    
-    logger.info("Successfully applied aggressive patch to psycopg2 dialect")
-except Exception as e:
-    logger.error(f"Failed to apply aggressive patch to psycopg2 dialect: {e}")
+            # Replace the _psycopg2_extras property on the PGDialect_psycopg2 class
+            def _patched_extras(self):
+                return mock_extras
+                
+            # Replace the on_connect method to avoid accessing _psycopg2_extras
+            def _patched_on_connect(self):
+                def connect(conn):
+                    conn.set_isolation_level(self.isolation_level)
+                    return conn
+                return connect
+            
+            # Create a patched initialize method to bypass hstore checks
+            def _patched_initialize(self, connection):
+                # Skip the hstore initialization that causes problems
+                pass
+                
+            # Apply the patches
+            sa_psycopg2.PGDialect_psycopg2._psycopg2_extras = property(_patched_extras)
+            sa_psycopg2.PGDialect_psycopg2.on_connect = _patched_on_connect
+            sa_psycopg2.PGDialect_psycopg2.initialize = _patched_initialize
+            
+            logger.info("Successfully applied aggressive patch to psycopg2 dialect")
+        except Exception as e:
+            logger.error(f"Failed to patch SQLAlchemy's psycopg2 dialect: {e}")
+    except Exception as e:
+        logger.error(f"Failed to create mock psycopg2 modules: {e}")
 
 # Ensure we have a database URL
 if not db_url:
