@@ -16,6 +16,31 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.info("Starting deployment WSGI app")
 
+# Force SQLAlchemy to use psycopg2 for PostgreSQL connections
+# Do this before any SQLAlchemy imports to ensure it uses the correct driver
+try:
+    import sqlalchemy.dialects.postgresql
+    # Check if we have the psycopg2 driver installed
+    try:
+        import psycopg2
+        logger.info("Found psycopg2 driver")
+    except ImportError:
+        logger.warning("psycopg2 not installed, trying psycopg2-binary")
+        try:
+            import psycopg2cffi as psycopg2
+            logger.info("Using psycopg2cffi as a fallback")
+        except ImportError:
+            logger.error("No PostgreSQL driver found!")
+    
+    # Set PostgreSQL dialect explicitly to psycopg2
+    os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
+    os.environ["SQLALCHEMY_WARN_20"] = "0"
+    os.environ["SQLALCHEMY_POSTGRESQL_DIALECT"] = "psycopg2"
+    
+    logger.info("Configured SQLAlchemy to use psycopg2 for PostgreSQL connections")
+except ImportError as e:
+    logger.error(f"Failed to configure SQLAlchemy dialect: {e}")
+
 # Import Flask and extensions
 from flask import Flask, render_template, request
 from flask_login import LoginManager
@@ -33,8 +58,30 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 # Configure database
 # On Render, the database URL is provided as DATABASE_URL
 db_url = os.environ.get("DATABASE_URL")
+logger.info("Checking for database configuration...")
+
+# Check which database environment variables are available (without revealing contents)
+db_vars = [
+    "DATABASE_URL",
+    "RENDER_POSTGRES_DATABASE_URL",
+    "DB_URL",
+    "POSTGRES_URL",
+    "POSTGRESQL_URL"
+]
+available_db_vars = [var for var in db_vars if os.environ.get(var)]
+if available_db_vars:
+    logger.info(f"Found database environment variables: {', '.join(available_db_vars)}")
+else:
+    logger.warning("No standard database environment variables found")
+
+# Try Render's internal database URL if available
+render_internal_db = os.environ.get("RENDER_POSTGRES_DATABASE_URL", None)
+if render_internal_db:
+    logger.info("Using Render's internal PostgreSQL database URL")
+    db_url = render_internal_db
+
+# If still no DB URL found, fall back to development database
 if not db_url:
-    # Fall back to development database if no URL provided
     logger.warning("No DATABASE_URL environment variable found, using SQLite for development")
     db_url = "sqlite:///pastebin.db"
 
@@ -134,12 +181,27 @@ if db_url:
     else:
         logger.info(f"Using database URL type: {db_url.split(':')[0]}")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
+# Configure SQLAlchemy to explicitly use psycopg2 for PostgreSQL
+if db_url and ('postgresql://' in db_url or 'postgres://' in db_url):
+    # Force SQLAlchemy to use psycopg2 for PostgreSQL connections
+    # This overrides any competing drivers like PyMySQL
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+        # Force the PostgreSQL driver to be psycopg2 regardless of other installed drivers
+        "connect_args": {"driver": "psycopg2"},
+    }
+    logger.info("Configured SQLAlchemy to use psycopg2 driver for PostgreSQL")
+else:
+    # For non-PostgreSQL databases
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
 
 # Initialize SQLAlchemy
 from db import db
