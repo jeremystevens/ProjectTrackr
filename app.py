@@ -1,3 +1,6 @@
+"""
+Application factory module.
+"""
 import os
 import logging
 from datetime import datetime
@@ -7,21 +10,13 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import sentry_sdk
 
-# Import db from db module to avoid circular import issues
+# Import db from db module
 from db import db, init_db
-
-# Initialize Sentry SDK
-sentry_sdk.init(
-    dsn="https://ea15360e41b2c867bdc005baebf0889c@o1129642.ingest.us.sentry.io/4509130694787072",
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
-)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Initialize extensions without binding them to an app yet
 login_manager = LoginManager()
@@ -38,6 +33,8 @@ def create_app():
     Application factory function that creates and configures the Flask app
     This pattern helps prevent circular imports and duplicate model registration
     """
+    logger.info("Creating Flask application with factory pattern")
+    
     # Create the application
     app = Flask(__name__)
     app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
@@ -112,7 +109,8 @@ def create_app():
         }
 
     with app.app_context():
-        # Import models - do this first to avoid circular imports
+        # Import models to register them with SQLAlchemy
+        # We do this only once inside the app context
         import models
         
         # Import user model for login manager
@@ -136,7 +134,7 @@ def create_app():
 
         # Register blueprints with proper URL prefixes
         app.register_blueprint(auth_bp, url_prefix='/auth')
-        app.register_blueprint(paste_bp, url_prefix='')  # Note: Ensure root path for paste_bp 
+        app.register_blueprint(paste_bp, url_prefix='')  # Root path for paste_bp 
         app.register_blueprint(user_bp, url_prefix='/user')
         app.register_blueprint(search_bp, url_prefix='/search')
         app.register_blueprint(comment_bp, url_prefix='/comment')
@@ -147,129 +145,23 @@ def create_app():
         
         # Create database tables
         db.create_all()
+        logger.info("Database tables created")
         
-    return app
+        # Register error handlers
+        @app.errorhandler(404)
+        def not_found_error(error):
+            return render_template('errors/404.html'), 404
+
+        @app.errorhandler(500)
+        def internal_server_error(error):
+            error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
+            logger.critical(f"500 Error ID {error_id}: {error}")
+            return render_template('errors/500.html', error_id=error_id), 500
+
+        @app.errorhandler(CSRFError)
+        def csrf_error(error):
+            logger.error(f"CSRF Error: {error}")
+            return render_template('errors/csrf_error.html'), 400
     
-# Note: We're not creating the app here anymore - we do it in main.py or wsgi.py instead
-# This prevents duplicate model registration issues
-
-# Define template filters and error handlers as part of the create_app function
-def register_filters_and_error_handlers(app):
-    # Add template filters
-    @app.template_filter('timesince')
-    def timesince_filter(dt):
-        """Format the datetime as a pretty relative time."""
-        now = datetime.utcnow()
-        diff = now - dt
-        
-        seconds = diff.total_seconds()
-        if seconds < 60:
-            return f"{int(seconds)} seconds ago"
-        minutes = seconds // 60
-        if minutes < 60:
-            return f"{int(minutes)} minutes ago"
-        hours = minutes // 60
-        if hours < 24:
-            return f"{int(hours)} hours ago"
-        days = hours // 24
-        if days < 30:
-            return f"{int(days)} days ago"
-        months = days // 30
-        if months < 12:
-            return f"{int(months)} months ago"
-        years = months // 12
-        return f"{int(years)} years ago"
-
-    @app.context_processor
-    def utility_processor():
-        def is_ten_minute_expiration(paste):
-            """Check if a paste has 10-minute expiration"""
-            # Check for special short_id
-            if hasattr(paste, 'short_id') and 'expires_in_10_minutes' in paste.short_id:
-                return True
-                
-            # If that doesn't work, check the time difference
-            if hasattr(paste, 'expires_at') and paste.expires_at and hasattr(paste, 'created_at'):
-                # Calculate total minutes of expiration
-                diff = paste.expires_at - paste.created_at
-                total_minutes = diff.total_seconds() / 60
-                
-                # If it's close to 10 minutes (between 9 and 11)
-                if 9 <= total_minutes <= 11:
-                    return True
-                    
-            return False
-        
-        return {
-            'now': datetime.utcnow(),
-            'is_ten_minute_expiration': is_ten_minute_expiration
-        }
-
-    # Error handlers
-    @app.errorhandler(400)
-    def bad_request_error(error):
-        """Handle 400 Bad Request errors"""
-        app.logger.error(f"400 Error: {error}")
-        error_details = str(error) if app.debug else None
-        return render_template('errors/400.html', error_details=error_details), 400
-
-    @app.errorhandler(401)
-    def unauthorized_error(error):
-        """Handle 401 Unauthorized errors"""
-        app.logger.error(f"401 Error: {error}")
-        return render_template('errors/401.html'), 401
-
-    @app.errorhandler(403)
-    def forbidden_error(error):
-        """Handle 403 Forbidden errors"""
-        app.logger.error(f"403 Error: {error}")
-        return render_template('errors/403.html'), 403
-
-    @app.errorhandler(404)
-    def not_found_error(error):
-        """Handle 404 Not Found errors"""
-        app.logger.error(f"404 Error: {error}")
-        return render_template('errors/404.html'), 404
-
-    @app.errorhandler(405)
-    def method_not_allowed_error(error):
-        """Handle 405 Method Not Allowed errors"""
-        app.logger.error(f"405 Error: {error}")
-        allowed_methods = error.get_headers().get('Allow', '').split(', ') if hasattr(error, 'get_headers') else []
-        return render_template('errors/405.html', allowed_methods=allowed_methods), 405
-
-    @app.errorhandler(429)
-    def too_many_requests_error(error):
-        """Handle 429 Too Many Requests errors"""
-        app.logger.error(f"429 Error: {error}")
-        # Extract retry-after value if available
-        retry_after = None
-        if hasattr(error, 'description') and isinstance(error.description, dict):
-            retry_after = error.description.get('retry_after')
-        return render_template('errors/429.html', retry_after=retry_after), 429
-
-    @app.errorhandler(500)
-    def internal_server_error(error):
-        """Handle 500 Internal Server errors"""
-        # Generate a unique error ID for tracking
-        error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
-        app.logger.critical(f"500 Error ID {error_id}: {error}")
-        app.logger.exception("Exception details:")
-        return render_template('errors/500.html', error_id=error_id), 500
-
-    @app.errorhandler(Exception)
-    def handle_unhandled_exception(error):
-        """Handle any unhandled exceptions"""
-        error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}"
-        app.logger.critical(f"Unhandled Exception ID {error_id}: {error}")
-        app.logger.exception("Exception details:")
-        return render_template('errors/500.html', error_id=error_id), 500
-
-    # CSRF error handler
-    @app.errorhandler(CSRFError)
-    def csrf_error(error):
-        """Handle CSRF errors"""
-        app.logger.error(f"CSRF Error: {error}")
-        return render_template('errors/csrf_error.html'), 400
-        
+    logger.info("Flask application creation complete")
     return app
