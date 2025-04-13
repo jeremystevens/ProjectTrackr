@@ -15,9 +15,9 @@ from model_package.base import db
 # Track if models have been registered
 _USER_MODEL_REGISTERED = False
 
-class User(UserMixin, db.Model):
+class AltUser(UserMixin, db.Model):
     """User model for authentication and profile management"""
-    __tablename__ = 'users'
+    __tablename__ = 'alt_users'
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)

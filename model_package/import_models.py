@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Type
 
 from model_package.base import db
-from model_package.user import User, PasswordResetToken, register_user_models
+from models import User, PasswordResetToken, register_user_models
 
 logger = logging.getLogger(__name__)
 
