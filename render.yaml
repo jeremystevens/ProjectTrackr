@@ -4,10 +4,7 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
-      echo "Running PostgreSQL driver and database diagnostics..."
-      python diagnose_psycopg2.py 
-      echo "Diagnostics complete, continuing with build..."
-    startCommand: gunicorn --bind 0.0.0.0:$PORT deploy_wsgi:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0

@@ -1,0 +1,76 @@
+==> Uploading build...
+==> Uploaded in 8.2s. Compression took 2.1s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'gunicorn --bind 0.0.0.0:$PORT wsgi:app'
+INFO:wsgi:Starting WSGI wrapper
+INFO:deploy_wsgi:Starting deployment WSGI app
+INFO:deploy_wsgi:Found psycopg2 driver
+INFO:deploy_wsgi:Configured SQLAlchemy to use psycopg2 for PostgreSQL connections
+INFO:deploy_wsgi:Checking for database configuration...
+INFO:deploy_wsgi:Found database environment variables: DATABASE_URL
+INFO:deploy_wsgi:Successfully imported psycopg2 and psycopg2.extras
+WARNING:deploy_wsgi:MySQL URL detected, but Render uses PostgreSQL. This may cause errors.
+INFO:deploy_wsgi:Using database URL: mysql://****:****@185.212.71.204:3306/u213077714_flaskbin
+INFO:deploy_wsgi:Importing models
+ERROR:wsgi:Unexpected error during import: Class '<class 'models.User'>' already has a primary mapper defined. 
+Traceback (most recent call last):
+  File "/opt/render/project/src/.venv/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+             ^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 66, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]", prog=prog).run()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 235, in run
+    super().run()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 71, in run
+    Arbiter(self).run()
+    ^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 57, in __init__
+    self.setup(app)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 117, in setup
+    self.app.wsgi()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/opt/render/project/src/wsgi.py", line 21, in <module>
+    from deploy_wsgi import app
+  File "/opt/render/project/src/deploy_wsgi.py", line 232, in <module>
+    import models
+  File "/opt/render/project/src/models.py", line 47, in <module>
+    class User(UserMixin, db.Model):
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask_sqlalchemy/model.py", line 100, in __init__
+    super().__init__(name, bases, d, **kwargs)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask_sqlalchemy/model.py", line 120, in __init__
+    super().__init__(name, bases, d, **kwargs)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/decl_api.py", line 195, in __init__
+    _as_declarative(reg, cls, dict_)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/decl_base.py", line 247, in _as_declarative
+    return _MapperConfig.setup_mapping(registry, cls, dict_, None, {})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/decl_base.py", line 328, in setup_mapping
+    return _ClassScanMapperConfig(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/decl_base.py", line 520, in __init__
+    super().__init__(registry, cls_, mapper_kw)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/decl_base.py", line 344, in __init__
+    instrumentation.register_class(
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/instrumentation.py", line 684, in register_class
+    manager._update_state(
