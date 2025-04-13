@@ -31,8 +31,12 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
 # Configure database
-# Use environment variable DB_URL (Render format) or fallback to DATABASE_URL
-db_url = os.environ.get("DB_URL", os.environ.get("DATABASE_URL", "sqlite:///pastebin.db"))
+# On Render, the database URL is provided as DATABASE_URL
+db_url = os.environ.get("DATABASE_URL")
+if not db_url:
+    # Fall back to development database if no URL provided
+    logger.warning("No DATABASE_URL environment variable found, using SQLite for development")
+    db_url = "sqlite:///pastebin.db"
 
 # Apply more aggressive monkey patch to fix SQLAlchemy psycopg2 dialect issue
 try:
@@ -85,20 +89,35 @@ try:
 except Exception as e:
     logger.error(f"Failed to apply aggressive patch to psycopg2 dialect: {e}")
 
+# Ensure we have a database URL
+if not db_url:
+    logger.error("No DATABASE_URL environment variable found!")
+    db_url = "sqlite:///pastebin.db"  # Fallback for development only
+    
 # Fix URL format for different PostgreSQL URL styles
-if db_url.startswith('postgres://'):
+if db_url and db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
-
+    
 # Log a sanitized version of the URL (hiding credentials)
-if db_url and 'postgresql://' in db_url:
-    parts = db_url.split('@')
-    if len(parts) > 1:
-        sanitized_url = f"postgresql://****:****@{parts[1]}"
-        logger.info(f"Using database URL: {sanitized_url}")
+if db_url:
+    if 'postgresql://' in db_url:
+        parts = db_url.split('@')
+        if len(parts) > 1:
+            sanitized_url = f"postgresql://****:****@{parts[1]}"
+            logger.info(f"Using database URL: {sanitized_url}")
+        else:
+            logger.info("Using PostgreSQL database")
+    elif 'mysql' in db_url:
+        # We're seeing a MySQL URL, but Render uses PostgreSQL
+        logger.warning("MySQL URL detected, but Render uses PostgreSQL. This may cause errors.")
+        parts = db_url.split('@')
+        if len(parts) > 1:
+            sanitized_url = f"mysql://****:****@{parts[1]}"
+            logger.info(f"Using database URL: {sanitized_url}")
+        else:
+            logger.info("Using MySQL database")
     else:
-        logger.info("Using PostgreSQL database")
-else:
-    logger.info(f"Using database URL: {db_url}")
+        logger.info(f"Using database URL type: {db_url.split(':')[0]}")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
